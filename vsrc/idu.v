@@ -580,7 +580,10 @@ assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch
                                 /*disable wfi time form S&U*/    (wfi & (current_priv_status < `PRV_M) & TW) | 
                                 //! todo need to add the sfence.vma and need to trap the sfence.vma
                                 /*disable access satp form S*/   (csr_valid & (current_priv_status == `PRV_S) & (csr_addr == 12'h180) & TVM) | 
-                                /*disable sret form S*/          (sret & (current_priv_status == `PRV_S) & TSR));
+                                /*disable sret form S*/          (sret & (current_priv_status == `PRV_S) & TSR) | 
+                                /*disable mret form S*/          (mret & (current_priv_status == `PRV_S)) | 
+                                /*disable sret form U*/          (sret & (current_priv_status == `PRV_U)) | 
+                                /*disable mret form U*/          (mret & (current_priv_status == `PRV_U)));
 //**********************************************************************************************
 //!output 
 assign ID_IF_inst_ready     = IF_ID_reg_inst_valid & (EX_ID_decode_ready | (!ID_EX_reg_decode_valid)) & (((!Data_Conflict) &
