@@ -598,7 +598,7 @@ assign gpr_data                 = (EX_LS_reg_operand & {64{(!(EX_LS_reg_load_val
                                     (atomic_data_reg & {64{EX_LS_reg_atomic_valid}});
 //**********************************************************************
 //read addr channel
-assign lsu_arvalid          = (EX_LS_reg_atomic_valid) ? read_arvalid_reg : atomic_arvalid_reg;
+assign lsu_arvalid          = (!EX_LS_reg_atomic_valid) ? read_arvalid_reg : atomic_arvalid_reg;
 assign lsu_arlock           = EX_LS_reg_atomic_valid;
 assign lsu_arsize           = (load_byte_sign) ? 3'h0 : (
                                 (load_half_sign) ? 3'h1 : (
@@ -608,7 +608,7 @@ assign lsu_araddr           = EX_LS_reg_operand;
 //read data channel
 assign lsu_rready           = 1'b1;
 //write addr channel
-assign lsu_awvalid          = (EX_LS_reg_atomic_valid) ? write_awvalid_reg : atomic_awvalid_reg;
+assign lsu_awvalid          = (!EX_LS_reg_atomic_valid) ? write_awvalid_reg : atomic_awvalid_reg;
 assign lsu_awlock           = EX_LS_reg_atomic_valid;
 assign lsu_awsize           = (store_byte_sign) ? 3'h0 : (
                                 (store_half_sign) ? 3'h1 : (
@@ -616,7 +616,7 @@ assign lsu_awsize           = (store_byte_sign) ? 3'h0 : (
                                         (store_double_sign) ? 3'h3 : 3'h0)));
 assign lsu_awaddr           = EX_LS_reg_operand;
 //write data channel
-assign lsu_wvalid           = (EX_LS_reg_atomic_valid) ? write_wvalid_reg : atomic_wvalid_reg;
+assign lsu_wvalid           = (!EX_LS_reg_atomic_valid) ? write_wvalid_reg : atomic_wvalid_reg;
 assign lsu_wstrob           = (store_byte_sign) ? byte_wstrob : (
                                 (store_half_sign) ? half_wstrob : (
                                     (store_word_sign) ? word_wstrob : (
