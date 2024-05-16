@@ -342,13 +342,19 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
+//+---------------+-----------------+
+//|inst_rdata     |inst_rdata_reg   |
+//|_______________|_________________|
+//|31|30|29|....|0|31|30|29|28|...|0|
+//|               |                 |
+//+---------------|-----------------|
 always @(*) begin
     case (status)
         STATUS1: begin
             inst_rdata_reg_get = inst_rdata;
         end
         STATUS2: begin
-            inst_rdata_reg_get = {inst_rdata_reg[15:0],inst_rdata[31:16]};
+            inst_rdata_reg_get = {inst_rdata[15:0], inst_rdata_reg[31:16]};
         end
         STATUS3: begin
             inst_rdata_reg_get = inst_rdata_reg;
