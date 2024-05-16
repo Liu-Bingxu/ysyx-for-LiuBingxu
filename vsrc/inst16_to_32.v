@@ -92,7 +92,7 @@ always @(*) begin
                 end
                 3'h2:begin
                     //c.li -> addi rd, x0, imm
-                    output_inst_reg = {{{6{input_inst[12]}},input_inst[12],input_inst[6:2]},{input_inst[11:7]},3'h0,{input_inst[11:7]},7'h13};
+                    output_inst_reg = {{{6{input_inst[12]}},input_inst[12],input_inst[6:2]},5'h0,3'h0,{input_inst[11:7]},7'h13};
                 end
                 3'h3:begin
                     if(input_inst[11:7]==5'h0)begin
