@@ -626,8 +626,8 @@ assign lsu_wdata            = store_data;
 assign lsu_bready           = 1'b1;
 //commom
 assign LS_EX_execute_ready  = (EX_LS_reg_execute_valid & ((!LS_WB_reg_ls_valid) | WB_LS_ls_ready) & 
-                                ((EX_LS_reg_load_valid & read_finish) | (EX_LS_reg_store_valid & write_finish) | 
-                                (EX_LS_reg_atomic_valid & atomic_finish) | trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid) & 
+                                ((((!EX_LS_reg_load_valid) | read_finish) & ((!EX_LS_reg_store_valid) | write_finish) & 
+                                ((!EX_LS_reg_atomic_valid) & atomic_finish)) | trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid) & 
                                 (!WB_LS_flush_flag) & (!(LS_WB_reg_ls_valid & (LS_WB_reg_trap_valid | LS_WB_reg_mret_valid | LS_WB_reg_sret_valid))));
 assign LS_EX_flush_flag     = (WB_LS_flush_flag | (LS_WB_reg_ls_valid & (LS_WB_reg_trap_valid | LS_WB_reg_mret_valid | LS_WB_reg_sret_valid)));
 FF_D_with_syn_rst #(
