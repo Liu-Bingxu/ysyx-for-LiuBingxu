@@ -276,6 +276,7 @@ idu u_idu(
     .IF_ID_reg_inst_compress_flag 	( IF_ID_reg_inst_compress_flag  ),
     .ID_IF_inst_ready             	( ID_IF_inst_ready              ),
     .ID_IF_flush_flag             	( ID_IF_flush_flag              ),
+    .EX_IF_jump_flag                ( EX_IF_jump_flag               ),
     .ID_EX_reg_decode_valid       	( ID_EX_reg_decode_valid        ),
     .EX_ID_decode_ready           	( EX_ID_decode_ready            ),
     .EX_ID_flush_flag             	( EX_ID_flush_flag              ),
