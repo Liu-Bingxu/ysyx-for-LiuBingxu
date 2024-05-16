@@ -16,7 +16,7 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
-module core_top#(parameter MHARTID = 0)(
+module core_top#(parameter MHARTID = 0,RST_PC=64'h0)(
     input                   clk,
     input                   rst_n,
 //interface with interrupt sign
@@ -242,7 +242,7 @@ wire        	WB_EX_interrupt_flag;
 wire        	WB_LS_ls_ready;
 wire        	WB_LS_flush_flag;
 
-ifu u_ifu(
+ifu #(RST_PC)u_ifu(
     .clk                          	( clk                           ),
     .rst_n                        	( rst_n                         ),
     .jump_flag                    	( jump_flag                     ),
@@ -583,7 +583,8 @@ lsu u_lsu(
 );
 
 wbu #(
-    .MHARTID 	( MHARTID  )
+    .MHARTID 	( MHARTID  ),
+    .RST_PC     ( RST_PC   )
 )u_wbu
 (
     .clk                     	( clk                      ),

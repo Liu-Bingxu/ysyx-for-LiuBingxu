@@ -16,7 +16,7 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
-module wbu#(parameter MHARTID = 0)(
+module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     input                   clk,
     input                   rst_n,
     output  [1:0]           current_priv_status,
@@ -100,7 +100,8 @@ gpr u_gpr(
 );
 
 csr #(
-    .MHARTID 	( MHARTID  )
+    .MHARTID 	( MHARTID  ),
+    .RST_PC     ( RST_PC   )
 )u_csr
 (
     .clk                     	( clk                      ),

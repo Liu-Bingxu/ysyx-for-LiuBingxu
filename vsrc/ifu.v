@@ -16,7 +16,7 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
-module ifu(
+module ifu#(parameter RST_PC=64'h0)(
     //clock and reset
     input                   clk,
     input                   rst_n,
@@ -111,7 +111,7 @@ localparam STATUS3 = 2'h2;
 reg [63:0]          pc;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
-        pc <= 64'h0;
+        pc <= RST_PC;
     end
     else begin
         if(jump_flag)begin
@@ -286,7 +286,7 @@ inst16_to_32 u_inst16_to_32(
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
         status <= STATUS1;
-        my_reg_PC_reg <= 64'h0;
+        my_reg_PC_reg <= RST_PC;
         // inst_my_reg_valid <= 1'b0;
     end
     else if(jump_flag)begin

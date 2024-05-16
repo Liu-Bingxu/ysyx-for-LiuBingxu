@@ -17,7 +17,7 @@
 // Please contact me through the following email: <qwe15889844242@163.com>
 
 `include "./define.v"
-module csr#(parameter MHARTID = 0) (
+module csr#(parameter MHARTID = 0,RST_PC=64'h0) (
     input                   clk,
     input                   rst_n,
     input                   stip,
@@ -256,7 +256,7 @@ csr_mstatus u_csr_mstatus(
     .sstatus                ( sstatus               )
 );
 
-csr_mtvec u_csr_mtvec(
+csr_mtvec #(RST_PC)u_csr_mtvec(
     .clk           	( clk            ),
     .rst_n         	( rst_n          ),
     .csr_mtvec_wen 	( csr_mtvec_wen  ),
@@ -402,7 +402,7 @@ csr_mseccfg u_csr_mseccfg(
 );
 //!S mode
 
-csr_stvec u_csr_stvec(
+csr_stvec #(RST_PC)u_csr_stvec(
     .clk           	( clk            ),
     .rst_n         	( rst_n          ),
     .csr_stvec_wen 	( csr_stvec_wen  ),
@@ -473,7 +473,7 @@ interrupt_control u_interrupt_control(
     .interrupt_cause     	( interrupt_cause      )
 );
 
-trap_control u_trap_control(
+trap_control #(RST_PC)u_trap_control(
     .clk                     	( clk                      ),
     .rst_n                   	( rst_n                    ),
     .current_priv_status     	( current_priv_status      ),
@@ -994,7 +994,7 @@ assign sstatus = mstatus & 64'h8000_0003_000D_E762;
 
 endmodule //csr_mstatus
 
-module csr_mtvec(
+module csr_mtvec#(parameter RST_PC=64'h0)(
     input                   clk,
     input                   rst_n,
     input                   csr_mtvec_wen,
@@ -1006,7 +1006,7 @@ reg  [63:0]     mtvec_reg;
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
-        mtvec_reg <= 64'h0;
+        mtvec_reg <= RST_PC;
     end
     else if(csr_mtvec_wen)begin
         if(csr_wdata[1:0] == 2'h1)begin
@@ -1391,7 +1391,7 @@ assign mseccfg = 64'h0;
 
 endmodule //csr_mseccfg
 
-module csr_stvec(
+module csr_stvec#(parameter RST_PC=64'h0)(
     input                   clk,
     input                   rst_n,
     input                   csr_stvec_wen,
@@ -1403,7 +1403,7 @@ reg  [63:0]     stvec_reg;
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
-        stvec_reg <= 64'h0;
+        stvec_reg <= RST_PC;
     end
     else if(csr_stvec_wen)begin
         if(csr_wdata[1:0] == 2'h1)begin
@@ -1589,7 +1589,7 @@ assign interrupt_cause          = (m_mode_interrupt_pending[11]) ? 64'h8000_0000
 
 endmodule //interrupt_control
 
-module trap_control(
+module trap_control#(parameter RST_PC=64'h0)(
     input                   clk,
     input                   rst_n,
     input  [1:0]            current_priv_status,
@@ -1641,7 +1641,7 @@ reg  [63:0]     next_pc;
 //**********************************************************************************************
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
-        next_pc <= 64'h0;
+        next_pc <= RST_PC;
     end
     else begin
         if(WB_IF_jump_flag)begin
