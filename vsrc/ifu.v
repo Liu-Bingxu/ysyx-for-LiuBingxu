@@ -99,6 +99,7 @@ wire                inst_compress_flag;
 wire                status1_can_conver_flag;
 wire                status2_can_conver_flag;
 wire                status3_can_conver_flag;
+wire                status2_after_jump_flag;
 wire                reg_can_cover_flag;
 wire                reg_can_change_flag;
 
@@ -269,7 +270,7 @@ ifu_fifo #(
 );
 
 assign fifo_wen = ifu_rvalid&ifu_rready&(invalid_cnt==4'h0);
-assign fifo_ren = status1_can_conver_flag | status2_can_conver_flag | (status3_can_conver_flag & (inst_rdata_reg_get[1:0] == 2'b11));
+assign fifo_ren = status1_can_conver_flag | status2_can_conver_flag | status2_after_jump_flag | (status3_can_conver_flag & (inst_rdata_reg_get[1:0] == 2'b11));
 assign ifu_rready   = 1;
 
 
@@ -422,6 +423,7 @@ FF_D_without_asyn_rst #(1)u_inst_compress_flag(.clk(clk),.wen(reg_can_change_fla
 assign status1_can_conver_flag              =   (status == STATUS1) & (reg_can_cover_flag) & (!inst_empty);
 assign status2_can_conver_flag              =   (status == STATUS2) & (reg_can_cover_flag) & (!inst_empty) & (inst_my_reg_valid);
 assign status3_can_conver_flag              =   (status == STATUS3) & (reg_can_cover_flag) & (inst_my_reg_valid);
+assign status2_after_jump_flag              =   (status == STATUS2) & (reg_can_cover_flag) & (!inst_empty) & (!inst_my_reg_valid);
 assign reg_can_cover_flag                   =   ((!IF_ID_reg_inst_valid) | (ID_IF_inst_ready)) & (!ID_IF_flush_flag);
 assign reg_can_change_flag                  =   status1_can_conver_flag | status2_can_conver_flag | status3_can_conver_flag;
 
