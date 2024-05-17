@@ -821,8 +821,6 @@ assign WB_EX_interrupt_flag = (interrupt_m_flag | interrupt_s_flag);
 
 endmodule //csr
 
-/* verilator lint_off DECLFILENAME */
-/* verilator lint_off UNUSEDSIGNAL */
 module csr_misa(
     output [63:0]           misa
 );
@@ -1673,4 +1671,3 @@ assign tval                 = (trap_m_interrupt | trap_s_interrupt) ? 64'h0 : LS
 endmodule //trap_control
 
 /* verilator lint_on UNUSEDSIGNAL */
-/* verilator lint_on DECLFILENAME */

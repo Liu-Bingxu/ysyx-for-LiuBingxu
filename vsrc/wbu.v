@@ -58,9 +58,7 @@ module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     output                  WB_LS_flush_flag,
     input  [63:0]           LS_WB_reg_PC,
     input  [63:0]           LS_WB_reg_next_PC,
-    /* verilator lint_off UNUSEDSIGNAL */
     input  [31:0]           LS_WB_reg_inst,
-    /* verilator lint_on UNUSEDSIGNAL */
     //trap:
     input                   LS_WB_reg_trap_valid,
     input                   LS_WB_reg_mret_valid,

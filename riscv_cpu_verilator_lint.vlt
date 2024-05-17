@@ -1,0 +1,19 @@
+`verilator_config
+//本文件用于使用verilator做lint检查时取消已知的报错
+//1.取消wbu的LS_WB_reg_inst端口未使用的错误，因为这是用来debug的信号
+lint_off -rule UNUSEDSIGNAL -file "*/wbu.v" -lines 61
+//2.取消csr中misa模块的名字不匹配错误，因为csr模块不好分成多个文件，后续可能会优化一个文件夹存放
+lint_off -rule DECLFILENAME -file "*/csr.v" -lines 824
+//3.取消csr中子模块对csr_wdata未完全使用的报错，这是因为不好拆分csr_wdata信号，但csr的有些位是只读的，所以使用不完csr_wdata信号
+lint_off -rule UNUSEDSIGNAL -file "*/csr.v" -lines 881
+lint_off -rule UNUSEDSIGNAL -file "*/csr.v" -lines 1027
+lint_off -rule UNUSEDSIGNAL -file "*/csr.v" -lines 1092
+lint_off -rule UNUSEDSIGNAL -file "*/csr.v" -lines 1133
+lint_off -rule UNUSEDSIGNAL -file "*/csr.v" -lines 1169
+lint_off -rule UNUSEDSIGNAL -file "*/csr.v" -lines 1266
+//4.取消csr中mepc和sepc的未完全使用报错，这是因为最低位被掩码为0导致的
+lint_off -rule UNUSEDSIGNAL -file "*/csr.v" -lines 1313
+lint_off -rule UNUSEDSIGNAL -file "*/csr.v" -lines 1456
+
+
+
