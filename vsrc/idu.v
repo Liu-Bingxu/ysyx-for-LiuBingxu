@@ -587,7 +587,7 @@ assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch
                                 /*disable mret form U*/          (mret & (current_priv_status == `PRV_U)));
 //**********************************************************************************************
 //!output 
-assign ID_IF_inst_ready     = IF_ID_reg_inst_valid & (EX_ID_decode_ready | (!ID_EX_reg_decode_valid)) & (((!Data_Conflict) & (!EX_IF_jump_flag) & 
+assign ID_IF_inst_ready     = IF_ID_reg_inst_valid & (EX_ID_decode_ready | (!ID_EX_reg_decode_valid)) & (!EX_IF_jump_flag) & (((!Data_Conflict) & 
                             (!(EX_LS_reg_execute_valid & EX_LS_reg_csr_wen)) & (!(LS_WB_reg_ls_valid & LS_WB_reg_csr_wen)) &
                             (!(ID_EX_reg_decode_valid & ID_EX_reg_csr_wen))) | trap_valid | mret_valid | sret_valid) & (!EX_ID_flush_flag) & 
                             (!(ID_EX_reg_decode_valid & (ID_EX_reg_trap_valid | ID_EX_reg_mret_valid | ID_EX_reg_sret_valid)));
