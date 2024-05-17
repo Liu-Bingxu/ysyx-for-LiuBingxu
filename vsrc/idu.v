@@ -153,7 +153,7 @@ wire                    rs2_valid;
 wire [4 :0]             rd;
 wire                    dest_wen;
 //control_sign:
-wire                    sub;
+wire                    alu_sub;
 wire                    word;
 //logic_sign:
 wire                    logic_valid;
@@ -469,7 +469,7 @@ assign rs2_valid        = (B_flag | R_flag | RW_flag | A_flag | S_flag);
 assign rd               = IF_ID_reg_inst[11:7];
 assign dest_wen         = (I_flag | U_flag | A_flag | R_flag | RW_flag | J_flag | csr_ren);
 //control_sign:
-assign sub              = (set_valid | branch_valid | sub | subw);
+assign alu_sub          = (set_valid | branch_valid | sub | subw);
 assign word             = (addw | addiw | subw);
 //logic_sign:
 assign logic_valid      = (OR | XOR | AND | ori | xori | andi);
@@ -611,7 +611,7 @@ FF_D_without_asyn_rst #(32) u_inst          (clk,ID_IF_inst_ready,IF_ID_reg_inst
 FF_D_without_asyn_rst #(64) u_PC            (clk,ID_IF_inst_ready,IF_ID_reg_PC,ID_EX_reg_PC);
 FF_D_without_asyn_rst #(64) u_next_PC       (clk,ID_IF_inst_ready,next_PC,ID_EX_reg_next_PC);
 //control_sign:
-FF_D_without_asyn_rst #(1)  u_sub           (clk,ID_IF_inst_ready,sub,ID_EX_reg_sub);
+FF_D_without_asyn_rst #(1)  u_sub           (clk,ID_IF_inst_ready,alu_sub,ID_EX_reg_sub);
 FF_D_without_asyn_rst #(1)  u_word          (clk,ID_IF_inst_ready,word,ID_EX_reg_word);
 //logic_sign:
 FF_D_without_asyn_rst #(1)  u_logic_valid   (clk,ID_IF_inst_ready,logic_valid,ID_EX_reg_logic_valid);
