@@ -102,6 +102,7 @@ wire                status3_can_conver_flag;
 wire                status2_after_jump_flag;
 wire                reg_can_cover_flag;
 wire                reg_can_change_flag;
+wire                flush_flag;
 
 reg [1:0]           status;
 localparam STATUS1 = 2'h0;
@@ -130,7 +131,7 @@ always @(posedge clk or negedge rst_n) begin
         ifu_arvalid_reg <= 1'b0;
     end
     else begin
-        if(ID_IF_flush_flag)begin
+        if(flush_flag)begin
             ifu_arvalid_reg <= 1'b0;
         end
         else if(ifu_arvalid_reg)begin
@@ -150,7 +151,7 @@ always @(posedge clk or negedge rst_n) begin
         pc_cnt<=3'h0;
     end
     else begin
-        if(ID_IF_flush_flag)begin
+        if(flush_flag)begin
             pc_cnt<=3'h0;
         end
         else if(ifu_arvalid&ifu_arready&fifo_ren)begin
@@ -189,7 +190,7 @@ always @(posedge clk or negedge rst_n) begin
         inst_cnt<=3'h0;
     end
     else begin
-        if(ID_IF_flush_flag)begin
+        if(flush_flag)begin
             inst_cnt <= 3'h0;
         end
         else if(ifu_arvalid&ifu_arready&ifu_rvalid&ifu_rready&(invalid_cnt==4'h0))begin
@@ -211,7 +212,7 @@ always @(posedge clk or negedge rst_n) begin
     end
     else begin
         if(invalid_cnt[3])begin
-            if(ID_IF_flush_flag)begin
+            if(flush_flag)begin
                 if(ifu_arvalid&ifu_arready&ifu_rvalid&ifu_rready)begin
                     invalid_cnt[2:0]<=invalid_cnt[2:0] + inst_cnt;
                 end
@@ -236,7 +237,7 @@ always @(posedge clk or negedge rst_n) begin
             end
         end
         else begin
-            if(ID_IF_flush_flag)begin
+            if(flush_flag)begin
                 if(ifu_arvalid&ifu_arready&ifu_rvalid&ifu_rready)begin
                     invalid_cnt <= {1'b1,inst_cnt};
                 end
@@ -264,7 +265,7 @@ ifu_fifo #(
     .Wready 	( fifo_wen                  ),
     .empty      ( inst_empty                ),
     .Rready 	( fifo_ren                  ),
-    .flush  	( ID_IF_flush_flag          ),
+    .flush  	( flush_flag          ),
     .wdata  	( {ifu_rresp,ifu_rdata}     ),
     .rdata  	( {rresp_rdata,inst_rdata}  )
 );
@@ -372,7 +373,7 @@ FF_D_with_syn_rst_without_asyn #(
 )u_inst_my_reg_valid
 (
     .clk      	( clk               ),
-    .syn_rst  	( ID_IF_flush_flag  ),
+    .syn_rst  	( flush_flag  ),
     .wen      	( fifo_ren          ),
     .data_in  	( 1'b1              ),
     .data_out 	( inst_my_reg_valid )
@@ -407,7 +408,7 @@ FF_D_with_syn_rst #(
 (
     .clk      	( clk                   ),
     .rst_n    	( rst_n                 ),
-    .syn_rst    ( ID_IF_flush_flag      ),
+    .syn_rst    ( flush_flag      ),
     .wen        ( reg_can_cover_flag    ),
     .data_in  	( reg_can_change_flag   ),
     .data_out 	( IF_ID_reg_inst_valid  )
@@ -424,8 +425,9 @@ assign status1_can_conver_flag              =   (status == STATUS1) & (reg_can_c
 assign status2_can_conver_flag              =   (status == STATUS2) & (reg_can_cover_flag) & (!inst_empty) & (inst_my_reg_valid);
 assign status3_can_conver_flag              =   (status == STATUS3) & (reg_can_cover_flag) & (inst_my_reg_valid);
 assign status2_after_jump_flag              =   (status == STATUS2) & (reg_can_cover_flag) & (!inst_empty) & (!inst_my_reg_valid);
-assign reg_can_cover_flag                   =   ((!IF_ID_reg_inst_valid) | (ID_IF_inst_ready)) & (!ID_IF_flush_flag);
+assign reg_can_cover_flag                   =   ((!IF_ID_reg_inst_valid) | (ID_IF_inst_ready)) & (!flush_flag);
 assign reg_can_change_flag                  =   status1_can_conver_flag | status2_can_conver_flag | status3_can_conver_flag;
+assign flush_flag                           =   ID_IF_flush_flag | jump_flag;
 
 assign inst_to_idu = (inst_rdata_reg_get[1:0] == 2'b11) ? inst_rdata_reg_get : inst_rdata_reg_tran;
 assign inst_compress_flag = (inst_rdata_reg_get[1:0] != 2'b11) ? 1'b1 : 1'b0;
