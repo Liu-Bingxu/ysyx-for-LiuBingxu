@@ -1670,4 +1670,3 @@ assign tval                 = (trap_m_interrupt | trap_s_interrupt) ? 64'h0 : LS
 
 endmodule //trap_control
 
-/* verilator lint_on UNUSEDSIGNAL */
