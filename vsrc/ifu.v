@@ -16,6 +16,7 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
+`include "./define.v"
 module ifu#(parameter RST_PC=64'h0)(
     //clock and reset
     input                   clk,
@@ -54,8 +55,6 @@ module ifu#(parameter RST_PC=64'h0)(
 
 //仍未接收inst计数器
 reg  [2:0]          inst_cnt;
-wire [2:0]          inst_cnt_more;
-wire [2:0]          inst_cnt_less;
 
 //有效已发未取pc计数器
 reg  [2:0]          pc_cnt;
@@ -204,6 +203,10 @@ always @(posedge clk or negedge rst_n) begin
         end
     end
 end
+
+`ifndef USE_ICACHE
+wire [2:0]          inst_cnt_more;
+wire [2:0]          inst_cnt_less;
 assign inst_cnt_more = inst_cnt + 1;
 assign inst_cnt_less = inst_cnt + 3'h7;
 always @(posedge clk or negedge rst_n) begin
@@ -254,6 +257,11 @@ always @(posedge clk or negedge rst_n) begin
         end
     end
 end
+`else
+always @(*) begin
+    invalid_cnt = 4'h0;
+end
+`endif 
 
 ifu_fifo #(
     .DATA_LEN   	( 34  ),
@@ -265,7 +273,7 @@ ifu_fifo #(
     .Wready 	( fifo_wen                  ),
     .empty      ( inst_empty                ),
     .Rready 	( fifo_ren                  ),
-    .flush  	( flush_flag          ),
+    .flush  	( flush_flag                ),
     .wdata  	( {ifu_rresp,ifu_rdata}     ),
     .rdata  	( {rresp_rdata,inst_rdata}  )
 );
