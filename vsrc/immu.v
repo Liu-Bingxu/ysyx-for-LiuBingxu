@@ -40,8 +40,8 @@ localparam IMMU_WAY_LEN     = $clog2(IMMU_WAY);
 localparam IMMU_TLB_FILL    = 42 - $clog2(IMMU_GROUP);
 
 //sram interface
-reg  [63:0]             tlb_page_valid[0:IMMU_GROUP-1][0:IMMU_WAY-1];
-reg  [63:0]             tlb_page_valid_way[0:IMMU_WAY-1];
+wire [63:0]             tlb_page_valid[0:IMMU_GROUP-1][0:IMMU_WAY-1];
+wire [63:0]             tlb_page_valid_way[0:IMMU_WAY-1];
 wire [127:0]            sram_rdata[0:IMMU_GROUP-1][0:IMMU_WAY-1];
 wire                    sram_cen[0:IMMU_GROUP-1];
 wire                    sram_wen[0:IMMU_GROUP-1][0:IMMU_WAY-1];
