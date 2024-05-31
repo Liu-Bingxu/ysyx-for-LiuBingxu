@@ -220,7 +220,7 @@ rand_lfsr_8_bit #(
     .out   	( rand_way      )
 );
 assign tlb_page                     = tlb_page_sel(tlb_hit_way_sel, tlb_rdata);
-assign sram_addr                    = (tlb_search_super_page_flag | tlb_write_super_page_flag) ? 6'h0 : vaddr[17:12];
+assign sram_addr                    = (tlb_search_super_page_flag | tlb_write_super_page_flag) ? 6'h0 : ((tlb_page_wen) ? stage_vaddr[17:12] : vaddr[17:12]);
 assign tlb_hit_flag                 = (|tlb_hit_way_sel) & ((stage_status == IDLE) | (stage_status == SEARCH_2M) | (stage_status == SEARCH_1G));
 assign tlb_error_flag               = (|tlb_error_way_sel) & ((stage_status == IDLE) | (stage_status == SEARCH_2M) | (stage_status == SEARCH_1G));
 assign tlb_search_super_page_flag   = tlb_search_super_page_2M_flag | tlb_search_super_page_1G_flag;
