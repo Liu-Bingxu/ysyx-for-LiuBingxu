@@ -33,6 +33,17 @@
 `define PRV_S   2'h1
 `define PRV_U   2'h0
 
+`define DEBUG_ROM_START             12'h800
+`define DEBUG_FLAG_START            12'h400
+`define DEBUG_DATA_START            12'h380
+`define DEBUG_PROGBUF_START         12'h340
+`define DEBUG_ABSTRACT_START        12'h310
+`define DEBUG_ROM_WHERETO           12'h300
+`define DEBUG_EXCEPTION_START       12'h10C
+`define DEBUG_RESUMING_START        12'h108
+`define DEBUG_GOING_START           12'h104
+`define DEBUG_HALT_START            12'h100
+
 `define CSR_ADDR_MISA               12'h301
 `define CSR_ADDR_MVENDORID          12'hF11
 `define CSR_ADDR_MARCHID            12'hF12
