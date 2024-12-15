@@ -5,15 +5,13 @@ module async_fifo #(
 ) (
     input                       clk_w,
     input                       rstn_w,
-    output                      full_f,
-    output                      empty_t,
+    output                      full,
     input                       wen,
     input  [ DATA_LEN - 1 : 0 ] data_in,
 
     input                       clk_r,
     input                       rstn_r,
-    output                      full_t,
-    output                      empty_f,
+    output                      empty,
     input                       ren,
     output [ DATA_LEN - 1 : 0 ] data_out
 );
@@ -31,7 +29,7 @@ always @(posedge clk_w or negedge rstn_w) begin
     if(!rstn_w)begin
         w_ptr   <= {(ADDR_LEN + 1){1'b0}};
     end
-    else if(wen & (!full_f))begin
+    else if(wen & (!full))begin
         w_ptr   <= w_ptr + 1'b1;
     end
 end
@@ -40,13 +38,13 @@ always @(posedge clk_r or negedge rstn_r) begin
     if(!rstn_r)begin
         r_ptr   <= {(ADDR_LEN + 1){1'b0}};
     end
-    else if(ren & (!empty_f))begin
+    else if(ren & (!empty))begin
         r_ptr   <= r_ptr + 1'b1;
     end
 end
 
 always @(posedge clk_w) begin
-    if(wen & (!full_f))begin
+    if(wen & (!full))begin
         ram[w_ptr[ADDR_LEN - 1 : 0]] <= data_in;
     end
 end
@@ -58,7 +56,7 @@ generate
     else begin : read_tick
         reg [DATA_LEN -1 : 0] data_r;
         always @(posedge clk_r) begin
-            if(ren & (!empty_f))begin
+            if(ren & (!empty))begin
                 data_r  <= ram[r_ptr[ADDR_LEN - 1 : 0]];
             end
         end
@@ -76,15 +74,12 @@ assign r_ptr_gray = {r_ptr[ADDR_LEN], (r_ptr[ ADDR_LEN -1 : 0 ] ^ r_ptr[ ADDR_LE
 
 generate 
     if(ADDR_LEN == 1) begin : full_gen_special
-        assign full_t = (w_ptr_gray_sync[ADDR_LEN : ADDR_LEN - 1] == ~r_ptr_gray[ADDR_LEN : ADDR_LEN - 1]); 
-        assign full_f = (r_ptr_gray_sync[ADDR_LEN : ADDR_LEN - 1] == ~w_ptr_gray[ADDR_LEN : ADDR_LEN - 1]); 
+        assign full = (r_ptr_gray_sync[ADDR_LEN : ADDR_LEN - 1] == ~w_ptr_gray[ADDR_LEN : ADDR_LEN - 1]); 
     end
     else begin : full_gen_normal
-        assign full_t = ((w_ptr_gray_sync[ADDR_LEN : ADDR_LEN - 1] == ~r_ptr_gray[ADDR_LEN : ADDR_LEN - 1]) & (w_ptr_gray_sync[ADDR_LEN - 2 : 0] == r_ptr_gray[ADDR_LEN - 2 : 0])); 
-        assign full_f = ((r_ptr_gray_sync[ADDR_LEN : ADDR_LEN - 1] == ~w_ptr_gray[ADDR_LEN : ADDR_LEN - 1]) & (r_ptr_gray_sync[ADDR_LEN - 2 : 0] == w_ptr_gray[ADDR_LEN - 2 : 0])); 
+        assign full = ((r_ptr_gray_sync[ADDR_LEN : ADDR_LEN - 1] == ~w_ptr_gray[ADDR_LEN : ADDR_LEN - 1]) & (r_ptr_gray_sync[ADDR_LEN - 2 : 0] == w_ptr_gray[ADDR_LEN - 2 : 0])); 
     end
 endgenerate
-assign empty_t = (r_ptr_gray_sync == w_ptr_gray);
-assign empty_f = (w_ptr_gray_sync == r_ptr_gray);
+assign empty = (w_ptr_gray_sync == r_ptr_gray);
 
 endmodule //async_fifo
