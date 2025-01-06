@@ -16,91 +16,105 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
-module memory_load_move(
-    input   [63:0]          pre_data,
-    input   [2:0]           data_offset,
-    input                   is_byte,
-    input                   is_half,
-    input                   is_word,
-    input                   is_double,
-    input                   is_sign,
-    output  [63:0]          data
+module memory_load_move#(
+    parameter DATA_WIDTH = 64,
+    parameter HAS_SIGN   = 1,
+    parameter OFF_WIDTH  = DATA_WIDTH / 32
+)(
+    input   [DATA_WIDTH -1:0]   pre_data,
+    input   [OFF_WIDTH    :0]   data_offset,
+    input                       is_byte,
+    input                       is_half,
+    input                       is_word,
+    input                       is_double,
+    input                       is_sign,
+    output  [DATA_WIDTH -1:0]   data
 );
 
-localparam FILLER_LEN_BYTE      = 56;
-localparam FILLER_LEN_HALF      = 48;
-localparam FILLER_LEN_DOUBLE    = 32;
+localparam FILLER_LEN_BYTE      = DATA_WIDTH - 8;
+localparam FILLER_LEN_HALF      = DATA_WIDTH - 16;
+localparam FILLER_LEN_DOUBLE    = DATA_WIDTH - 32;
 
-wire [63:0] data_byte;
-wire [63:0] data_half;
-wire [63:0] data_word;
-wire [63:0] data_double;
-wire [63:0] data_signed_byte;
-wire [63:0] data_signed_half;
-wire [63:0] data_signed_word;
-wire [63:0] data_unsigned_byte;
-wire [63:0] data_unsigned_half;
-wire [63:0] data_unsigned_word;
+wire                   use_sign;
 
-wire [63:0] pre_move_data_0;
-wire [63:0] pre_move_data_1;
-wire [63:0] pre_move_data_2;
-wire [63:0] pre_move_data_3;
-wire [63:0] pre_move_data_4;
-wire [63:0] pre_move_data_5;
-wire [63:0] pre_move_data_6;
-wire [63:0] pre_move_data_7;
-reg  [63:0] pre_data_reg;
+wire [DATA_WIDTH -1:0] data_byte;
+wire [DATA_WIDTH -1:0] data_half;
+wire [DATA_WIDTH -1:0] data_word;
+wire [DATA_WIDTH -1:0] data_double;
+wire [DATA_WIDTH -1:0] data_signed_byte;
+wire [DATA_WIDTH -1:0] data_signed_half;
+wire [DATA_WIDTH -1:0] data_signed_word;
+wire [DATA_WIDTH -1:0] data_unsigned_byte;
+wire [DATA_WIDTH -1:0] data_unsigned_half;
+wire [DATA_WIDTH -1:0] data_unsigned_word;
 
-assign pre_move_data_0 = pre_data;
-assign pre_move_data_1 = { 8'h0,pre_move_data_0[63:8] };
-assign pre_move_data_2 = {16'h0,pre_move_data_0[63:16]};
-assign pre_move_data_3 = {24'h0,pre_move_data_0[63:24]};
-assign pre_move_data_4 = {32'h0,pre_move_data_0[63:32]};
-assign pre_move_data_5 = {40'h0,pre_move_data_0[63:40]};
-assign pre_move_data_6 = {48'h0,pre_move_data_0[63:48]};
-assign pre_move_data_7 = {56'h0,pre_move_data_0[63:56]};
-always @(*) begin
-    if(data_offset==3'b000)begin
-        pre_data_reg=pre_move_data_0;
+wire [DATA_WIDTH -1:0] pre_data_out;
+wire [DATA_WIDTH -1:0] pre_data_temp[OFF_WIDTH + 1 : 0]/* verilator split_var */;
+
+genvar off_index;
+generate 
+    for(off_index = 0 ; off_index <= OFF_WIDTH; off_index = off_index + 1) begin : buck_shift
+        assign pre_data_temp[off_index + 1] = (!data_offset[off_index]) ? pre_data_temp[off_index] 
+                                        : {{(8 * (2 **off_index)){1'b0}}, pre_data_temp[off_index][DATA_WIDTH -1 : 8 * (2 **off_index)]};
     end
-    else if(data_offset==3'b001)begin
-        pre_data_reg=pre_move_data_1;
-    end
-    else if(data_offset==3'b010)begin
-        pre_data_reg=pre_move_data_2;
-    end
-    else if(data_offset==3'b011)begin
-        pre_data_reg=pre_move_data_3;
-    end
-    else if(data_offset==3'b100)begin
-        pre_data_reg=pre_move_data_4;
-    end
-    else if(data_offset==3'b101)begin
-        pre_data_reg=pre_move_data_5;
-    end
-    else if(data_offset==3'b110)begin
-        pre_data_reg=pre_move_data_6;
+endgenerate
+
+generate 
+    if(HAS_SIGN == 0) begin : no_sign
+        assign use_sign = 1'b0;
     end
     else begin
-        pre_data_reg=pre_move_data_7;
+        if(DATA_WIDTH == 64) begin : gen_64bit_use_sign
+            assign use_sign = is_sign;
+        end
+        else if(DATA_WIDTH == 32) begin : gen_32bit_use_sign
+            assign use_sign = (!is_word) & is_sign;
+        end
+        else begin : gen_error_messge
+            $error("data width error");
+        end
     end
-end
+endgenerate
 
-assign data_signed_byte = {{FILLER_LEN_BYTE{pre_data_reg[7]} },pre_data_reg[7:0] };
-assign data_signed_half = {{FILLER_LEN_HALF{pre_data_reg[15]}},pre_data_reg[15:0]};
+generate 
+    if(DATA_WIDTH == 64) begin : gen_64bit_data
+        assign data = {DATA_WIDTH{1'b0}}
+                | ({DATA_WIDTH{is_byte  }} & data_byte  )
+                | ({DATA_WIDTH{is_half  }} & data_half  )
+                | ({DATA_WIDTH{is_word  }} & data_word  )
+                | ({DATA_WIDTH{is_double}} & data_double) 
+                ;
+    end
+    else if(DATA_WIDTH == 32) begin : gen_32bit_data
+        assign data = {DATA_WIDTH{1'b0}}
+                | ({DATA_WIDTH{is_byte  }} & data_byte  )
+                | ({DATA_WIDTH{is_half  }} & data_half  )
+                | ({DATA_WIDTH{is_word  }} & data_word  )
+                ;
+    end
+    else begin : gen_error_messge
+        $error("data width error");
+    end
+endgenerate
 
-assign data_unsigned_byte = {{FILLER_LEN_BYTE{1'b0}},pre_data_reg[7:0] };
-assign data_unsigned_half = {{FILLER_LEN_HALF{1'b0}},pre_data_reg[15:0]};
+assign  pre_data_temp[0] = pre_data;
 
-assign data_signed_word   = {{FILLER_LEN_DOUBLE{pre_data_reg[31]}},pre_data_reg[31:0] };
-assign data_unsigned_word = {{FILLER_LEN_DOUBLE{1'b0}},pre_data_reg[31:0]};
+assign pre_data_out = pre_data_temp[OFF_WIDTH + 1];
 
-assign data_byte    = (is_sign)?data_signed_byte:data_unsigned_byte;
-assign data_half    = (is_sign)?data_signed_half:data_unsigned_half;
-assign data_word    = (is_sign)?data_signed_word:data_unsigned_word;
-assign data_double  = pre_data_reg;
+assign data_signed_byte = {{FILLER_LEN_BYTE{pre_data_out[7]} },pre_data_out[7:0] };
+assign data_signed_half = {{FILLER_LEN_HALF{pre_data_out[15]}},pre_data_out[15:0]};
 
-assign data = (is_byte)?data_byte:((is_half)?data_half:((is_word)?data_word:((is_double)?data_double:{64{1'b0}})));
+assign data_unsigned_byte = {{FILLER_LEN_BYTE{1'b0}},pre_data_out[7:0] };
+assign data_unsigned_half = {{FILLER_LEN_HALF{1'b0}},pre_data_out[15:0]};
+
+assign data_signed_word   = {{FILLER_LEN_DOUBLE{pre_data_out[31]}},pre_data_out[31:0] };
+assign data_unsigned_word = {{FILLER_LEN_DOUBLE{1'b0}},pre_data_out[31:0]};
+
+assign data_byte    = (use_sign)?data_signed_byte:data_unsigned_byte;
+assign data_half    = (use_sign)?data_signed_half:data_unsigned_half;
+assign data_word    = (use_sign)?data_signed_word:data_unsigned_word;
+assign data_double  = pre_data_out;
+
+// assign data = (is_byte)?data_byte:((is_half)?data_half:((is_word)?data_word:((is_double)?data_double:{64{1'b0}})));
 
 endmodule //memory_load_move

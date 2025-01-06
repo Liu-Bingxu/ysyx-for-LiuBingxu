@@ -16,57 +16,27 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
-module memory_store_move(
-    input   [63:0]          pre_data,
-    input   [2:0]           data_offset,
-    output  [63:0]          data
+module memory_store_move#(
+    parameter DATA_WIDTH = 64,
+    parameter OFF_WIDTH  = DATA_WIDTH / 32
+)(
+    input   [DATA_WIDTH -1:0]   pre_data,
+    input   [OFF_WIDTH    :0]   data_offset,
+    output  [DATA_WIDTH -1:0]   data
 );
 
-wire [63:0] pre_move_data_0;
-wire [63:0] pre_move_data_1;
-wire [63:0] pre_move_data_2;
-wire [63:0] pre_move_data_3;
-wire [63:0] pre_move_data_4;
-wire [63:0] pre_move_data_5;
-wire [63:0] pre_move_data_6;
-wire [63:0] pre_move_data_7;
-reg  [63:0] pre_data_reg;
+wire [DATA_WIDTH -1:0] pre_data_temp[OFF_WIDTH + 1 : 0]/* verilator split_var */;
 
-assign pre_move_data_0 = pre_data;
-assign pre_move_data_1 = {pre_move_data_0[55:0],8'h0 };
-assign pre_move_data_2 = {pre_move_data_0[47:0],16'h0};
-assign pre_move_data_3 = {pre_move_data_0[39:0],24'h0};
-assign pre_move_data_4 = {pre_move_data_0[31:0],32'h0};
-assign pre_move_data_5 = {pre_move_data_0[23:0],40'h0};
-assign pre_move_data_6 = {pre_move_data_0[15:0],48'h0};
-assign pre_move_data_7 = {pre_move_data_0[7:0], 56'h0};
-always @(*) begin
-    if(data_offset==3'b000)begin
-        pre_data_reg=pre_move_data_0;
+genvar off_index;
+generate 
+    for(off_index = 0 ; off_index <= OFF_WIDTH; off_index = off_index + 1) begin : buck_shift
+        assign pre_data_temp[off_index + 1] = (!data_offset[off_index]) ? pre_data_temp[off_index] 
+                                        : {pre_data_temp[off_index][DATA_WIDTH -1 - (8 * (2 **off_index)): 0], {(8 * (2 **off_index)){1'b0}}};
     end
-    else if(data_offset==3'b001)begin
-        pre_data_reg=pre_move_data_1;
-    end
-    else if(data_offset==3'b010)begin
-        pre_data_reg=pre_move_data_2;
-    end
-    else if(data_offset==3'b011)begin
-        pre_data_reg=pre_move_data_3;
-    end
-    else if(data_offset==3'b100)begin
-        pre_data_reg=pre_move_data_4;
-    end
-    else if(data_offset==3'b101)begin
-        pre_data_reg=pre_move_data_5;
-    end
-    else if(data_offset==3'b110)begin
-        pre_data_reg=pre_move_data_6;
-    end
-    else begin
-        pre_data_reg=pre_move_data_7;
-    end
-end
+endgenerate
 
-assign data = pre_data_reg;
+assign  pre_data_temp[0] = pre_data;
+
+assign data = pre_data_temp[OFF_WIDTH + 1];
 
 endmodule //memory_store_move
