@@ -236,12 +236,12 @@ FF_D_with_syn_rst #(
     .RST_DATA 	( 0  )
 )u_stage_valid
 (
-    .clk      	( clk                                                               ),
-    .rst_n    	( rst_n                                                             ),
-    .syn_rst    ( flush_flag                                                        ),
-    .wen        ( (fifo_wen) | (mmu_fifo_valid & mmu_fifo_ready)                    ),
-    .data_in  	( ((stage_status == OUT) ? (!tlb_page_wen) : 1'b1) & mmu_fifo_valid ),
-    .data_out 	( stage_valid                                                       )
+    .clk      	( clk                                                                                   ),
+    .rst_n    	( rst_n                                                                                 ),
+    .syn_rst    ( flush_flag                                                                            ),
+    .wen        ( (fifo_wen) | (mmu_fifo_valid & mmu_fifo_ready)                                        ),
+    .data_in  	( ((stage_status == OUT) ? (!tlb_page_wen) : 1'b1) & mmu_fifo_valid & mmu_fifo_ready    ),
+    .data_out 	( stage_valid                                                                           )
 );
 FF_D_without_asyn_rst #(64)  u_stage_vaddr            (clk,mmu_fifo_valid & mmu_fifo_ready,vaddr,stage_vaddr);
 ifu_fifo #(
