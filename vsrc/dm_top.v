@@ -115,12 +115,12 @@ wire dtm2dm_wen;
 wire [ABITS+33:0] dtm2dm_data_in;
 wire dm2dtm_ren;
 
-// output declaration of module dtm2dm async_fifo
+// output declaration of module dtm2dm async_fifo_my
 wire dtm2dm_full;
 wire dtm2dm_empty;
 wire [ABITS+33:0] dtm2dm_data_out;
 
-// output declaration of module dm2dtm async_fifo
+// output declaration of module dm2dtm async_fifo_my
 wire dm2dtm_full;
 wire dm2dtm_empty;
 wire [ABITS+33:0] dm2dtm_data_out;
@@ -242,11 +242,11 @@ u_dtm(
     .dm2dtm_data_out 	(dm2dtm_data_out  )
 );
 
-async_fifo #(
+async_fifo_my #(
     .DATA_LEN     	(ABITS+34),
     .ADDR_LEN     	(1       ),
     .READ_THROUGH 	("TRUE"  ))
-u_dtm2dm_async_fifo(
+u_dtm2dm_async_fifo_my(
     .clk_w    	(tck            ),
     .rstn_w   	(trst_n         ),
     .full     	(dtm2dm_full    ),
@@ -259,11 +259,11 @@ u_dtm2dm_async_fifo(
     .data_out 	(dtm2dm_data_out)
 );
 
-async_fifo #(
+async_fifo_my #(
     .DATA_LEN     	(ABITS+34),
     .ADDR_LEN     	(1       ),
     .READ_THROUGH 	("TRUE"  ))
-u_dm2dtm_async_fifo(
+u_dm2dtm_async_fifo_my(
     .clk_w    	(dm_clk         ),
     .rstn_w   	(dm_rst_n       ),
     .full     	(dm2dtm_full    ),

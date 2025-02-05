@@ -1,4 +1,4 @@
-module async_fifo #(
+module async_fifo_my #(
     parameter DATA_LEN      = 64,
     parameter ADDR_LEN      = 3,
     parameter READ_THROUGH  = "TRUE"
@@ -82,4 +82,4 @@ generate
 endgenerate
 assign empty = (w_ptr_gray_sync == r_ptr_gray);
 
-endmodule //async_fifo
+endmodule //async_fifo_my
