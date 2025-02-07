@@ -40,7 +40,7 @@ module ifu#(parameter RST_PC=64'h0)(
     input                   ifu_rvalid,
     output                  ifu_rready,
     input  [1:0]            ifu_rresp,
-    input  [31:0]           ifu_rdata,
+    input  [63:0]           ifu_rdata,
 
     //ifu - idu interface
     output                  IF_ID_reg_inst_valid,
@@ -75,7 +75,7 @@ wire                fifo_ren;
 wire                fifo_wen;
 
 //fifo 指令读出数据
-wire [31:0]         inst_rdata;
+wire [63:0]         inst_rdata;
 
 //fifo 回应数据
 wire [1:0]          rresp_rdata;
@@ -84,7 +84,7 @@ wire [1:0]          rresp_rdata;
 wire                inst_empty;
 
 reg [63:0]          my_reg_PC_reg;
-reg [31:0]          inst_rdata_reg;
+reg [15:0]          inst_rdata_reg;
 reg [1:0]           rresp_rdata_reg;
 wire                inst_my_reg_valid;
 
@@ -98,7 +98,8 @@ wire                inst_compress_flag;
 wire                status1_can_conver_flag;
 wire                status2_can_conver_flag;
 wire                status3_can_conver_flag;
-wire                status2_after_jump_flag;
+wire                status4_can_conver_flag;
+wire                status4_after_jump_flag;
 wire                reg_can_cover_flag;
 wire                reg_can_change_flag;
 wire                flush_flag;
@@ -106,7 +107,8 @@ wire                flush_flag;
 reg [1:0]           status;
 localparam STATUS1 = 2'h0;
 localparam STATUS2 = 2'h1;
-localparam STATUS3 = 2'h2;
+localparam STATUS3 = 2'h3;
+localparam STATUS4 = 2'h2;
 
 //pc part
 reg [63:0]          pc;
@@ -264,7 +266,7 @@ end
 `endif 
 
 ifu_fifo #(
-    .DATA_LEN   	( 34  ),
+    .DATA_LEN   	( 66  ),
     .AddR_Width 	( 2   )
 ) u_ifu_fifo
 (
@@ -279,14 +281,14 @@ ifu_fifo #(
 );
 
 assign fifo_wen = ifu_rvalid&ifu_rready&(invalid_cnt==4'h0);
-assign fifo_ren = status1_can_conver_flag | status2_can_conver_flag | status2_after_jump_flag | (status3_can_conver_flag & (inst_rdata_reg_get[1:0] == 2'b11));
+assign fifo_ren = status4_after_jump_flag | (status3_can_conver_flag & (inst_rdata_reg_get[1:0] != 2'b11));
 assign ifu_rready   = 1;
 
 
 //ifu - idu interface part
 
-//使用fifo输出输出     使用fifo的前半段和reg的后半段输出      使用reg输出输出    
-//status1           ->status2                           ->status3
+//使用fifo后半段输出输出  使用fifo中半段输出输出 使用fifo前半段输出输出  使用fifo的前半段和reg的后半段输出
+//status1                ->status2            ->status3             ->status4
 
 inst16_to_32 u_inst16_to_32(
     .input_inst 	( inst_rdata_reg_get[15:0]  ),
@@ -295,79 +297,83 @@ inst16_to_32 u_inst16_to_32(
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
-        status <= STATUS1;
         my_reg_PC_reg <= RST_PC;
-        // inst_my_reg_valid <= 1'b0;
     end
     else if(jump_flag)begin
         my_reg_PC_reg <= jump_addr;
-        // inst_my_reg_valid <= 1'b0;
-        if(jump_addr[1])begin
-            status <= STATUS2;
-        end
-        else begin
-            status <= STATUS1;
-        end
     end
-    // else if(flush_flag)begin
-        // inst_my_reg_valid <= 1'b0;
-    // end
     else begin
         case (status)
             STATUS1: begin
-                if(reg_can_cover_flag&(!inst_empty)&(inst_rdata_reg_get[1:0]!=2'b11))begin
-                    status <= STATUS2;
+                if(reg_can_change_flag & (inst_rdata_reg_get[1:0] != 2'b11))begin
                     my_reg_PC_reg <= my_reg_PC_reg + 2;
                 end
-                else if(reg_can_cover_flag&(!inst_empty))begin
-                    status <= STATUS1;
+                else if(reg_can_change_flag)begin
                     my_reg_PC_reg <= my_reg_PC_reg + 4;
                 end
             end
             STATUS2: begin
-                if(reg_can_cover_flag&(!inst_empty)&(inst_my_reg_valid)&(inst_rdata_reg_get[1:0]!=2'b11))begin
-                    status <= STATUS3;
+                if(reg_can_change_flag & (inst_rdata_reg_get[1:0]!=2'b11))begin
                     my_reg_PC_reg <= my_reg_PC_reg + 2;
                 end
-                else if(reg_can_cover_flag&(!inst_empty)&(inst_my_reg_valid))begin
-                    status <= STATUS2;
+                else if(reg_can_change_flag)begin
                     my_reg_PC_reg <= my_reg_PC_reg + 4;
                 end
             end
             STATUS3: begin
-                if(reg_can_cover_flag&(inst_my_reg_valid)&(inst_rdata_reg_get[1:0]!=2'b11))begin
-                    status <= STATUS2;
+                if(reg_can_change_flag & (inst_rdata_reg_get[1:0]!=2'b11))begin
                     my_reg_PC_reg <= my_reg_PC_reg + 2;
                 end
-                else if(reg_can_cover_flag&(inst_my_reg_valid))begin
-                    status <= STATUS3;
+                else if(reg_can_change_flag)begin
                     my_reg_PC_reg <= my_reg_PC_reg + 4;
                 end
             end
             default: begin
-                status <= STATUS1;
                 my_reg_PC_reg <= 64'h0;
             end
         endcase
     end
 end
 
+always @(*) begin
+    case (my_reg_PC_reg[2:1])
+        2'h0: begin
+            status = STATUS1;
+        end
+        2'h1: begin
+            status = STATUS2;
+        end
+        2'h2: begin
+            status = STATUS3;
+        end
+        2'h3: begin
+            status = STATUS4;
+        end
+        default: begin
+            status = STATUS1;
+        end
+    endcase
+end
+
 //+---------------+-----------------+
 //|inst_rdata     |inst_rdata_reg   |
 //|_______________|_________________|
-//|31|30|29|....|0|31|30|29|28|...|0|
+//|63|62|61|....|0|15|14|13|12|...|0|
 //|               |                 |
 //+---------------|-----------------|
 always @(*) begin
     case (status)
         STATUS1: begin
-            inst_rdata_reg_get = inst_rdata;
+            inst_rdata_reg_get = inst_rdata[31:0];
         end
         STATUS2: begin
-            inst_rdata_reg_get = {inst_rdata[15:0], inst_rdata_reg[31:16]};
+            inst_rdata_reg_get = inst_rdata[47:16];
         end
         STATUS3: begin
-            inst_rdata_reg_get = inst_rdata_reg;
+            inst_rdata_reg_get = inst_rdata[63:32];
+        end
+        STATUS4: begin
+            inst_rdata_reg_get = {inst_rdata[15:0], inst_rdata_reg};
         end
         default: begin
             inst_rdata_reg_get = 32'h0;
@@ -381,7 +387,7 @@ FF_D_with_syn_rst_without_asyn #(
 )u_inst_my_reg_valid
 (
     .clk      	( clk               ),
-    .syn_rst  	( flush_flag  ),
+    .syn_rst  	( flush_flag        ),
     .wen      	( fifo_ren          ),
     .data_in  	( 1'b1              ),
     .data_out 	( inst_my_reg_valid )
@@ -389,12 +395,12 @@ FF_D_with_syn_rst_without_asyn #(
 
 
 FF_D_without_asyn_rst #(
-    .DATA_LEN 	( 32  )
+    .DATA_LEN 	( 16  )
 )u_inst_rdata_reg
 (
     .clk      	( clk               ),
     .wen    	( fifo_ren          ),
-    .data_in  	( inst_rdata        ),
+    .data_in  	( inst_rdata[63:48] ),
     .data_out 	( inst_rdata_reg    )
 );
 
@@ -416,7 +422,7 @@ FF_D_with_syn_rst #(
 (
     .clk      	( clk                   ),
     .rst_n    	( rst_n                 ),
-    .syn_rst    ( flush_flag      ),
+    .syn_rst    ( flush_flag            ),
     .wen        ( reg_can_cover_flag    ),
     .data_in  	( reg_can_change_flag   ),
     .data_out 	( IF_ID_reg_inst_valid  )
@@ -428,13 +434,13 @@ FF_D_without_asyn_rst #(16)u_inst_compress(.clk(clk),.wen(reg_can_change_flag),.
 FF_D_without_asyn_rst #(64)u_PC(.clk(clk),.wen(reg_can_change_flag),.data_in(my_reg_PC_reg),.data_out(IF_ID_reg_PC));
 FF_D_without_asyn_rst #(1)u_inst_compress_flag(.clk(clk),.wen(reg_can_change_flag),.data_in(inst_compress_flag),.data_out(IF_ID_reg_inst_compress_flag));
 
-
 assign status1_can_conver_flag              =   (status == STATUS1) & (reg_can_cover_flag) & (!inst_empty);
-assign status2_can_conver_flag              =   (status == STATUS2) & (reg_can_cover_flag) & (!inst_empty) & (inst_my_reg_valid);
-assign status3_can_conver_flag              =   (status == STATUS3) & (reg_can_cover_flag) & (inst_my_reg_valid);
-assign status2_after_jump_flag              =   (status == STATUS2) & (reg_can_cover_flag) & (!inst_empty) & (!inst_my_reg_valid);
-assign reg_can_cover_flag                   =   ((!IF_ID_reg_inst_valid) | (ID_IF_inst_ready)) & (!flush_flag);
-assign reg_can_change_flag                  =   status1_can_conver_flag | status2_can_conver_flag | status3_can_conver_flag;
+assign status2_can_conver_flag              =   (status == STATUS2) & (reg_can_cover_flag) & (!inst_empty);
+assign status3_can_conver_flag              =   (status == STATUS3) & (reg_can_cover_flag) & (!inst_empty);
+assign status4_can_conver_flag              =   (status == STATUS4) & (reg_can_cover_flag) & (!inst_empty) & (inst_my_reg_valid);
+assign status4_after_jump_flag              =   (status == STATUS4) & (reg_can_cover_flag) & (!inst_empty) & (!inst_my_reg_valid);
+assign reg_can_cover_flag                   =   ((!IF_ID_reg_inst_valid) | (ID_IF_inst_ready));
+assign reg_can_change_flag                  =   status1_can_conver_flag | status2_can_conver_flag | status3_can_conver_flag | status4_can_conver_flag;
 assign flush_flag                           =   ID_IF_flush_flag | jump_flag;
 
 assign inst_to_idu = (inst_rdata_reg_get[1:0] == 2'b11) ? inst_rdata_reg_get : inst_rdata_reg_tran;
@@ -442,19 +448,16 @@ assign inst_compress_flag = (inst_rdata_reg_get[1:0] != 2'b11) ? 1'b1 : 1'b0;
 
 always @(*) begin
     case (status)
-        STATUS1: begin
+        STATUS1, STATUS2, STATUS3: begin
             rresp_to_idu = rresp_rdata;
         end
-        STATUS2: begin
+        STATUS4: begin
             if(inst_rdata_reg_get[1:0] != 2'b11)begin
                 rresp_to_idu = rresp_rdata_reg;
             end
             else begin
                 rresp_to_idu = (rresp_rdata_reg != 2'b00) ? rresp_rdata_reg : rresp_rdata;
             end
-        end
-        STATUS3: begin
-            rresp_to_idu = rresp_rdata_reg;
         end
         default: begin
             rresp_to_idu = 2'h0;
