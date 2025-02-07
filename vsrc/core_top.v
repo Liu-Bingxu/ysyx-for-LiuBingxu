@@ -43,7 +43,7 @@ module core_top#(parameter MHARTID = 0,RST_PC=64'h0)(
     input                   ifu_rvalid,
     output                  ifu_rready,
     input  [1:0]            ifu_rresp,
-    input  [31:0]           ifu_rdata,
+    input  [63:0]           ifu_rdata,
 //interface with dcache
     //read addr channel
     output                  lsu_arvalid,
