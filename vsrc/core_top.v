@@ -65,7 +65,7 @@ module core_top#(parameter MHARTID = 0,RST_PC=64'h0)(
     //write data channel
     output                  lsu_wvalid,
     input                   lsu_wready,
-    output [7:0]            lsu_wstrob,
+    output [7:0]            lsu_wstrb,
     output [63:0]           lsu_wdata,
     //write resp channel
     input                   lsu_bvalid,
@@ -518,7 +518,7 @@ lsu u_lsu(
     .lsu_awaddr              	( lsu_awaddr               ),
     .lsu_wvalid              	( lsu_wvalid               ),
     .lsu_wready              	( lsu_wready               ),
-    .lsu_wstrob              	( lsu_wstrob               ),
+    .lsu_wstrb              	( lsu_wstrb                ),
     .lsu_wdata               	( lsu_wdata                ),
     .lsu_bvalid              	( lsu_bvalid               ),
     .lsu_bready              	( lsu_bready               ),

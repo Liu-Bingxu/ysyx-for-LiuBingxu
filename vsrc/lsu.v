@@ -40,7 +40,7 @@ module lsu (
     //write data channel
     output                  lsu_wvalid,
     input                   lsu_wready,
-    output [7:0]            lsu_wstrob,
+    output [7:0]            lsu_wstrb,
     output [63:0]           lsu_wdata,
     //write resp channel
     input                   lsu_bvalid,
@@ -202,40 +202,40 @@ reg             atomic_load_access_error;
 reg             atomic_store_access_error;
 
 //get wstrb by control sign 
-reg [7:0] byte_wstrob,half_wstrob,word_wstrob,double_store;
+reg [7:0] byte_wstrb,half_wstrb,word_wstrb,double_wstrb;
 always @(*) begin
     case (EX_LS_reg_operand[2:0])
-        3'b000: byte_wstrob=8'b00000001;
-        3'b001: byte_wstrob=8'b00000010;
-        3'b010: byte_wstrob=8'b00000100;
-        3'b011: byte_wstrob=8'b00001000;
-        3'b100: byte_wstrob=8'b00010000;
-        3'b101: byte_wstrob=8'b00100000;
-        3'b110: byte_wstrob=8'b01000000;
-        3'b111: byte_wstrob=8'b10000000;
-        default: byte_wstrob=8'b00000000;
+        3'b000: byte_wstrb=8'b00000001;
+        3'b001: byte_wstrb=8'b00000010;
+        3'b010: byte_wstrb=8'b00000100;
+        3'b011: byte_wstrb=8'b00001000;
+        3'b100: byte_wstrb=8'b00010000;
+        3'b101: byte_wstrb=8'b00100000;
+        3'b110: byte_wstrb=8'b01000000;
+        3'b111: byte_wstrb=8'b10000000;
+        default: byte_wstrb=8'b00000000;
     endcase
 end
 always @(*) begin
     case (EX_LS_reg_operand[2:0])
-        3'b000: half_wstrob=8'b00000011;
-        3'b010: half_wstrob=8'b00001100;
-        3'b100: half_wstrob=8'b00110000;
-        3'b110: half_wstrob=8'b11000000;
-        default: half_wstrob=8'b00000000;
+        3'b000: half_wstrb=8'b00000011;
+        3'b010: half_wstrb=8'b00001100;
+        3'b100: half_wstrb=8'b00110000;
+        3'b110: half_wstrb=8'b11000000;
+        default: half_wstrb=8'b00000000;
     endcase
 end
 always @(*) begin
     case (EX_LS_reg_operand[2:0])
-        3'b000: word_wstrob=8'b00001111;
-        3'b100: word_wstrob=8'b11110000;
-        default: word_wstrob=8'b00000000;
+        3'b000: word_wstrb=8'b00001111;
+        3'b100: word_wstrb=8'b11110000;
+        default: word_wstrb=8'b00000000;
     endcase
 end
 always @(*) begin
     case (EX_LS_reg_operand[2:0])
-        3'b000: double_store=8'b11111111;
-        default: double_store=8'b00000000;
+        3'b000: double_wstrb=8'b11111111;
+        default: double_wstrb=8'b00000000;
     endcase
 end
 
@@ -617,10 +617,10 @@ assign lsu_awsize           = (store_byte_sign) ? 3'h0 : (
 assign lsu_awaddr           = EX_LS_reg_operand;
 //write data channel
 assign lsu_wvalid           = (!EX_LS_reg_atomic_valid) ? write_wvalid_reg : atomic_wvalid_reg;
-assign lsu_wstrob           = (store_byte_sign) ? byte_wstrob : (
-                                (store_half_sign) ? half_wstrob : (
-                                    (store_word_sign) ? word_wstrob : (
-                                        (store_double_sign) ? double_store : 8'h0)));
+assign lsu_wstrb           = (store_byte_sign) ? byte_wstrb : (
+                                (store_half_sign) ? half_wstrb : (
+                                    (store_word_sign) ? word_wstrb : (
+                                        (store_double_sign) ? double_wstrb : 8'h0)));
 assign lsu_wdata            = store_data;
 //write resp channel
 assign lsu_bready           = 1'b1;
