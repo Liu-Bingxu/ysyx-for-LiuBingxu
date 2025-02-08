@@ -985,6 +985,85 @@ u_sim_sram_dpic(
     .mst_rlast    	(mst3_rlast    )
 );
 
+DifftestArchIntRegState u_DifftestArchIntRegState(
+    .io_value_0  	(64'h0                                  ),
+    .io_value_1  	(u_core_top.u_wbu.u_gpr.riscv_reg[1]    ),
+    .io_value_2  	(u_core_top.u_wbu.u_gpr.riscv_reg[2]    ),
+    .io_value_3  	(u_core_top.u_wbu.u_gpr.riscv_reg[3]    ),
+    .io_value_4  	(u_core_top.u_wbu.u_gpr.riscv_reg[4]    ),
+    .io_value_5  	(u_core_top.u_wbu.u_gpr.riscv_reg[5]    ),
+    .io_value_6  	(u_core_top.u_wbu.u_gpr.riscv_reg[6]    ),
+    .io_value_7  	(u_core_top.u_wbu.u_gpr.riscv_reg[7]    ),
+    .io_value_8  	(u_core_top.u_wbu.u_gpr.riscv_reg[8]    ),
+    .io_value_9  	(u_core_top.u_wbu.u_gpr.riscv_reg[9]    ),
+    .io_value_10 	(u_core_top.u_wbu.u_gpr.riscv_reg[10]   ),
+    .io_value_11 	(u_core_top.u_wbu.u_gpr.riscv_reg[11]   ),
+    .io_value_12 	(u_core_top.u_wbu.u_gpr.riscv_reg[12]   ),
+    .io_value_13 	(u_core_top.u_wbu.u_gpr.riscv_reg[13]   ),
+    .io_value_14 	(u_core_top.u_wbu.u_gpr.riscv_reg[14]   ),
+    .io_value_15 	(u_core_top.u_wbu.u_gpr.riscv_reg[15]   ),
+    .io_value_16 	(u_core_top.u_wbu.u_gpr.riscv_reg[16]   ),
+    .io_value_17 	(u_core_top.u_wbu.u_gpr.riscv_reg[17]   ),
+    .io_value_18 	(u_core_top.u_wbu.u_gpr.riscv_reg[18]   ),
+    .io_value_19 	(u_core_top.u_wbu.u_gpr.riscv_reg[19]   ),
+    .io_value_20 	(u_core_top.u_wbu.u_gpr.riscv_reg[20]   ),
+    .io_value_21 	(u_core_top.u_wbu.u_gpr.riscv_reg[21]   ),
+    .io_value_22 	(u_core_top.u_wbu.u_gpr.riscv_reg[22]   ),
+    .io_value_23 	(u_core_top.u_wbu.u_gpr.riscv_reg[23]   ),
+    .io_value_24 	(u_core_top.u_wbu.u_gpr.riscv_reg[24]   ),
+    .io_value_25 	(u_core_top.u_wbu.u_gpr.riscv_reg[25]   ),
+    .io_value_26 	(u_core_top.u_wbu.u_gpr.riscv_reg[26]   ),
+    .io_value_27 	(u_core_top.u_wbu.u_gpr.riscv_reg[27]   ),
+    .io_value_28 	(u_core_top.u_wbu.u_gpr.riscv_reg[28]   ),
+    .io_value_29 	(u_core_top.u_wbu.u_gpr.riscv_reg[29]   ),
+    .io_value_30 	(u_core_top.u_wbu.u_gpr.riscv_reg[30]   ),
+    .io_value_31 	(u_core_top.u_wbu.u_gpr.riscv_reg[31]   )
+);
+
+    // input                   LS_WB_reg_ls_valid,
+    // input  [63:0]           LS_WB_reg_PC,
+    // input  [63:0]           LS_WB_reg_next_PC,
+    // input  [31:0]           LS_WB_reg_inst,
+    // //trap:
+    // input                   LS_WB_reg_trap_valid,
+    // input                   LS_WB_reg_mret_valid,
+    // input                   LS_WB_reg_sret_valid,
+    // input  [63:0]           LS_WB_reg_trap_cause,
+    // input  [63:0]           LS_WB_reg_trap_tval,
+    // //csr
+    // input                   LS_WB_reg_csr_wen,
+    // input                   LS_WB_reg_csr_ren,
+    // input  [11:0]           LS_WB_reg_csr_addr,
+    // //gpr
+    // input  [4:0]            LS_WB_reg_rd,
+    // input                   LS_WB_reg_dest_wen,
+    // input  [63:0]           LS_WB_reg_data
+
+DifftestInstrCommit u_DifftestInstrCommit(
+    .clock      	(clk                                    ),
+    .io_valid   	(u_core_top.u_wbu.LS_WB_reg_ls_valid    ),
+    .io_skip    	(1'b0                                   ),
+    //todo 暂不支持查询是否压缩指令
+    .io_isRVC   	(io_isRVC    ),
+    .io_rfwen   	(u_core_top.u_wbu.LS_WB_reg_dest_wen    ),
+    .io_fpwen   	(1'b0                                   ),
+    .io_vecwen  	(1'b0                                   ),
+    .io_wpdest  	(u_core_top.u_wbu.LS_WB_reg_rd          ),
+    .io_wdest   	({3'h0, u_core_top.u_wbu.LS_WB_reg_rd}  ),
+    .io_pc      	(u_core_top.u_wbu.LS_WB_reg_PC          ),
+    .io_instr   	(u_core_top.u_wbu.LS_WB_reg_inst        ),
+    .io_robIdx  	(10'h0                                  ),
+    .io_lqIdx   	(7'h0                                   ),
+    .io_sqIdx   	(7'h0                                   ),
+    //todo 暂不支持查询是否访存指令
+    .io_isLoad  	(io_isLoad   ),
+    .io_isStore 	(io_isStore  ),
+    .io_nFused  	(8'h0                                   ),
+    .io_special 	(8'h0                                   ),
+    .io_coreid  	(8'h0                                   ),
+    .io_index   	(8'h0                                   )
+);
+
 
 
 endmodule //core_debugger_top
