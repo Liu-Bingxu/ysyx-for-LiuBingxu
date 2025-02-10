@@ -1020,6 +1020,28 @@ DifftestArchIntRegState u_DifftestArchIntRegState(
     .io_value_31 	(u_core_top.u_wbu.u_gpr.riscv_reg[31]   )
 );
 
+DifftestCSRState u_DifftestCSRState(
+    .io_privilegeMode 	({{62{1'b0}},u_core_top.u_wbu.u_csr.current_priv_status}),
+    .io_mstatus       	(u_core_top.u_wbu.u_csr.mstatus                         ),
+    .io_sstatus       	(u_core_top.u_wbu.u_csr.sstatus                         ),
+    .io_mepc          	(u_core_top.u_wbu.u_csr.mepc                            ),
+    .io_sepc          	(u_core_top.u_wbu.u_csr.sepc                            ),
+    .io_mtval         	(u_core_top.u_wbu.u_csr.mtval                           ),
+    .io_stval         	(u_core_top.u_wbu.u_csr.stval                           ),
+    .io_mtvec         	(u_core_top.u_wbu.u_csr.mtvec                           ),
+    .io_stvec         	(u_core_top.u_wbu.u_csr.stvec                           ),
+    .io_mcause        	(u_core_top.u_wbu.u_csr.mcause                          ),
+    .io_scause        	(u_core_top.u_wbu.u_csr.scause                          ),
+    .io_satp          	(u_core_top.u_wbu.u_csr.satp                            ),
+    .io_mip           	(u_core_top.u_wbu.u_csr.mip                             ),
+    .io_mie           	(u_core_top.u_wbu.u_csr.mie                             ),
+    .io_mscratch      	(u_core_top.u_wbu.u_csr.mscratch                        ),
+    .io_sscratch      	(u_core_top.u_wbu.u_csr.sscratch                        ),
+    .io_mideleg       	(u_core_top.u_wbu.u_csr.mideleg                         ),
+    .io_medeleg       	(u_core_top.u_wbu.u_csr.medeleg                         )
+);
+
+
     // input                   LS_WB_reg_ls_valid,
     // input  [63:0]           LS_WB_reg_PC,
     // input  [63:0]           LS_WB_reg_next_PC,
