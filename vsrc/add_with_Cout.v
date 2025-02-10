@@ -28,9 +28,9 @@ module add_with_Cout #(parameter DATA_LEN=32)(
 wire [DATA_LEN-1:0] a,b;
 
 assign a = OP_A;
-assign b = OP_B ^ {DATA_LEN{Cin}} +{{(DATA_LEN-1){1'b0}},Cin};
+assign b = OP_B ^ {DATA_LEN{Cin}};
 
-assign {Cout,Sum} = a + b;
+assign {Cout,Sum} = a + b + {{(DATA_LEN-1){1'b0}},Cin};
 
 assign overflow = ((a[DATA_LEN-1]==b[DATA_LEN-1])&(a[DATA_LEN-1]!=Sum[DATA_LEN-1]));
 
