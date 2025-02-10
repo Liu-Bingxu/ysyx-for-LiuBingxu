@@ -1,6 +1,6 @@
 `include "define.v"
 module core_debugger_top (
-    input       clk,
+    input       clock,
     input       rst_n,
     input       stip_asyn,
     input       seip_asyn,
@@ -9,6 +9,8 @@ module core_debugger_top (
     input       meip_asyn,
     input       msip_asyn
 );
+
+wire clk = clock;
 
 // output declaration of module core_top
 wire MXR;
@@ -333,7 +335,7 @@ axicb_crossbar_top #(
     .AXI_ID_W            	(AXI_ID_W           ),
     .AXI_DATA_W          	(AXI_DATA_W         ),
 
-    .MST_NB              	(2        ),
+    .MST_NB              	(4        ),
     .SLV_NB              	(4        ),
 
     .MST_PIPELINE        	(0        ),
@@ -354,16 +356,16 @@ axicb_crossbar_top #(
     .MST0_OSTDREQ_NUM    	(4        ),
     .MST0_OSTDREQ_SIZE   	(1        ),
     .MST0_PRIORITY       	(0        ),
-    .MST0_ROUTES         	(1_1_1_1  ),
-    .MST0_ID_MASK        	(10       ),
+    .MST0_ROUTES         	(4'b1_1_1_1  ),
+    .MST0_ID_MASK        	(8'h10       ),
     .MST0_RW             	(1        ),
 
     .MST1_CDC            	(0        ),
     .MST1_OSTDREQ_NUM    	(4        ),
     .MST1_OSTDREQ_SIZE   	(1        ),
-    .MST1_PRIORITY       	(3        ),
-    .MST1_ROUTES         	(1_1_1_1  ),
-    .MST1_ID_MASK        	(20       ),
+    .MST1_PRIORITY       	(0        ),
+    .MST1_ROUTES         	(4'b1_1_1_1  ),
+    .MST1_ID_MASK        	(8'h20       ),
     .MST1_RW             	(0        ),
 
     // .MST2_CDC            	(0        ),
@@ -383,32 +385,32 @@ axicb_crossbar_top #(
     // .MST3_RW             	(0        ),
 
     .SLV0_CDC            	(0        ),
-    .SLV0_START_ADDR     	(0        ),
-    .SLV0_END_ADDR       	(4095     ),
+    .SLV0_START_ADDR     	(64'd0        ),
+    .SLV0_END_ADDR       	(64'd4095     ),
     .SLV0_OSTDREQ_NUM    	(4        ),
     .SLV0_OSTDREQ_SIZE   	(1        ),
-    .SLV0_KEEP_BASE_ADDR 	(0        ),
+    .SLV0_KEEP_BASE_ADDR 	(1        ),
 
     .SLV1_CDC            	(0        ),
-    .SLV1_START_ADDR     	(4096     ),
-    .SLV1_END_ADDR       	(8191     ),
+    .SLV1_START_ADDR     	(64'd4096     ),
+    .SLV1_END_ADDR       	(64'd8191     ),
     .SLV1_OSTDREQ_NUM    	(4        ),
     .SLV1_OSTDREQ_SIZE   	(1        ),
-    .SLV1_KEEP_BASE_ADDR 	(0        ),
+    .SLV1_KEEP_BASE_ADDR 	(1        ),
 
     .SLV2_CDC            	(0        ),
-    .SLV2_START_ADDR     	(8192     ),
-    .SLV2_END_ADDR       	(12287    ),
+    .SLV2_START_ADDR     	(64'd8192     ),
+    .SLV2_END_ADDR       	(64'd12287    ),
     .SLV2_OSTDREQ_NUM    	(4        ),
     .SLV2_OSTDREQ_SIZE   	(1        ),
-    .SLV2_KEEP_BASE_ADDR 	(0        ),
+    .SLV2_KEEP_BASE_ADDR 	(1        ),
 
     .SLV3_CDC            	(0        ),
     .SLV3_START_ADDR     	(64'h8000_0000    ),
     .SLV3_END_ADDR       	(64'h9fff_ffff    ),
     .SLV3_OSTDREQ_NUM    	(4        ),
     .SLV3_OSTDREQ_SIZE   	(1        ),
-    .SLV3_KEEP_BASE_ADDR 	(0        ))
+    .SLV3_KEEP_BASE_ADDR 	(1        ))
 u_axicb_crossbar_top(
     .aclk          	(clk            ),
     .aresetn       	(rst_n          ),
@@ -428,7 +430,7 @@ u_axicb_crossbar_top(
     .slv0_awprot   	(3'h0           ),
     .slv0_awqos    	(4'h0           ),
     .slv0_awregion 	(4'h0           ),
-    .slv0_awid     	(8'h0           ),
+    .slv0_awid     	(8'h10          ),
     .slv0_awuser   	(1'h0           ),
     .slv0_wvalid   	(1'h0           ),
     .slv0_wready   	(slv0_wready    ),
@@ -446,13 +448,13 @@ u_axicb_crossbar_top(
     .slv0_araddr   	(ifu_araddr     ),
     .slv0_arlen    	(8'h0           ),
     .slv0_arsize   	(3'h3           ),
-    .slv0_arburst  	(2'h0           ),
+    .slv0_arburst  	(2'h1           ),
     .slv0_arlock   	(1'h0           ),
     .slv0_arcache  	(4'h0           ),
     .slv0_arprot   	(3'h0           ),
     .slv0_arqos    	(4'h0           ),
     .slv0_arregion 	(4'h0           ),
-    .slv0_arid     	(8'h0           ),
+    .slv0_arid     	(8'h10          ),
     .slv0_aruser   	(1'b0           ),
     .slv0_rvalid   	(slv0_rvalid    ),
     .slv0_rready   	(ifu_rready     ),
@@ -470,13 +472,13 @@ u_axicb_crossbar_top(
     .slv1_awaddr   	(lsu_awaddr     ),
     .slv1_awlen    	(8'h0           ),
     .slv1_awsize   	(lsu_awsize     ),
-    .slv1_awburst  	(2'h0           ),
+    .slv1_awburst  	(2'h1           ),
     .slv1_awlock   	(lsu_awlock     ),
     .slv1_awcache  	(4'h0           ),
     .slv1_awprot   	(3'h0           ),
     .slv1_awqos    	(4'h0           ),
     .slv1_awregion 	(4'h0           ),
-    .slv1_awid     	(8'h1           ),
+    .slv1_awid     	(8'h20          ),
     .slv1_awuser   	(1'b0           ),
     .slv1_wvalid   	(lsu_wvalid     ),
     .slv1_wready   	(slv1_wready    ),
@@ -494,13 +496,13 @@ u_axicb_crossbar_top(
     .slv1_araddr   	(lsu_araddr     ),
     .slv1_arlen    	(8'h0           ),
     .slv1_arsize   	(lsu_arsize     ),
-    .slv1_arburst  	(2'h0           ),
+    .slv1_arburst  	(2'h1           ),
     .slv1_arlock   	(lsu_arlock     ),
     .slv1_arcache  	(4'h0           ),
     .slv1_arprot   	(3'h0           ),
     .slv1_arqos    	(4'h0           ),
     .slv1_arregion 	(4'h0           ),
-    .slv1_arid     	(8'h1           ),
+    .slv1_arid     	(8'h20          ),
     .slv1_aruser   	(1'b0           ),
     .slv1_rvalid   	(slv1_rvalid    ),
     .slv1_rready   	(lsu_rready     ),
@@ -1066,7 +1068,8 @@ DifftestInstrCommit u_DifftestInstrCommit(
     .io_valid   	(u_core_top.u_wbu.LS_WB_reg_ls_valid    ),
     .io_skip    	(1'b0                                   ),
     //todo 暂不支持查询是否压缩指令
-    .io_isRVC   	(io_isRVC    ),
+    .io_isRVC   	(1'b0    ),
+
     .io_rfwen   	(u_core_top.u_wbu.LS_WB_reg_dest_wen    ),
     .io_fpwen   	(1'b0                                   ),
     .io_vecwen  	(1'b0                                   ),
@@ -1078,8 +1081,9 @@ DifftestInstrCommit u_DifftestInstrCommit(
     .io_lqIdx   	(7'h0                                   ),
     .io_sqIdx   	(7'h0                                   ),
     //todo 暂不支持查询是否访存指令
-    .io_isLoad  	(io_isLoad   ),
-    .io_isStore 	(io_isStore  ),
+    .io_isLoad  	(1'b0   ),
+    .io_isStore 	(1'b0  ),
+
     .io_nFused  	(8'h0                                   ),
     .io_special 	(8'h0                                   ),
     .io_coreid  	(8'h0                                   ),
