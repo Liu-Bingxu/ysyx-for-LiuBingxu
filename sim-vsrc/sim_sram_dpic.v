@@ -9,6 +9,8 @@ import "DPI-C" function void sim_sram_write (
     input      byte wmask
 );
 
+import "DPI-C" function void halt(byte code);
+
 module sim_sram_dpic#(
     // Address width in bits
     parameter AXI_ADDR_W = 64,
@@ -109,7 +111,7 @@ always @(posedge aclk or negedge arst_n) begin
         mst_araddr_reg  <= {AXI_ADDR_W{1'b0}};
         mst_arlen_reg   <= 8'h0;
     end
-    else if(mst_awvalid & mst_awready)begin
+    else if(mst_arvalid & mst_arready)begin
         mst_araddr_reg  <= mst_araddr + {{(AXI_ADDR_W - 4){1'b0}}, 4'h8};
         mst_arlen_reg   <= mst_arlen;
     end
@@ -182,27 +184,33 @@ always @(posedge aclk) begin
     // input  [4             -1:0]     mst_awregion,
         if(mst_awburst != 2'h1)begin
             $display("now mst_awburst != 2'h1");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_awlock != 1'h0)begin
             $display("now mst_awlock != 1'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_awcache != 4'h0)begin
             $display("now mst_awcache != 4'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_awprot != 3'h0)begin
             $display("now mst_awprot != 3'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_awqos != 4'h0)begin
             $display("now mst_awqos != 4'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_awregion != 4'h0)begin
             $display("now mst_awregion != 4'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
     end
 end
@@ -218,27 +226,33 @@ always @(posedge aclk) begin
     // input  [4             -1:0]     mst_arregion,
         if(mst_arburst != 2'h1)begin
             $display("now mst_arburst != 2'h1");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_arlock != 1'h0)begin
             $display("now mst_arlock != 1'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_arcache != 4'h0)begin
             $display("now mst_arcache != 4'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_arprot != 3'h0)begin
             $display("now mst_arprot != 3'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_arqos != 4'h0)begin
             $display("now mst_arqos != 4'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
         else if(mst_arregion != 4'h0)begin
             $display("now mst_arregion != 4'h0");
-            $stop;
+            halt(1);
+            // $stop;
         end
     end
 end
