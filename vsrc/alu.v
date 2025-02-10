@@ -153,7 +153,7 @@ buck_shift #(64,6)u_buck_shift(
     .data_in  	( shift_data            ),
     .data_out 	( shift_res_temp        )
 );
-assign shift_shamt = ID_EX_reg_operand2[5:0];
+assign shift_shamt = (ID_EX_reg_shift_word) ? {1'b0, ID_EX_reg_operand2[4:0]} : ID_EX_reg_operand2[5:0];
 assign shift_data  = (!ID_EX_reg_shift_word) ? ID_EX_reg_operand1 : 
                         ((ID_EX_reg_shift_al) ? {{32{ID_EX_reg_operand1[31]}},ID_EX_reg_operand1[31:0]} : 
                             {32'h0,ID_EX_reg_operand1[31:0]}); 
