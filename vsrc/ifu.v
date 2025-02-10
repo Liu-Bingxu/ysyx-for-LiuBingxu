@@ -328,6 +328,14 @@ always @(posedge clk or negedge rst_n) begin
                     my_reg_PC_reg <= my_reg_PC_reg + 4;
                 end
             end
+            STATUS4: begin
+                if(reg_can_change_flag & (inst_rdata_reg_get[1:0]!=2'b11))begin
+                    my_reg_PC_reg <= my_reg_PC_reg + 2;
+                end
+                else if(reg_can_change_flag)begin
+                    my_reg_PC_reg <= my_reg_PC_reg + 4;
+                end
+            end
             default: begin
                 my_reg_PC_reg <= 64'h0;
             end
