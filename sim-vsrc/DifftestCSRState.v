@@ -45,24 +45,24 @@ module DifftestCSRState(
 export "DPI-C" task difftest_CSRState;
 
 task difftest_CSRState;
-    output   longint out_io_privilegeMode,
-    output   longint out_io_mstatus,
-    output   longint out_io_sstatus,
-    output   longint out_io_mepc,
-    output   longint out_io_sepc,
-    output   longint out_io_mtval,
-    output   longint out_io_stval,
-    output   longint out_io_mtvec,
-    output   longint out_io_stvec,
-    output   longint out_io_mcause,
-    output   longint out_io_scause,
-    output   longint out_io_satp,
-    output   longint out_io_mip,
-    output   longint out_io_mie,
-    output   longint out_io_mscratch,
-    output   longint out_io_sscratch,
-    output   longint out_io_mideleg,
-    output   longint out_io_medeleg
+    output   longint out_io_privilegeMode;
+    output   longint out_io_mstatus;
+    output   longint out_io_sstatus;
+    output   longint out_io_mepc;
+    output   longint out_io_sepc;
+    output   longint out_io_mtval;
+    output   longint out_io_stval;
+    output   longint out_io_mtvec;
+    output   longint out_io_stvec;
+    output   longint out_io_mcause;
+    output   longint out_io_scause;
+    output   longint out_io_satp;
+    output   longint out_io_mip;
+    output   longint out_io_mie;
+    output   longint out_io_mscratch;
+    output   longint out_io_sscratch;
+    output   longint out_io_mideleg;
+    output   longint out_io_medeleg;
 
     out_io_privilegeMode    = io_privilegeMode;
     out_io_mstatus          = io_mstatus      ;
