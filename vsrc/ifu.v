@@ -281,7 +281,7 @@ ifu_fifo #(
 );
 
 assign fifo_wen = ifu_rvalid&ifu_rready&(invalid_cnt==4'h0);
-assign fifo_ren = status4_after_jump_flag | (status3_can_conver_flag & (inst_rdata_reg_get[1:0] != 2'b11));
+assign fifo_ren = status4_after_jump_flag | (status2_can_conver_flag & (inst_rdata_reg_get[1:0] == 2'b11)) | status3_can_conver_flag;
 assign ifu_rready   = 1;
 
 
