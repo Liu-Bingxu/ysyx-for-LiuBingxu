@@ -239,7 +239,7 @@ always @(*) begin
                         end
                         else if(input_inst[6:2]==5'h0)begin
                             //c.jalr -> jalr x1, 0(rs1)
-                            output_inst_reg = {12'h0,input_inst[11:7],3'h0,5'h1,7'h6f};
+                            output_inst_reg = {12'h0,input_inst[11:7],3'h0,5'h1,7'h67};
                         end
                         else if(input_inst[11:7]==5'h0)begin
                             //HINT for c.add
@@ -257,7 +257,7 @@ always @(*) begin
                         end
                         else if(input_inst[6:2]==5'h0)begin
                             //c.jr -> jalr x0, 0(rs1)
-                            output_inst_reg = {12'h0,input_inst[11:7],3'h0,5'h0,7'h6f};
+                            output_inst_reg = {12'h0,input_inst[11:7],3'h0,5'h0,7'h67};
                         end
                         else if(input_inst[11:7]==5'h0)begin
                             //HINT for c.mv
