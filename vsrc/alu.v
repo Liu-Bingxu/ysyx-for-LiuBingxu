@@ -94,6 +94,7 @@ wire                    res_ltu;
 //shift
 wire [63:0]             shift_data;
 wire [5:0]              shift_shamt;
+wire [63:0]             shift_res_temp;
 wire [63:0]             shift_res;
 
 //mul
@@ -149,12 +150,13 @@ buck_shift #(64,6)u_buck_shift(
     .AL       	( ID_EX_reg_shift_al    ),
     .shamt    	( shift_shamt           ),
     .data_in  	( shift_data            ),
-    .data_out 	( shift_res             )
+    .data_out 	( shift_res_temp        )
 );
 assign shift_shamt = ID_EX_reg_operand2[5:0];
 assign shift_data  = (!ID_EX_reg_shift_word) ? ID_EX_reg_operand1 : 
                         ((ID_EX_reg_shift_al) ? {{32{ID_EX_reg_operand1[31]}},ID_EX_reg_operand1[31:0]} : 
                             {32'h0,ID_EX_reg_operand1[31:0]}); 
+assign shift_res   = (ID_EX_reg_shift_word) ? {{32{shift_res_temp[31]}},shift_res_temp[31:0]} : shift_res_temp;
 
 //mul
 mulu u_mulu(
