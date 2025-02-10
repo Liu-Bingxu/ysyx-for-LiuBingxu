@@ -121,7 +121,7 @@ always @(posedge clk or negedge rst_n) begin
             pc <= jump_addr;
         end
         else if(ifu_arvalid & ifu_arready)begin
-            pc <= pc + 4;
+            pc <= pc + 8;
         end
     end
 end
@@ -182,7 +182,7 @@ always @(posedge clk or negedge rst_n) begin
         end
     end
 end
-assign ifu_araddr = {pc[63:2],2'h0};
+assign ifu_araddr = {pc[63:3],3'h0};
 assign ifu_arvalid = ifu_arvalid_reg;
 
 //read data part
