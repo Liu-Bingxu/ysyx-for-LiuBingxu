@@ -243,17 +243,20 @@ always @(posedge clk or negedge rst_n) begin
         end
         else begin
             if(flush_flag)begin
-                if(ifu_arvalid&ifu_arready&ifu_rvalid&ifu_rready)begin
-                    invalid_cnt <= {1'b1,inst_cnt};
+                if(ifu_arvalid & ifu_arready & ifu_rvalid & ifu_rready)begin
+                    if(inst_cnt != 3'h0)
+                        invalid_cnt <= {1'b1,inst_cnt};
                 end
-                else if(ifu_arvalid&ifu_arready)begin
+                else if(ifu_arvalid & ifu_arready)begin
                     invalid_cnt <= {1'b1,inst_cnt_more};
                 end
-                else if(ifu_rvalid&ifu_rready)begin
-                    invalid_cnt <= {1'b1,inst_cnt_less};
+                else if(ifu_rvalid & ifu_rready)begin
+                    if(inst_cnt != 3'h1)
+                        invalid_cnt <= {1'b1,inst_cnt_less};
                 end
                 else begin
-                    invalid_cnt <= {1'b1,inst_cnt};
+                    if(inst_cnt != 3'h0)
+                        invalid_cnt <= {1'b1,inst_cnt};
                 end
             end
         end
