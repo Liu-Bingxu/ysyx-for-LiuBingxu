@@ -18,11 +18,11 @@
 
 module gpr (
     input                   clk,
-//interface with idu
+//interface with exu
     input  [4 :0]           rs1,
     input  [4 :0]           rs2,
-    output [63:0]           WB_ID_src1,
-    output [63:0]           WB_ID_src2,
+    output [63:0]           WB_EX_src1,
+    output [63:0]           WB_EX_src2,
 //interface with lsu 
     //gpr
     input  [4:0]            LS_WB_reg_rd,
@@ -38,7 +38,7 @@ always @(posedge clk) begin
     end
 end
 
-assign WB_ID_src1 = (rs1 == 5'h0) ? 64'h0 : riscv_reg[rs1];
-assign WB_ID_src2 = (rs2 == 5'h0) ? 64'h0 : riscv_reg[rs2];
+assign WB_EX_src1 = (rs1 == 5'h0) ? 64'h0 : riscv_reg[rs1];
+assign WB_EX_src2 = (rs2 == 5'h0) ? 64'h0 : riscv_reg[rs2];
 
 endmodule //gpr

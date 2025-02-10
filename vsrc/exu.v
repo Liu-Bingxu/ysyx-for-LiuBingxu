@@ -24,6 +24,12 @@ module exu (
     output                  EX_ID_flush_flag,
     output                  EX_ID_decode_ready,
     input                   ID_EX_reg_decode_valid,
+    input  [4 :0]           ID_EX_reg_rs1,
+    input  [4 :0]           ID_EX_reg_rs2,
+    output [4 :0]           rs1,
+    output [4 :0]           rs2,
+    input  [63:0]           WB_EX_src1,
+    input  [63:0]           WB_EX_src2,
     input  [63:0]           ID_EX_reg_PC,
     input  [63:0]           ID_EX_reg_next_PC,
     input  [31:0]           ID_EX_reg_inst,
@@ -50,7 +56,7 @@ module exu (
     input                   ID_EX_reg_store_half,
     input                   ID_EX_reg_store_word,
     input                   ID_EX_reg_store_double,
-    input  [63:0]           ID_EX_reg_store_data,
+    // input  [63:0]           ID_EX_reg_store_data,
     //branch:
     input                   ID_EX_reg_branch_valid,
     input                   ID_EX_reg_branch_ne,
@@ -68,6 +74,7 @@ module exu (
     input                   ID_EX_reg_set_signed,
     //jump:
     input                   ID_EX_reg_jump_valid,
+    input                   ID_EX_reg_jump_jalr,
     //Zicsr:
     input                   ID_EX_reg_csr_valid,
     input                   ID_EX_reg_csr_wen,
@@ -105,9 +112,9 @@ module exu (
     input  [63:0]           ID_EX_reg_trap_cause,
     input  [63:0]           ID_EX_reg_trap_tval,
     //operand
-    input  [63:0]           ID_EX_reg_operand1,   
-    input  [63:0]           ID_EX_reg_operand2, 
-    input  [62:0]           ID_EX_reg_operand3,   
+    input  [63:0]           ID_EX_reg_operand1,
+    input  [63:0]           ID_EX_reg_operand2,
+    input  [62:0]           ID_EX_reg_operand3,
     input  [62:0]           ID_EX_reg_operand4,
 //interface with lsu
     //common sign:
@@ -160,10 +167,23 @@ module exu (
     output [63:0]           EX_LS_reg_operand,   //addr when atomic or store, data when other
 //interface with wbu
     input                   WB_EX_interrupt_flag,
+    input                   LS_WB_reg_ls_valid,
+    input  [4:0]            LS_WB_reg_rd,
+    input                   LS_WB_reg_dest_wen,
+    input  [63:0]           LS_WB_reg_data,
 //interface with ifu
     output                  EX_IF_jump_flag,
     output [63:0]           EX_IF_jump_addr
 );
+
+wire        Data_Conflict;
+reg [63:0]  src1;
+reg [63:0]  src2;
+
+wire [63:0]             operand1;
+wire [63:0]             operand2;
+wire [62:0]             operand3;
+wire [62:0]             operand4;
 
 // outports wire
 wire        	o_valid;
@@ -176,11 +196,45 @@ wire [63:0]     next_PC;
 //use for give a sigle cycle jump sign 
 reg             jump_cnt;
 
+assign rs1 = ID_EX_reg_rs1;
+assign rs2 = ID_EX_reg_rs2;
+
+assign Data_Conflict = ((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen) |
+                        ((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen);
+always @(*) begin
+    if((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & EX_LS_reg_dest_wen)begin
+        src1 = EX_LS_reg_operand;
+    end
+    else if((rs1 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs1 != 5'h0) & LS_WB_reg_dest_wen)begin
+        src1 = LS_WB_reg_data;
+    end
+    else begin
+        src1 = WB_EX_src1;
+    end
+end
+always @(*) begin
+    if((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & EX_LS_reg_dest_wen)begin
+        src2 = EX_LS_reg_operand;
+    end
+    else if((rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & LS_WB_reg_dest_wen)begin
+        src2 = LS_WB_reg_data;
+    end
+    else begin
+        src2 = WB_EX_src2;
+    end
+end
+
+assign operand1 = ((rs1 != 5'h0) & (!ID_EX_reg_jump_jalr)) ? src1 : ID_EX_reg_operand1;
+assign operand2 = ((rs2 != 5'h0) & (!ID_EX_reg_store_valid)) ? src2 : ID_EX_reg_operand2;
+assign operand3 = (ID_EX_reg_jump_jalr) ? src1[63:1] : ID_EX_reg_operand3;
+assign operand4 = ID_EX_reg_operand4;
+
 alu u_alu(
     .clk                     	( clk                      ),
     .rst_n                   	( rst_n                    ),
     .flush_flag              	( LS_EX_flush_flag         ),
     .ready_flag              	( EX_ID_decode_ready       ),
+    .Data_Conflict              ( Data_Conflict            ),
     .ID_EX_reg_decode_valid  	( ID_EX_reg_decode_valid   ),
     .ID_EX_reg_sub           	( ID_EX_reg_sub            ),
     .ID_EX_reg_word          	( ID_EX_reg_word           ),
@@ -213,8 +267,8 @@ alu u_alu(
     .ID_EX_reg_div_word      	( ID_EX_reg_div_word       ),
     .ID_EX_reg_atomic_valid  	( ID_EX_reg_atomic_valid   ),
     .ID_EX_reg_trap_valid    	( ID_EX_reg_trap_valid     ),
-    .ID_EX_reg_operand1      	( ID_EX_reg_operand1       ),
-    .ID_EX_reg_operand2      	( ID_EX_reg_operand2       ),
+    .ID_EX_reg_operand1      	( operand1                 ),
+    .ID_EX_reg_operand2      	( operand2                 ),
     .o_valid                 	( o_valid                  ),
     .branch_flag             	( branch_flag              ),
     .res                     	( res                      )
@@ -224,9 +278,9 @@ add_without_Cin #(
     .DATA_LEN 	( 63  )
 )u_jump_addr
 (
-    .OP_A 	( ID_EX_reg_operand3    ),
-    .OP_B 	( ID_EX_reg_operand4    ),
-    .Sum  	( jump_addr             )
+    .OP_A 	( operand3    ),
+    .OP_B 	( operand4    ),
+    .Sum  	( jump_addr   )
 );
 
 //**********************************************************************
@@ -246,7 +300,7 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 //**********************************************************************
-assign EX_ID_decode_ready = (ID_EX_reg_decode_valid & ((!EX_LS_reg_execute_valid) | LS_EX_execute_ready) & (!WB_EX_interrupt_flag) &
+assign EX_ID_decode_ready = (ID_EX_reg_decode_valid & ((!EX_LS_reg_execute_valid) | LS_EX_execute_ready) & (!WB_EX_interrupt_flag) & (!Data_Conflict) &
                             (!LS_EX_flush_flag) & (!(EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid))) & 
                             (!((ID_EX_reg_mul_valid | ID_EX_reg_div_valid) & (!o_valid))) | ID_EX_reg_trap_valid | ID_EX_reg_mret_valid | ID_EX_reg_sret_valid);
 assign EX_ID_flush_flag   = (LS_EX_flush_flag | (EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid)));
@@ -284,7 +338,7 @@ FF_D_without_asyn_rst #(1)  u_store_byte    (clk,EX_ID_decode_ready,ID_EX_reg_st
 FF_D_without_asyn_rst #(1)  u_store_half    (clk,EX_ID_decode_ready,ID_EX_reg_store_half,   EX_LS_reg_store_half);
 FF_D_without_asyn_rst #(1)  u_store_word    (clk,EX_ID_decode_ready,ID_EX_reg_store_word,   EX_LS_reg_store_word);
 FF_D_without_asyn_rst #(1)  u_store_double  (clk,EX_ID_decode_ready,ID_EX_reg_store_double, EX_LS_reg_store_double);
-FF_D_without_asyn_rst #(64) u_store_data    (clk,EX_ID_decode_ready,ID_EX_reg_store_data,   EX_LS_reg_store_data);
+FF_D_without_asyn_rst #(64) u_store_data    (clk,EX_ID_decode_ready,src2,                   EX_LS_reg_store_data);
 //Zicsr:
 FF_D_without_asyn_rst #(1)  u_csr_wen       (clk,EX_ID_decode_ready,ID_EX_reg_csr_wen, EX_LS_reg_csr_wen);
 FF_D_without_asyn_rst #(1)  u_csr_ren       (clk,EX_ID_decode_ready,ID_EX_reg_csr_ren, EX_LS_reg_csr_ren);

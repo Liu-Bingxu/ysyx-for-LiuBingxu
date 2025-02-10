@@ -39,16 +39,16 @@ module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     output                  WB_IF_jump_flag,
     output [63:0]           WB_IF_jump_addr,
 //interface with idu
-    input  [4 :0]           rs1,
-    input  [4 :0]           rs2,
-    output [63:0]           WB_ID_src1,
-    output [63:0]           WB_ID_src2,
     input  [11:0]           ID_WB_csr_addr,
     output [63:0]           WB_ID_csr_rdata,
     output                  TSR,
     output                  TW,
     output                  TVM,
 //interface with exu
+    input  [4 :0]           rs1,
+    input  [4 :0]           rs2,
+    output [63:0]           WB_EX_src1,
+    output [63:0]           WB_EX_src2,
     input                   EX_LS_reg_execute_valid,
     output                  WB_EX_interrupt_flag,
 //interface with lsu 
@@ -90,8 +90,8 @@ gpr u_gpr(
     .clk                	( clk                 ),
     .rs1                	( rs1                 ),
     .rs2                	( rs2                 ),
-    .WB_ID_src1         	( WB_ID_src1          ),
-    .WB_ID_src2         	( WB_ID_src2          ),
+    .WB_EX_src1         	( WB_EX_src1          ),
+    .WB_EX_src2         	( WB_EX_src2          ),
     .LS_WB_reg_rd       	( LS_WB_reg_rd        ),
     .LS_WB_reg_dest_wen 	( LS_WB_reg_dest_wen  ),
     .write_data         	( write_data          )

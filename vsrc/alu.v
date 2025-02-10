@@ -22,6 +22,7 @@ module alu(
     input                   rst_n,
     input                   flush_flag,
     input                   ready_flag,
+    input                   Data_Conflict,
 //***********************************************************
     input                   ID_EX_reg_decode_valid,
     //control_sign:
@@ -174,7 +175,7 @@ mulu u_mulu(
 );
 assign mul_a     = ID_EX_reg_operand1;
 assign mul_b     = ID_EX_reg_operand2;
-assign mul_valid = ID_EX_reg_mul_valid & ID_EX_reg_decode_valid & (!ID_EX_reg_trap_valid);
+assign mul_valid = ID_EX_reg_mul_valid & ID_EX_reg_decode_valid & (!ID_EX_reg_trap_valid) & (!Data_Conflict);
 
 //div
 divu u_divu(
@@ -196,7 +197,7 @@ assign dividend     = (!ID_EX_reg_div_word) ? ID_EX_reg_operand1 : (
 assign divisor      = (!ID_EX_reg_div_word) ? ID_EX_reg_operand2 : (
                         (ID_EX_reg_div_signed) ? {{32{ID_EX_reg_operand2[31]}},ID_EX_reg_operand2[31:0]} : 
                             {32'h0, ID_EX_reg_operand2[31:0]});
-assign div_valid    = ID_EX_reg_div_valid & ID_EX_reg_decode_valid & (!ID_EX_reg_trap_valid);
+assign div_valid    = ID_EX_reg_div_valid & ID_EX_reg_decode_valid & (!ID_EX_reg_trap_valid) & (!Data_Conflict);
 
 //*************************************************************************
 assign logic_res = (res_and & {64{ID_EX_reg_logic_and}}) | (res_or & {64{ID_EX_reg_logic_or}}) | (res_xor & {64{ID_EX_reg_logic_xor}});

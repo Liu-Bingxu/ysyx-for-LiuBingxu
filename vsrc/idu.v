@@ -37,10 +37,10 @@ module idu(
     output                  ID_EX_reg_decode_valid,
     input                   EX_ID_decode_ready,
     input                   EX_ID_flush_flag,
-    output [4 :0]           rs1,
-    output [4 :0]           rs2,
-    input  [63:0]           WB_ID_src1,
-    input  [63:0]           WB_ID_src2,
+    output [4 :0]           ID_EX_reg_rs1,
+    output [4 :0]           ID_EX_reg_rs2,
+    // input  [63:0]           WB_ID_src1,
+    // input  [63:0]           WB_ID_src2,
     output [63:0]           ID_EX_reg_PC,
     output [63:0]           ID_EX_reg_next_PC,
     output [31:0]           ID_EX_reg_inst,
@@ -67,7 +67,7 @@ module idu(
     output                  ID_EX_reg_store_half,
     output                  ID_EX_reg_store_word,
     output                  ID_EX_reg_store_double,
-    output [63:0]           ID_EX_reg_store_data,
+    // output [63:0]           ID_EX_reg_store_data,
     //branch:
     output                  ID_EX_reg_branch_valid,
     output                  ID_EX_reg_branch_ne,
@@ -85,6 +85,7 @@ module idu(
     output                  ID_EX_reg_set_signed,
     //jump:
     output                  ID_EX_reg_jump_valid,
+    output                  ID_EX_reg_jump_jalr,
     //Zicsr:
     output                  ID_EX_reg_csr_valid,
     output                  ID_EX_reg_csr_wen,
@@ -131,26 +132,28 @@ module idu(
 //interface with lsu
     input                   EX_LS_reg_execute_valid,
     input                   EX_LS_reg_csr_wen,
-    input                   EX_LS_reg_atomic_valid,
-    input                   EX_LS_reg_load_valid,
-    input  [4:0]            EX_LS_reg_rd,
-    input                   EX_LS_reg_dest_wen,
-    input  [63:0]           EX_LS_reg_operand,
+    // input                   EX_LS_reg_atomic_valid,
+    // input                   EX_LS_reg_load_valid,
+    // input  [4:0]            EX_LS_reg_rd,
+    // input                   EX_LS_reg_dest_wen,
+    // input  [63:0]           EX_LS_reg_operand,
 //interface with wbu
     input                   TSR,
     input                   TW,
     input                   TVM,
     input                   LS_WB_reg_ls_valid,
-    input                   LS_WB_reg_csr_wen,
-    input  [4:0]            LS_WB_reg_rd,
-    input                   LS_WB_reg_dest_wen,
-    input  [63:0]           LS_WB_reg_data
+    input                   LS_WB_reg_csr_wen
+    // input  [4:0]            LS_WB_reg_rd,
+    // input                   LS_WB_reg_dest_wen,
+    // input  [63:0]           LS_WB_reg_data
 );
 //common
 wire [63:0]             next_PC;
 wire                    rs1_valid;
 wire                    rs2_valid;
 wire [4 :0]             rd;
+wire [4 :0]             rs1;
+wire [4 :0]             rs2;
 wire                    dest_wen;
 //control_sign:
 wire                    alu_sub;
@@ -190,6 +193,7 @@ wire                    set_valid;
 wire                    set_signed;
 //jump:
 wire                    jump_valid;
+wire                    jump_jalr;
 //Zicsr:
 wire                    csr_valid;
 wire                    csr_wen;
@@ -229,7 +233,7 @@ wire [63:0]             trap_tval;
 //operand
 wire [63:0]             operand1;
 wire [63:0]             operand2;
-wire [62:0]             operand3;
+// wire [62:0]             operand3;
 wire [62:0]             operand4;
 
 wire [63:0]             imm;
@@ -276,9 +280,9 @@ wire wfi;
 //illegal instruction 
 wire        illegal_instruction;
 
-wire        Data_Conflict;
-reg [63:0]  src1;
-reg [63:0]  src2;
+// wire        Data_Conflict;
+// reg [63:0]  src1;
+// reg [63:0]  src2;
 
 assign rs1              = IF_ID_reg_inst[19:15];
 assign rs2              = IF_ID_reg_inst[24:20];
@@ -435,32 +439,32 @@ assign mret     =   (IF_ID_reg_inst ==  32'h30200073) ? 1'b1 : 1'b0;
 assign sret     =   (IF_ID_reg_inst ==  32'h10200073) ? 1'b1 : 1'b0;
 assign wfi      =   (IF_ID_reg_inst ==  32'h10500073) ? 1'b1 : 1'b0;
 //**********************************************************************************************
-assign Data_Conflict = ((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & rs1_valid & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen) |
-                        ((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & rs2_valid & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen) |
-                        ((rs1 == ID_EX_reg_rd) & ID_EX_reg_decode_valid & (rs1 != 5'h0) & rs1_valid & ID_EX_reg_dest_wen) |
-                        ((rs2 == ID_EX_reg_rd) & ID_EX_reg_decode_valid & (rs2 != 5'h0) & rs2_valid & ID_EX_reg_dest_wen);
-always @(*) begin
-    if((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & rs1_valid & EX_LS_reg_dest_wen)begin
-        src1 = EX_LS_reg_operand;
-    end
-    else if((rs1 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs1 != 5'h0) & rs1_valid & LS_WB_reg_dest_wen)begin
-        src1 = LS_WB_reg_data;
-    end
-    else begin
-        src1 = WB_ID_src1;
-    end
-end
-always @(*) begin
-    if((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & rs2_valid & EX_LS_reg_dest_wen)begin
-        src2 = EX_LS_reg_operand;
-    end
-    else if((rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & rs2_valid & LS_WB_reg_dest_wen)begin
-        src2 = LS_WB_reg_data;
-    end
-    else begin
-        src2 = WB_ID_src2;
-    end
-end
+// assign Data_Conflict = ((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & rs1_valid & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen) |
+//                         ((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & rs2_valid & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen) |
+//                         ((rs1 == ID_EX_reg_rd) & ID_EX_reg_decode_valid & (rs1 != 5'h0) & rs1_valid & ID_EX_reg_dest_wen) |
+//                         ((rs2 == ID_EX_reg_rd) & ID_EX_reg_decode_valid & (rs2 != 5'h0) & rs2_valid & ID_EX_reg_dest_wen);
+// always @(*) begin
+//     if((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & rs1_valid & EX_LS_reg_dest_wen)begin
+//         src1 = EX_LS_reg_operand;
+//     end
+//     else if((rs1 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs1 != 5'h0) & rs1_valid & LS_WB_reg_dest_wen)begin
+//         src1 = LS_WB_reg_data;
+//     end
+//     else begin
+//         src1 = WB_ID_src1;
+//     end
+// end
+// always @(*) begin
+//     if((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & rs2_valid & EX_LS_reg_dest_wen)begin
+//         src2 = EX_LS_reg_operand;
+//     end
+//     else if((rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & rs2_valid & LS_WB_reg_dest_wen)begin
+//         src2 = LS_WB_reg_data;
+//     end
+//     else begin
+//         src2 = WB_ID_src2;
+//     end
+// end
 //!output sign decode
 //common
 assign next_PC          = (IF_ID_reg_inst_compress_flag) ? (IF_ID_reg_PC + 2) : (IF_ID_reg_PC + 4);
@@ -506,6 +510,7 @@ assign set_valid        = (slt | sltu | slti | sltiu);
 assign set_signed       = (slt | slti);
 //jump:
 assign jump_valid       = (jal | jalr);
+assign jump_jalr        = jalr;
 //Zicsr:
 assign csr_valid        = (csrrw | csrrwi | csrrc | csrrci | csrrs | csrrsi);
 assign csr_ren          = (csrrc | csrrci | csrrs | csrrsi | ((csrrw | csrrwi) & (rd != 5'h0)));
@@ -559,17 +564,17 @@ assign trap_tval        = (((IF_ID_reg_rresp != 2'h0) | (ebreak)) ? IF_ID_reg_PC
                             ) 
                         ));
 //operand
-assign operand1         = (lui) ? 0 : ((auipc | jal | jalr) ? IF_ID_reg_PC : (csrrci | csrrwi | csrrsi) ? imm : src1);
+assign operand1         = (lui) ? 0 : ((auipc | jal | jalr) ? IF_ID_reg_PC : (csrrci | csrrwi | csrrsi) ? imm : 64'h0);
 assign operand2         = (jal | jalr) ? ((IF_ID_reg_inst_compress_flag) ? 64'h2 : 64'h4) : (
                             (csrrw | csrrwi) ? 64'h0 : (
                                 (csrrc | csrrci) ? (~WB_ID_csr_rdata) : (
                                     (csrrs | csrrsi) ? WB_ID_csr_rdata : (
-                                        (I_flag | U_flag | S_flag) ? imm : src2
+                                        (I_flag | U_flag | S_flag) ? imm : 64'h0
                                     )
                                 )
                             )
                         );
-assign operand3         = (jalr) ? src1[63:1] : IF_ID_reg_PC[63:1];
+// assign operand3         = (jalr) ? src1[63:1] : IF_ID_reg_PC[63:1];
 assign operand4         = imm[63:1];
 //illegal instruction judge
 assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch_valid | shift_valid | 
@@ -587,7 +592,7 @@ assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch
                                 /*disable mret form U*/          (mret & (current_priv_status == `PRV_U)));
 //**********************************************************************************************
 //!output 
-assign ID_IF_inst_ready     = IF_ID_reg_inst_valid & (EX_ID_decode_ready | (!ID_EX_reg_decode_valid)) & (!EX_IF_jump_flag) & (((!Data_Conflict) & 
+assign ID_IF_inst_ready     = IF_ID_reg_inst_valid & (EX_ID_decode_ready | (!ID_EX_reg_decode_valid)) & (!EX_IF_jump_flag) & ((
                             (!(EX_LS_reg_execute_valid & EX_LS_reg_csr_wen)) & (!(LS_WB_reg_ls_valid & LS_WB_reg_csr_wen)) &
                             (!(ID_EX_reg_decode_valid & ID_EX_reg_csr_wen))) | trap_valid | mret_valid | sret_valid) & (!EX_ID_flush_flag) & 
                             (!(ID_EX_reg_decode_valid & (ID_EX_reg_trap_valid | ID_EX_reg_mret_valid | ID_EX_reg_sret_valid)));
@@ -608,6 +613,8 @@ FF_D_with_syn_rst #(
 FF_D_without_asyn_rst #(5)  u_rd            (clk,ID_IF_inst_ready,rd,ID_EX_reg_rd);
 FF_D_without_asyn_rst #(1)  u_dest_wen      (clk,ID_IF_inst_ready,dest_wen,ID_EX_reg_dest_wen);
 FF_D_without_asyn_rst #(32) u_inst          (clk,ID_IF_inst_ready,IF_ID_reg_inst,ID_EX_reg_inst);
+FF_D_without_asyn_rst #(5)  u_rs1           (clk,ID_IF_inst_ready,rs1 & {5{rs1_valid}},ID_EX_reg_rs1);
+FF_D_without_asyn_rst #(5)  u_rs2           (clk,ID_IF_inst_ready,rs2 & {5{rs2_valid}},ID_EX_reg_rs2);
 FF_D_without_asyn_rst #(64) u_PC            (clk,ID_IF_inst_ready,IF_ID_reg_PC,ID_EX_reg_PC);
 FF_D_without_asyn_rst #(64) u_next_PC       (clk,ID_IF_inst_ready,next_PC,ID_EX_reg_next_PC);
 //control_sign:
@@ -631,7 +638,7 @@ FF_D_without_asyn_rst #(1)  u_store_byte    (clk,ID_IF_inst_ready,store_byte,ID_
 FF_D_without_asyn_rst #(1)  u_store_half    (clk,ID_IF_inst_ready,store_half,ID_EX_reg_store_half);
 FF_D_without_asyn_rst #(1)  u_store_word    (clk,ID_IF_inst_ready,store_word,ID_EX_reg_store_word);
 FF_D_without_asyn_rst #(1)  u_store_double  (clk,ID_IF_inst_ready,store_double,ID_EX_reg_store_double);
-FF_D_without_asyn_rst #(64) u_store_data    (clk,ID_IF_inst_ready,src2,ID_EX_reg_store_data);
+// FF_D_without_asyn_rst #(64) u_store_data    (clk,ID_IF_inst_ready,src2,ID_EX_reg_store_data);
 //branch:
 FF_D_without_asyn_rst #(1)  u_branch_valid  (clk,ID_IF_inst_ready,branch_valid,ID_EX_reg_branch_valid);
 FF_D_without_asyn_rst #(1)  u_branch_ne     (clk,ID_IF_inst_ready,branch_ne,ID_EX_reg_branch_ne);
@@ -649,6 +656,7 @@ FF_D_without_asyn_rst #(1)  u_set_valid     (clk,ID_IF_inst_ready,set_valid,ID_E
 FF_D_without_asyn_rst #(1)  u_set_signed    (clk,ID_IF_inst_ready,set_signed,ID_EX_reg_set_signed);
 //jump:
 FF_D_without_asyn_rst #(1)  u_jump_valid     (clk,ID_IF_inst_ready,jump_valid,ID_EX_reg_jump_valid);
+FF_D_without_asyn_rst #(1)  u_jump_jalr      (clk,ID_IF_inst_ready,jump_jalr,ID_EX_reg_jump_jalr);
 //Zicsr:
 FF_D_without_asyn_rst #(1)  u_csr_valid     (clk,ID_IF_inst_ready,csr_valid,ID_EX_reg_csr_valid);
 FF_D_without_asyn_rst #(1)  u_csr_wen       (clk,ID_IF_inst_ready,csr_wen,ID_EX_reg_csr_wen);
@@ -688,7 +696,8 @@ FF_D_without_asyn_rst #(64) u_trap_tval     (clk,ID_IF_inst_ready,trap_tval,ID_E
 //operand
 FF_D_without_asyn_rst #(64) u_operand1      (clk,ID_IF_inst_ready,operand1,ID_EX_reg_operand1);
 FF_D_without_asyn_rst #(64) u_operand2      (clk,ID_IF_inst_ready,operand2,ID_EX_reg_operand2);
-FF_D_without_asyn_rst #(63) u_operand3      (clk,ID_IF_inst_ready,operand3,ID_EX_reg_operand3);
+// FF_D_without_asyn_rst #(63) u_operand3      (clk,ID_IF_inst_ready,operand3,ID_EX_reg_operand3);
+assign ID_EX_reg_operand3 = ID_EX_reg_PC[63:1];
 FF_D_without_asyn_rst #(63) u_operand4      (clk,ID_IF_inst_ready,operand4,ID_EX_reg_operand4);
 //**********************************************************************************************
 
