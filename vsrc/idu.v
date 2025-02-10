@@ -573,7 +573,7 @@ assign operand3         = (jalr) ? src1[63:1] : IF_ID_reg_PC[63:1];
 assign operand4         = imm[63:1];
 //illegal instruction judge
 assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch_valid | shift_valid | 
-                                set_valid | jump_valid | csr_valid | mul_valid | atomic_valid | mret | 
+                                set_valid | jump_valid | csr_valid | mul_valid | div_valid | atomic_valid | mret | 
                                 sret | wfi | lui | auipc | add | addi | sub | addw | addiw | subw | ecall | 
                                 ebreak | fence)) | (csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)) | 
                                 /*disable all access csr form U*/(csr_valid & (current_priv_status == `PRV_U)) | 
