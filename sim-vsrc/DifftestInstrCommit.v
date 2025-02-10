@@ -46,7 +46,8 @@ import "DPI-C" function void difftest_InstrCommit (
 
 always @(posedge clock) begin
     if (io_valid)
-        difftest_InstrCommit (io_skip, io_isRVC, io_rfwen, io_fpwen, io_vecwen, io_wpdest, io_wdest, io_pc, io_instr, io_robIdx, io_lqIdx, io_sqIdx, io_isLoad, io_isStore, io_nFused, io_special, io_coreid, io_index);
+        difftest_InstrCommit (io_skip, io_isRVC, io_rfwen, io_fpwen, io_vecwen, 
+        {3'h0, io_wpdest}, io_wdest, io_pc, io_instr, {22'h0, io_robIdx}, {1'b0, io_lqIdx}, {1'b0, io_sqIdx}, io_isLoad, io_isStore, io_nFused, io_special, io_coreid, io_index);
 end
 
 endmodule
