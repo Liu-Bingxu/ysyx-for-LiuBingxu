@@ -404,12 +404,12 @@ assign mulhu    =   (R_flag &({funct7,funct3}==10'h00B))?1'b1:1'b0;
 assign div      =   (R_flag &({funct7,funct3}==10'h00C))?1'b1:1'b0;
 assign divu     =   (R_flag &({funct7,funct3}==10'h00D))?1'b1:1'b0;
 assign rem      =   (R_flag &({funct7,funct3}==10'h00E))?1'b1:1'b0;
-assign remu     =   (R_flag &({funct7,funct3}==10'h10F))?1'b1:1'b0;
+assign remu     =   (R_flag &({funct7,funct3}==10'h00F))?1'b1:1'b0;
 assign mulw     =   (RW_flag&({funct7,funct3}==10'h008))?1'b1:1'b0;
 assign divw     =   (RW_flag&({funct7,funct3}==10'h00C))?1'b1:1'b0;
 assign divuw    =   (RW_flag&({funct7,funct3}==10'h00D))?1'b1:1'b0;
 assign remw     =   (RW_flag&({funct7,funct3}==10'h00E))?1'b1:1'b0;
-assign remuw    =   (RW_flag&({funct7,funct3}==10'h10F))?1'b1:1'b0;
+assign remuw    =   (RW_flag&({funct7,funct3}==10'h00F))?1'b1:1'b0;
 
 //rv64a decode
 assign lr_w         =   (A_flag&(funct3==3'h2)&({IF_ID_reg_inst[31:27],rs2}==10'h040))?1'b1:1'b0;
@@ -580,7 +580,7 @@ assign operand4         = imm[63:1];
 assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch_valid | shift_valid | 
                                 set_valid | jump_valid | csr_valid | mul_valid | div_valid | atomic_valid | mret | 
                                 sret | wfi | lui | auipc | add | addi | sub | addw | addiw | subw | ecall | 
-                                ebreak | fence)) | (csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)) | 
+                                ebreak | fence)) | (csr_valid & ((csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)))) | 
                                 /*disable all access csr form U*/(csr_valid & (current_priv_status == `PRV_U)) | 
                                 /*disable access time form S*/   (csr_valid & (current_priv_status == `PRV_S) & (csr_addr == 12'hC01)) | 
                                 /*disable wfi time form S&U*/    (wfi & (current_priv_status < `PRV_M) & TW) | 
