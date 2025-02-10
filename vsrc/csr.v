@@ -239,6 +239,7 @@ csr_mstatus u_csr_mstatus(
     .csr_sstatus_wen      	( csr_sstatus_wen       ),
     .trap_m_mode_valid    	( trap_m_mode_valid     ),
     .trap_s_mode_valid    	( trap_s_mode_valid     ),
+    .LS_WB_reg_ls_valid     ( LS_WB_reg_ls_valid    ),
     .LS_WB_reg_mret_valid 	( LS_WB_reg_mret_valid  ),
     .LS_WB_reg_sret_valid 	( LS_WB_reg_sret_valid  ),
     .current_priv_status  	( current_priv_status   ),
@@ -876,6 +877,7 @@ module csr_mstatus(
     input                   csr_sstatus_wen,
     input                   trap_m_mode_valid,
     input                   trap_s_mode_valid,
+    input                   LS_WB_reg_ls_valid,
     input                   LS_WB_reg_mret_valid,
     input                   LS_WB_reg_sret_valid,
     input  [63:0]           csr_wdata,
@@ -956,14 +958,14 @@ always @(posedge clk or negedge rst_n) begin
         SPIE                    <= SIE;
         SIE                     <= 1'b0;
     end
-    else if(LS_WB_reg_mret_valid)begin
+    else if(LS_WB_reg_ls_valid & LS_WB_reg_mret_valid)begin
         current_priv_status_reg <= MPP;
         MPRV                    <= ((MPP == `PRV_M) & MPRV);
         MPP                     <= 2'h0;
         MPIE                    <= 1'b1;
         MIE                     <= MPIE;
     end
-    else if(LS_WB_reg_sret_valid)begin
+    else if(LS_WB_reg_ls_valid & LS_WB_reg_sret_valid)begin
         current_priv_status_reg <= {1'b0, SPP};
         MPRV                    <= 1'b0;
         SPP                     <= 1'b0;
@@ -1657,7 +1659,7 @@ assign trap_s_interrupt     = (interrupt_s_flag & ((!(EX_LS_reg_execute_valid | 
 assign trap_m_exception     = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & (!trap_s_exception));
 assign trap_s_exception     = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & medeleg[LS_WB_reg_trap_cause[5:0]] & (current_priv_status <= `PRV_S));
 //**********************************************************************************************
-assign WB_IF_jump_flag      = (trap_m_mode_valid | trap_s_mode_valid | LS_WB_reg_mret_valid | LS_WB_reg_sret_valid);
+assign WB_IF_jump_flag      = (trap_m_mode_valid | trap_s_mode_valid | (LS_WB_reg_ls_valid & (LS_WB_reg_mret_valid | LS_WB_reg_sret_valid)));
 assign WB_IF_jump_addr      = (trap_m_mode_valid | trap_s_mode_valid) ? trap_addr : ((LS_WB_reg_mret_valid) ? mepc : ((LS_WB_reg_sret_valid) ? sepc : 64'h0));
 assign trap_m_mode_valid    = (trap_m_interrupt | trap_m_exception);
 assign trap_s_mode_valid    = (trap_s_interrupt | trap_s_exception);
