@@ -161,8 +161,8 @@ wire [63:0] 	ID_EX_reg_trap_cause;
 wire [63:0] 	ID_EX_reg_trap_tval;
 wire [63:0] 	ID_EX_reg_operand1;
 wire [63:0] 	ID_EX_reg_operand2;
-wire [62:0] 	ID_EX_reg_operand3;
-wire [62:0] 	ID_EX_reg_operand4;
+wire [63:0] 	ID_EX_reg_operand3;
+wire [63:0] 	ID_EX_reg_operand4;
 
 // exu outports wire
 wire        	EX_ID_flush_flag;

@@ -114,8 +114,8 @@ module exu (
     //operand
     input  [63:0]           ID_EX_reg_operand1,
     input  [63:0]           ID_EX_reg_operand2,
-    input  [62:0]           ID_EX_reg_operand3,
-    input  [62:0]           ID_EX_reg_operand4,
+    input  [63:0]           ID_EX_reg_operand3,
+    input  [63:0]           ID_EX_reg_operand4,
 //interface with lsu
     //common sign:
     input                   LS_EX_flush_flag,
@@ -182,15 +182,15 @@ reg [63:0]  src2;
 
 wire [63:0]             operand1;
 wire [63:0]             operand2;
-wire [62:0]             operand3;
-wire [62:0]             operand4;
+wire [63:0]             operand3;
+wire [63:0]             operand4;
 
 // outports wire
 wire        	o_valid;
 wire        	branch_flag;
 wire [63:0] 	res;
 
-wire [62:0]     jump_addr;
+wire [63:0]     jump_addr;
 wire [63:0]     next_PC;
 
 //use for give a sigle cycle jump sign 
@@ -226,7 +226,7 @@ end
 
 assign operand1 = ((rs1 != 5'h0) & (!ID_EX_reg_jump_jalr)) ? src1 : ID_EX_reg_operand1;
 assign operand2 = ((rs2 != 5'h0) & (!ID_EX_reg_store_valid)) ? src2 : ID_EX_reg_operand2;
-assign operand3 = (ID_EX_reg_jump_jalr) ? src1[63:1] : ID_EX_reg_operand3;
+assign operand3 = (ID_EX_reg_jump_jalr) ? src1 : ID_EX_reg_operand3;
 assign operand4 = ID_EX_reg_operand4;
 
 alu u_alu(
@@ -275,7 +275,7 @@ alu u_alu(
 );
 
 add_without_Cin #(
-    .DATA_LEN 	( 63  )
+    .DATA_LEN 	( 64  )
 )u_jump_addr
 (
     .OP_A 	( operand3    ),
@@ -284,7 +284,7 @@ add_without_Cin #(
 );
 
 //**********************************************************************
-assign next_PC = (ID_EX_reg_jump_valid | (ID_EX_reg_branch_valid & branch_flag)) ? {jump_addr ,1'b0} : ID_EX_reg_next_PC;
+assign next_PC = (ID_EX_reg_jump_valid | (ID_EX_reg_branch_valid & branch_flag)) ? {jump_addr[63:1] ,1'b0} : ID_EX_reg_next_PC;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
         jump_cnt <= 1'b0;
@@ -305,7 +305,7 @@ assign EX_ID_decode_ready = (ID_EX_reg_decode_valid & ((!EX_LS_reg_execute_valid
                             ((!((ID_EX_reg_mul_valid | ID_EX_reg_div_valid) & (!o_valid))) | ID_EX_reg_trap_valid) & ((!Data_Conflict) | ID_EX_reg_trap_valid));
 assign EX_ID_flush_flag   = (LS_EX_flush_flag | (EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid)));
 assign EX_IF_jump_flag    = (ID_EX_reg_decode_valid & (ID_EX_reg_jump_valid | (ID_EX_reg_branch_valid & branch_flag)) & (!jump_cnt) & (!Data_Conflict));
-assign EX_IF_jump_addr    = {jump_addr, 1'b0};
+assign EX_IF_jump_addr    = {jump_addr[63:1], 1'b0};
 
 //common
 FF_D_with_syn_rst #(

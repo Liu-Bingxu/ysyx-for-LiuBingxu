@@ -127,8 +127,8 @@ module idu(
     //operand
     output [63:0]           ID_EX_reg_operand1,   
     output [63:0]           ID_EX_reg_operand2, 
-    output [62:0]           ID_EX_reg_operand3,   
-    output [62:0]           ID_EX_reg_operand4,
+    output [63:0]           ID_EX_reg_operand3,   
+    output [63:0]           ID_EX_reg_operand4,
 //interface with lsu
     input                   EX_LS_reg_execute_valid,
     input                   EX_LS_reg_csr_wen,
@@ -233,8 +233,8 @@ wire [63:0]             trap_tval;
 //operand
 wire [63:0]             operand1;
 wire [63:0]             operand2;
-// wire [62:0]             operand3;
-wire [62:0]             operand4;
+// wire [63:0]             operand3;
+wire [63:0]             operand4;
 
 wire [63:0]             imm;
 wire [63:0]             imm_I,imm_J,imm_U,imm_B,imm_S,CSR_imm;
@@ -574,8 +574,8 @@ assign operand2         = (jal | jalr) ? ((IF_ID_reg_inst_compress_flag) ? 64'h2
                                 )
                             )
                         );
-// assign operand3         = (jalr) ? src1[63:1] : IF_ID_reg_PC[63:1];
-assign operand4         = imm[63:1];
+// assign operand3         = (jalr) ? src1 : IF_ID_reg_PC;
+assign operand4         = imm;
 //illegal instruction judge
 assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch_valid | shift_valid | 
                                 set_valid | jump_valid | csr_valid | mul_valid | div_valid | atomic_valid | mret | 
@@ -697,8 +697,8 @@ FF_D_without_asyn_rst #(64) u_trap_tval     (clk,ID_IF_inst_ready,trap_tval,ID_E
 FF_D_without_asyn_rst #(64) u_operand1      (clk,ID_IF_inst_ready,operand1,ID_EX_reg_operand1);
 FF_D_without_asyn_rst #(64) u_operand2      (clk,ID_IF_inst_ready,operand2,ID_EX_reg_operand2);
 // FF_D_without_asyn_rst #(63) u_operand3      (clk,ID_IF_inst_ready,operand3,ID_EX_reg_operand3);
-assign ID_EX_reg_operand3 = ID_EX_reg_PC[63:1];
-FF_D_without_asyn_rst #(63) u_operand4      (clk,ID_IF_inst_ready,operand4,ID_EX_reg_operand4);
+assign ID_EX_reg_operand3 = ID_EX_reg_PC;
+FF_D_without_asyn_rst #(64) u_operand4      (clk,ID_IF_inst_ready,operand4,ID_EX_reg_operand4);
 //**********************************************************************************************
 
 endmodule //idu
