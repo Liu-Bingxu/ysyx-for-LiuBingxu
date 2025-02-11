@@ -199,6 +199,7 @@ wire                    csr_valid;
 wire                    csr_wen;
 wire                    csr_ren;
 wire [11:0]             csr_addr;
+wire                    csr_addr_legal;
 wire                    csr_set;
 wire                    csr_clear;
 wire                    csr_swap;
@@ -520,6 +521,128 @@ assign csr_valid        = (csrrw | csrrwi | csrrc | csrrci | csrrs | csrrsi);
 assign csr_ren          = (csrrc | csrrci | csrrs | csrrsi | ((csrrw | csrrwi) & (rd != 5'h0)));
 assign csr_wen          = (((csrrc | csrrci | csrrs | csrrsi) & (rs1 != 5'h0)) | csrrw | csrrwi);
 assign csr_addr         = IF_ID_reg_inst[31:20];
+assign csr_addr_legal   = ( (csr_addr == `CSR_ADDR_MISA          ) |
+                            (csr_addr == `CSR_ADDR_MVENDORID     ) |
+                            (csr_addr == `CSR_ADDR_MARCHID       ) |
+                            (csr_addr == `CSR_ADDR_MIMPID        ) |
+                            (csr_addr == `CSR_ADDR_MHARTID       ) |
+                            (csr_addr == `CSR_ADDR_MSTATUS       ) |
+                            (csr_addr == `CSR_ADDR_MTVEC         ) |
+                            (csr_addr == `CSR_ADDR_MEDELEG       ) |
+                            (csr_addr == `CSR_ADDR_MIDELEG       ) |
+                            (csr_addr == `CSR_ADDR_MIP           ) |
+                            (csr_addr == `CSR_ADDR_MIE           ) |
+                            (csr_addr == `CSR_ADDR_MCYCLE        ) |
+                            (csr_addr == `CSR_ADDR_MINSTRET      ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER3  ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER4  ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER5  ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER6  ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER7  ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER8  ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER9  ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER10 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER11 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER12 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER13 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER14 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER15 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER16 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER17 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER18 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER19 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER20 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER21 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER22 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER23 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER24 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER25 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER26 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER27 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER28 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER29 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER3  ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER3  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT3   ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT4   ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT5   ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT6   ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT7   ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT8   ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT9   ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT10  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT11  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT12  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT13  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT14  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT15  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT16  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT17  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT18  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT19  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT20  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT21  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT22  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT23  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT24  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT25  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT26  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT27  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT28  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT29  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT30  ) |
+                            (csr_addr == `CSR_ADDR_MHPMENVENT31  ) |
+                            (csr_addr == `CSR_ADDR_MCOUNTEREN    ) |
+                            (csr_addr == `CSR_ADDR_MCOUNTINHIBIT ) |
+                            (csr_addr == `CSR_ADDR_MSCRATCH      ) |
+                            (csr_addr == `CSR_ADDR_MEPC          ) |
+                            (csr_addr == `CSR_ADDR_MCAUSE        ) |
+                            (csr_addr == `CSR_ADDR_MTVAL         ) |
+                            (csr_addr == `CSR_ADDR_MCONFIGPTR    ) |
+                            (csr_addr == `CSR_ADDR_MENVCFG       ) |
+                            (csr_addr == `CSR_ADDR_MSECCFG       ) |
+                            (csr_addr == `CSR_ADDR_SSTATUS       ) |
+                            (csr_addr == `CSR_ADDR_STVEC         ) |
+                            (csr_addr == `CSR_ADDR_SIP           ) |
+                            (csr_addr == `CSR_ADDR_SIE           ) |
+                            (csr_addr == `CSR_ADDR_SCOUNTEREN    ) |
+                            (csr_addr == `CSR_ADDR_SSCRATCH      ) |
+                            (csr_addr == `CSR_ADDR_SEPC          ) |
+                            (csr_addr == `CSR_ADDR_SCAUSE        ) |
+                            (csr_addr == `CSR_ADDR_STVAL         ) |
+                            (csr_addr == `CSR_ADDR_SENVCFG       ) |
+                            (csr_addr == `CSR_ADDR_SATP          ) |
+                            (csr_addr == `CSR_ADDR_CYCLE         ) |
+                            (csr_addr == `CSR_ADDR_INSTRET       ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER3   ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER4   ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER5   ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER6   ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER7   ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER8   ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER9   ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER10  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER11  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER12  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER13  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER14  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER15  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER16  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER17  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER18  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER19  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER20  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER21  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER22  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER23  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER24  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER25  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER26  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER27  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER28  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER29  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER30  ) |
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER31  ));
 assign csr_set          = (csrrs | csrrsi);
 assign csr_clear        = (csrrc | csrrci);
 assign csr_swap         = (csrrw | csrrwi);    
@@ -583,7 +706,7 @@ assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch
                                 set_valid | jump_valid | csr_valid | mul_valid | div_valid | atomic_valid | mret | 
                                 sret | wfi | lui | auipc | add | addi | sub | addw | addiw | subw | ecall | 
                                 ebreak | fence | fence_i | sfence_vma)) | 
-                                (csr_valid & ((csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)))) | 
+                                (csr_valid & ((csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)) | (!csr_addr_legal))) | 
                                 /*disable all access csr form U*/(csr_valid & (current_priv_status == `PRV_U)) | 
                                 /*disable access time form S*/   (csr_valid & (current_priv_status == `PRV_S) & (csr_addr == 12'hC01)) | 
                                 /*disable wfi time form S&U*/    (wfi & (current_priv_status < `PRV_M) & TW) | 
