@@ -91,7 +91,7 @@ always @(posedge clk or negedge rst_n) begin
         cnt <= 7'h0;
         sub_num <= 64'h0;
         div_o_valid_reg <= 1'b0;
-        quotient_reg <= 64'h1;
+        quotient_reg <= 64'h0;
         remainder_reg <= 64'h0;
         div_shfit_rem <= 128'h0;
     end
@@ -101,7 +101,7 @@ always @(posedge clk or negedge rst_n) begin
                 if(div_flush)begin
                     state <= IDLE;
                     div_o_valid_reg <= 1'b0;
-                    quotient_reg <= 64'h1;
+                    quotient_reg <= 64'h0;
                     remainder_reg <= 64'h0;
                 end
                 else if(div_valid)begin
@@ -127,7 +127,7 @@ always @(posedge clk or negedge rst_n) begin
                 if(div_flush)begin
                     state <= IDLE;
                     div_o_valid_reg <= 1'b0;
-                    quotient_reg <= 64'h1;
+                    quotient_reg <= 64'h0;
                     remainder_reg <= 64'h0;
                 end
                 else begin
@@ -150,7 +150,7 @@ always @(posedge clk or negedge rst_n) begin
                 if(div_flush)begin
                     state <= IDLE;
                     div_o_valid_reg <= 1'b0;
-                    quotient_reg <= 64'h1;
+                    quotient_reg <= 64'h0;
                     remainder_reg <= 64'h0;
                 end
                 else if(div_o_valid & div_o_ready)begin
