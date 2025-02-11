@@ -84,6 +84,9 @@ wire [63:0]             res_and;
 wire [63:0]             res_xor;
 wire [63:0]             res_or;
 
+//csr logic
+wire [63:0]             res_csr_and;
+
 //cmp or branch
 wire                    res_eq;
 wire                    res_ne;
@@ -136,6 +139,9 @@ add_with_Cout #(64)add_sub(
 assign res_and = ID_EX_reg_operand1 & ID_EX_reg_operand2;
 assign res_xor = ID_EX_reg_operand1 ^ ID_EX_reg_operand2;
 assign res_or  = ID_EX_reg_operand1 | ID_EX_reg_operand2;
+
+//csr logic
+assign res_csr_and = (~ID_EX_reg_operand1) & ID_EX_reg_operand2;
 
 //cmp or branch
 assign res_eq  = (Sum==0)?1'b1:1'b0;
@@ -207,7 +213,7 @@ assign mul_res   = (ID_EX_reg_mul_word) ? ({{32{mul_result_lo[31]}},mul_result_l
 assign div_res   = (ID_EX_reg_div_word) ? ((ID_EX_reg_div_rem) ? {{32{remainder[31]}},remainder[31:0]} : {{32{quotient[31]}},quotient[31:0]}) : 
                         ((ID_EX_reg_div_rem) ? remainder : quotient);
 assign sum_res   = (ID_EX_reg_word) ? {{32{Sum[31]}},Sum[31:0]} : Sum;
-assign csr_res = (Sum & {64{ID_EX_reg_csr_swap}}) | (res_or & {64{ID_EX_reg_csr_set}}) | (res_and & {64{ID_EX_reg_csr_clear}});
+assign csr_res = (Sum & {64{ID_EX_reg_csr_swap}}) | (res_or & {64{ID_EX_reg_csr_set}}) | (res_csr_and & {64{ID_EX_reg_csr_clear}});
 //*************************************************************************
 assign o_valid      = div_o_valid | mul_o_valid;
 assign branch_flag  = (res_ne & ID_EX_reg_branch_ne) | (res_eq & ID_EX_reg_branch_eq) | 
