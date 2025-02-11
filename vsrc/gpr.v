@@ -25,6 +25,7 @@ module gpr (
     output [63:0]           WB_EX_src2,
 //interface with lsu 
     //gpr
+    input                   LS_WB_reg_ls_valid,
     input  [4:0]            LS_WB_reg_rd,
     input                   LS_WB_reg_dest_wen,
     input  [63:0]           write_data
@@ -33,7 +34,7 @@ module gpr (
 reg [63:0] riscv_reg [1:31];
 
 always @(posedge clk) begin
-    if(LS_WB_reg_dest_wen & (LS_WB_reg_rd != 5'h0))begin
+    if(LS_WB_reg_ls_valid & LS_WB_reg_dest_wen & (LS_WB_reg_rd != 5'h0))begin
         riscv_reg[LS_WB_reg_rd] <= write_data;
     end
 end
