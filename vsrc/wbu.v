@@ -93,6 +93,7 @@ gpr u_gpr(
     .WB_EX_src1         	( WB_EX_src1          ),
     .WB_EX_src2         	( WB_EX_src2          ),
     .LS_WB_reg_ls_valid     ( LS_WB_reg_ls_valid  ),
+    .LS_WB_reg_trap_valid   ( LS_WB_reg_trap_valid),
     .LS_WB_reg_rd       	( LS_WB_reg_rd        ),
     .LS_WB_reg_dest_wen 	( LS_WB_reg_dest_wen  ),
     .write_data         	( write_data          )
