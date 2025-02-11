@@ -256,7 +256,8 @@ wire sll,srl,sra,slli,srli,srai;
 wire sub, slt,sltu, add;
 wire OR, XOR, AND;
 //todo fence_i to invalid i/d cache
-wire ecall, ebreak, fence, fence_i;
+//todo sfence_vma to invalid tlb
+wire ecall, ebreak, fence, fence_i, sfence_vma;
 wire addiw, addw, subw;
 wire sllw,srlw,sraw,slliw,srliw,sraiw;
 
@@ -329,89 +330,90 @@ assign arith_w_flag = (IF_ID_reg_inst[6:0]==7'b0011011)?1'b1:1'b0;
 //**********************************************************************************************
 //!instruction decode
 //rv64i decode
-assign lui      =   (IF_ID_reg_inst[6:0]  ==  7'b0110111  ) ? 1'b1 : 1'b0;
-assign auipc    =   (IF_ID_reg_inst[6:0]  ==  7'b0010111  ) ? 1'b1 : 1'b0;
-assign jal      =   (IF_ID_reg_inst[6:0]  ==  7'b1101111  ) ? 1'b1 : 1'b0;
-assign jalr     =   (IF_ID_reg_inst[6:0]  ==  7'b1100111  ) ? 1'b1 : 1'b0;
+assign lui          =   (IF_ID_reg_inst[6:0]  ==  7'b0110111  ) ? 1'b1 : 1'b0;
+assign auipc        =   (IF_ID_reg_inst[6:0]  ==  7'b0010111  ) ? 1'b1 : 1'b0;
+assign jal          =   (IF_ID_reg_inst[6:0]  ==  7'b1101111  ) ? 1'b1 : 1'b0;
+assign jalr         =   (IF_ID_reg_inst[6:0]  ==  7'b1100111  ) ? 1'b1 : 1'b0;
 
-assign beq      =   (B_flag&(funct3==3'b000))?1'b1:1'b0;
-assign bne      =   (B_flag&(funct3==3'b001))?1'b1:1'b0;
-assign blt      =   (B_flag&(funct3==3'b100))?1'b1:1'b0;
-assign bge      =   (B_flag&(funct3==3'b101))?1'b1:1'b0;
-assign bltu     =   (B_flag&(funct3==3'b110))?1'b1:1'b0;
-assign bgeu     =   (B_flag&(funct3==3'b111))?1'b1:1'b0;
+assign beq          =   (B_flag&(funct3==3'b000))?1'b1:1'b0;
+assign bne          =   (B_flag&(funct3==3'b001))?1'b1:1'b0;
+assign blt          =   (B_flag&(funct3==3'b100))?1'b1:1'b0;
+assign bge          =   (B_flag&(funct3==3'b101))?1'b1:1'b0;
+assign bltu         =   (B_flag&(funct3==3'b110))?1'b1:1'b0;
+assign bgeu         =   (B_flag&(funct3==3'b111))?1'b1:1'b0;
 
-assign lb       =   (load_flag&(funct3==3'b000))?1'b1:1'b0;
-assign lbu      =   (load_flag&(funct3==3'b100))?1'b1:1'b0;
-assign lh       =   (load_flag&(funct3==3'b001))?1'b1:1'b0;
-assign lhu      =   (load_flag&(funct3==3'b101))?1'b1:1'b0;
-assign lw       =   (load_flag&(funct3==3'b010))?1'b1:1'b0;
-assign lwu      =   (load_flag&(funct3==3'b110))?1'b1:1'b0;
-assign ld       =   (load_flag&(funct3==3'b011))?1'b1:1'b0;
+assign lb           =   (load_flag&(funct3==3'b000))?1'b1:1'b0;
+assign lbu          =   (load_flag&(funct3==3'b100))?1'b1:1'b0;
+assign lh           =   (load_flag&(funct3==3'b001))?1'b1:1'b0;
+assign lhu          =   (load_flag&(funct3==3'b101))?1'b1:1'b0;
+assign lw           =   (load_flag&(funct3==3'b010))?1'b1:1'b0;
+assign lwu          =   (load_flag&(funct3==3'b110))?1'b1:1'b0;
+assign ld           =   (load_flag&(funct3==3'b011))?1'b1:1'b0;
 
-assign sb       =   (S_flag&(funct3==3'b000))?1'b1:1'b0;
-assign sh       =   (S_flag&(funct3==3'b001))?1'b1:1'b0;
-assign sw       =   (S_flag&(funct3==3'b010))?1'b1:1'b0;
-assign sd       =   (S_flag&(funct3==3'b011))?1'b1:1'b0;
+assign sb           =   (S_flag&(funct3==3'b000))?1'b1:1'b0;
+assign sh           =   (S_flag&(funct3==3'b001))?1'b1:1'b0;
+assign sw           =   (S_flag&(funct3==3'b010))?1'b1:1'b0;
+assign sd           =   (S_flag&(funct3==3'b011))?1'b1:1'b0;
 
-assign addi     =   (arith_flag&(funct3==3'b0))   ?1'b1:1'b0;
-assign slti     =   (arith_flag&(funct3==3'h2))   ?1'b1:1'b0;
-assign sltiu    =   (arith_flag&(funct3==3'h3))   ?1'b1:1'b0;
-assign xori     =   (arith_flag&(funct3==3'h4))   ?1'b1:1'b0;
-assign ori      =   (arith_flag&(funct3==3'h6))   ?1'b1:1'b0; 
-assign andi     =   (arith_flag&(funct3==3'h7))   ?1'b1:1'b0; 
-assign slli     =   (arith_flag&({IF_ID_reg_inst[31:26],funct3}==9'h001))?1'b1:1'b0;
-assign srli     =   (arith_flag&({IF_ID_reg_inst[31:26],funct3}==9'h005))?1'b1:1'b0;
-assign srai     =   (arith_flag&({IF_ID_reg_inst[31:26],funct3}==9'h085))?1'b1:1'b0;
+assign addi         =   (arith_flag&(funct3==3'b0))   ?1'b1:1'b0;
+assign slti         =   (arith_flag&(funct3==3'h2))   ?1'b1:1'b0;
+assign sltiu        =   (arith_flag&(funct3==3'h3))   ?1'b1:1'b0;
+assign xori         =   (arith_flag&(funct3==3'h4))   ?1'b1:1'b0;
+assign ori          =   (arith_flag&(funct3==3'h6))   ?1'b1:1'b0; 
+assign andi         =   (arith_flag&(funct3==3'h7))   ?1'b1:1'b0; 
+assign slli         =   (arith_flag&({IF_ID_reg_inst[31:26],funct3}==9'h001))?1'b1:1'b0;
+assign srli         =   (arith_flag&({IF_ID_reg_inst[31:26],funct3}==9'h005))?1'b1:1'b0;
+assign srai         =   (arith_flag&({IF_ID_reg_inst[31:26],funct3}==9'h085))?1'b1:1'b0;
 
-assign add      =   (R_flag&({funct3,funct7}==10'h000))?1'b1:1'b0;
-assign sub      =   (R_flag&({funct3,funct7}==10'h020))?1'b1:1'b0;
-assign sll      =   (R_flag&({funct7,funct3}==10'h001))?1'b1:1'b0;
-assign slt      =   (R_flag&({funct7,funct3}==10'h002))?1'b1:1'b0;
-assign sltu     =   (R_flag&({funct7,funct3}==10'h003))?1'b1:1'b0;
-assign XOR      =   (R_flag&({funct7,funct3}==10'h004))?1'b1:1'b0;
-assign srl      =   (R_flag&({funct7,funct3}==10'h005))?1'b1:1'b0;
-assign sra      =   (R_flag&({funct7,funct3}==10'h105))?1'b1:1'b0;
-assign OR       =   (R_flag&({funct7,funct3}==10'h006))?1'b1:1'b0;
-assign AND      =   (R_flag&({funct7,funct3}==10'h007))?1'b1:1'b0;
+assign add          =   (R_flag&({funct3,funct7}==10'h000))?1'b1:1'b0;
+assign sub          =   (R_flag&({funct3,funct7}==10'h020))?1'b1:1'b0;
+assign sll          =   (R_flag&({funct7,funct3}==10'h001))?1'b1:1'b0;
+assign slt          =   (R_flag&({funct7,funct3}==10'h002))?1'b1:1'b0;
+assign sltu         =   (R_flag&({funct7,funct3}==10'h003))?1'b1:1'b0;
+assign XOR          =   (R_flag&({funct7,funct3}==10'h004))?1'b1:1'b0;
+assign srl          =   (R_flag&({funct7,funct3}==10'h005))?1'b1:1'b0;
+assign sra          =   (R_flag&({funct7,funct3}==10'h105))?1'b1:1'b0;
+assign OR           =   (R_flag&({funct7,funct3}==10'h006))?1'b1:1'b0;
+assign AND          =   (R_flag&({funct7,funct3}==10'h007))?1'b1:1'b0;
 
-assign addiw    =   (arith_w_flag&(funct3==3'b0))   ?1'b1:1'b0;
-assign slliw    =   (arith_w_flag&({IF_ID_reg_inst[31:25],funct3}==10'h001))?1'b1:1'b0;
-assign srliw    =   (arith_w_flag&({IF_ID_reg_inst[31:25],funct3}==10'h005))?1'b1:1'b0;
-assign sraiw    =   (arith_w_flag&({IF_ID_reg_inst[31:25],funct3}==10'h105))?1'b1:1'b0;
-assign addw     =   (RW_flag&({funct3,funct7}==10'h000))?1'b1:1'b0;
-assign subw     =   (RW_flag&({funct3,funct7}==10'h020))?1'b1:1'b0;
-assign sllw     =   (RW_flag&({funct7,funct3}==10'h001))?1'b1:1'b0;
-assign srlw     =   (RW_flag&({funct7,funct3}==10'h005))?1'b1:1'b0;
-assign sraw     =   (RW_flag&({funct7,funct3}==10'h105))?1'b1:1'b0;
+assign addiw        =   (arith_w_flag&(funct3==3'b0))   ?1'b1:1'b0;
+assign slliw        =   (arith_w_flag&({IF_ID_reg_inst[31:25],funct3}==10'h001))?1'b1:1'b0;
+assign srliw        =   (arith_w_flag&({IF_ID_reg_inst[31:25],funct3}==10'h005))?1'b1:1'b0;
+assign sraiw        =   (arith_w_flag&({IF_ID_reg_inst[31:25],funct3}==10'h105))?1'b1:1'b0;
+assign addw         =   (RW_flag&({funct3,funct7}==10'h000))?1'b1:1'b0;
+assign subw         =   (RW_flag&({funct3,funct7}==10'h020))?1'b1:1'b0;
+assign sllw         =   (RW_flag&({funct7,funct3}==10'h001))?1'b1:1'b0;
+assign srlw         =   (RW_flag&({funct7,funct3}==10'h005))?1'b1:1'b0;
+assign sraw         =   (RW_flag&({funct7,funct3}==10'h105))?1'b1:1'b0;
 
-assign fence    =   ({funct3,IF_ID_reg_inst[6:0]} == 10'h00F) ? 1'b1 : 1'b0;
-assign fence_i  =   ({funct3,IF_ID_reg_inst[6:0]} == 10'h08F) ? 1'b1 : 1'b0;
-assign ecall    =   (IF_ID_reg_inst ==  32'h00000073) ? 1'b1 : 1'b0;
-assign ebreak   =   (IF_ID_reg_inst ==  32'h00100073) ? 1'b1 : 1'b0;
+assign fence        =   ({funct3,IF_ID_reg_inst[6:0]} == 10'h00F) ? 1'b1 : 1'b0;
+assign fence_i      =   ({funct3,IF_ID_reg_inst[6:0]} == 10'h08F) ? 1'b1 : 1'b0;
+assign sfence_vma   =   ({funct7,IF_ID_reg_inst[14:0]} == 22'h048073) ? 1'b1 : 1'b0;
+assign ecall        =   (IF_ID_reg_inst ==  32'h00000073) ? 1'b1 : 1'b0;
+assign ebreak       =   (IF_ID_reg_inst ==  32'h00100073) ? 1'b1 : 1'b0;
 
 //rv64 Zicsr decode
-assign csrrw    =   (CSR_flag&(funct3==3'b001))?1'b1:1'b0;
-assign csrrs    =   (CSR_flag&(funct3==3'b010))?1'b1:1'b0;
-assign csrrc    =   (CSR_flag&(funct3==3'b011))?1'b1:1'b0;
-assign csrrwi   =   (CSR_flag&(funct3==3'b101))?1'b1:1'b0;
-assign csrrsi   =   (CSR_flag&(funct3==3'b110))?1'b1:1'b0;
-assign csrrci   =   (CSR_flag&(funct3==3'b111))?1'b1:1'b0;
+assign csrrw        =   (CSR_flag&(funct3==3'b001))?1'b1:1'b0;
+assign csrrs        =   (CSR_flag&(funct3==3'b010))?1'b1:1'b0;
+assign csrrc        =   (CSR_flag&(funct3==3'b011))?1'b1:1'b0;
+assign csrrwi       =   (CSR_flag&(funct3==3'b101))?1'b1:1'b0;
+assign csrrsi       =   (CSR_flag&(funct3==3'b110))?1'b1:1'b0;
+assign csrrci       =   (CSR_flag&(funct3==3'b111))?1'b1:1'b0;
 
 //rv64m decode
-assign mul      =   (R_flag &({funct7,funct3}==10'h008))?1'b1:1'b0;
-assign mulh     =   (R_flag &({funct7,funct3}==10'h009))?1'b1:1'b0;
-assign mulhsu   =   (R_flag &({funct7,funct3}==10'h00A))?1'b1:1'b0;
-assign mulhu    =   (R_flag &({funct7,funct3}==10'h00B))?1'b1:1'b0;
-assign div      =   (R_flag &({funct7,funct3}==10'h00C))?1'b1:1'b0;
-assign divu     =   (R_flag &({funct7,funct3}==10'h00D))?1'b1:1'b0;
-assign rem      =   (R_flag &({funct7,funct3}==10'h00E))?1'b1:1'b0;
-assign remu     =   (R_flag &({funct7,funct3}==10'h00F))?1'b1:1'b0;
-assign mulw     =   (RW_flag&({funct7,funct3}==10'h008))?1'b1:1'b0;
-assign divw     =   (RW_flag&({funct7,funct3}==10'h00C))?1'b1:1'b0;
-assign divuw    =   (RW_flag&({funct7,funct3}==10'h00D))?1'b1:1'b0;
-assign remw     =   (RW_flag&({funct7,funct3}==10'h00E))?1'b1:1'b0;
-assign remuw    =   (RW_flag&({funct7,funct3}==10'h00F))?1'b1:1'b0;
+assign mul          =   (R_flag &({funct7,funct3}==10'h008))?1'b1:1'b0;
+assign mulh         =   (R_flag &({funct7,funct3}==10'h009))?1'b1:1'b0;
+assign mulhsu       =   (R_flag &({funct7,funct3}==10'h00A))?1'b1:1'b0;
+assign mulhu        =   (R_flag &({funct7,funct3}==10'h00B))?1'b1:1'b0;
+assign div          =   (R_flag &({funct7,funct3}==10'h00C))?1'b1:1'b0;
+assign divu         =   (R_flag &({funct7,funct3}==10'h00D))?1'b1:1'b0;
+assign rem          =   (R_flag &({funct7,funct3}==10'h00E))?1'b1:1'b0;
+assign remu         =   (R_flag &({funct7,funct3}==10'h00F))?1'b1:1'b0;
+assign mulw         =   (RW_flag&({funct7,funct3}==10'h008))?1'b1:1'b0;
+assign divw         =   (RW_flag&({funct7,funct3}==10'h00C))?1'b1:1'b0;
+assign divuw        =   (RW_flag&({funct7,funct3}==10'h00D))?1'b1:1'b0;
+assign remw         =   (RW_flag&({funct7,funct3}==10'h00E))?1'b1:1'b0;
+assign remuw        =   (RW_flag&({funct7,funct3}==10'h00F))?1'b1:1'b0;
 
 //rv64a decode
 assign lr_w         =   (A_flag&(funct3==3'h2)&({IF_ID_reg_inst[31:27],rs2}==10'h040))?1'b1:1'b0;
@@ -437,9 +439,9 @@ assign amomax_d     =   (A_flag&(funct3==3'h3)&({IF_ID_reg_inst[31:27]}==5'h14))
 assign amominu_d    =   (A_flag&(funct3==3'h3)&({IF_ID_reg_inst[31:27]}==5'h18))?1'b1:1'b0;
 assign amomaxu_d    =   (A_flag&(funct3==3'h3)&({IF_ID_reg_inst[31:27]}==5'h1C))?1'b1:1'b0;
 
-assign mret     =   (IF_ID_reg_inst ==  32'h30200073) ? 1'b1 : 1'b0;
-assign sret     =   (IF_ID_reg_inst ==  32'h10200073) ? 1'b1 : 1'b0;
-assign wfi      =   (IF_ID_reg_inst ==  32'h10500073) ? 1'b1 : 1'b0;
+assign mret         =   (IF_ID_reg_inst ==  32'h30200073) ? 1'b1 : 1'b0;
+assign sret         =   (IF_ID_reg_inst ==  32'h10200073) ? 1'b1 : 1'b0;
+assign wfi          =   (IF_ID_reg_inst ==  32'h10500073) ? 1'b1 : 1'b0;
 //**********************************************************************************************
 // assign Data_Conflict = ((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & rs1_valid & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen) |
 //                         ((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & rs2_valid & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen) |
@@ -580,7 +582,8 @@ assign operand4         = imm;
 assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch_valid | shift_valid | 
                                 set_valid | jump_valid | csr_valid | mul_valid | div_valid | atomic_valid | mret | 
                                 sret | wfi | lui | auipc | add | addi | sub | addw | addiw | subw | ecall | 
-                                ebreak | fence | fence_i)) | (csr_valid & ((csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)))) | 
+                                ebreak | fence | fence_i | sfence_vma)) | 
+                                (csr_valid & ((csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)))) | 
                                 /*disable all access csr form U*/(csr_valid & (current_priv_status == `PRV_U)) | 
                                 /*disable access time form S*/   (csr_valid & (current_priv_status == `PRV_S) & (csr_addr == 12'hC01)) | 
                                 /*disable wfi time form S&U*/    (wfi & (current_priv_status < `PRV_M) & TW) | 
