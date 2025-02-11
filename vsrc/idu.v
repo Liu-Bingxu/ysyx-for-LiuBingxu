@@ -255,7 +255,8 @@ wire slti, sltiu, xori, ori, andi, addi;
 wire sll,srl,sra,slli,srli,srai;
 wire sub, slt,sltu, add;
 wire OR, XOR, AND;
-wire ecall, ebreak, fence;
+//todo fence_i to invalid i/d cache
+wire ecall, ebreak, fence, fence_i;
 wire addiw, addw, subw;
 wire sllw,srlw,sraw,slliw,srliw,sraiw;
 
@@ -385,6 +386,7 @@ assign srlw     =   (RW_flag&({funct7,funct3}==10'h005))?1'b1:1'b0;
 assign sraw     =   (RW_flag&({funct7,funct3}==10'h105))?1'b1:1'b0;
 
 assign fence    =   ({funct3,IF_ID_reg_inst[6:0]} == 10'h00F) ? 1'b1 : 1'b0;
+assign fence_i  =   ({funct3,IF_ID_reg_inst[6:0]} == 10'h08F) ? 1'b1 : 1'b0;
 assign ecall    =   (IF_ID_reg_inst ==  32'h00000073) ? 1'b1 : 1'b0;
 assign ebreak   =   (IF_ID_reg_inst ==  32'h00100073) ? 1'b1 : 1'b0;
 
@@ -578,7 +580,7 @@ assign operand4         = imm[63:1];
 assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch_valid | shift_valid | 
                                 set_valid | jump_valid | csr_valid | mul_valid | div_valid | atomic_valid | mret | 
                                 sret | wfi | lui | auipc | add | addi | sub | addw | addiw | subw | ecall | 
-                                ebreak | fence)) | (csr_valid & ((csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)))) | 
+                                ebreak | fence | fence_i)) | (csr_valid & ((csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)))) | 
                                 /*disable all access csr form U*/(csr_valid & (current_priv_status == `PRV_U)) | 
                                 /*disable access time form S*/   (csr_valid & (current_priv_status == `PRV_S) & (csr_addr == 12'hC01)) | 
                                 /*disable wfi time form S&U*/    (wfi & (current_priv_status < `PRV_M) & TW) | 
