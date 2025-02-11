@@ -331,10 +331,10 @@ assign arith_w_flag = (IF_ID_reg_inst[6:0]==7'b0011011)?1'b1:1'b0;
 //**********************************************************************************************
 //!instruction decode
 //rv64i decode
-assign lui          =   (IF_ID_reg_inst[6:0]  ==  7'b0110111  ) ? 1'b1 : 1'b0;
-assign auipc        =   (IF_ID_reg_inst[6:0]  ==  7'b0010111  ) ? 1'b1 : 1'b0;
-assign jal          =   (IF_ID_reg_inst[6:0]  ==  7'b1101111  ) ? 1'b1 : 1'b0;
-assign jalr         =   (IF_ID_reg_inst[6:0]  ==  7'b1100111  ) ? 1'b1 : 1'b0;
+assign lui          =   (IF_ID_reg_inst[6:0]            ==      7'b0110111  ) ? 1'b1 : 1'b0;
+assign auipc        =   (IF_ID_reg_inst[6:0]            ==      7'b0010111  ) ? 1'b1 : 1'b0;
+assign jal          =   (IF_ID_reg_inst[6:0]            ==      7'b1101111  ) ? 1'b1 : 1'b0;
+assign jalr         =   ({funct3,IF_ID_reg_inst[6:0]}   ==  10'b0001100111  ) ? 1'b1 : 1'b0;
 
 assign beq          =   (B_flag&(funct3==3'b000))?1'b1:1'b0;
 assign bne          =   (B_flag&(funct3==3'b001))?1'b1:1'b0;
