@@ -21,6 +21,7 @@ module idu(
     input                   clk,
     input                   rst_n,
 
+    input                   debug_mode,
     input  [1:0]            current_priv_status,
 //interface with ifu
     input  [1:0]            IF_ID_reg_rresp,
@@ -122,6 +123,7 @@ module idu(
     output                  ID_EX_reg_trap_valid,
     output                  ID_EX_reg_mret_valid,
     output                  ID_EX_reg_sret_valid,
+    output                  ID_EX_reg_dret_valid,
     output [63:0]           ID_EX_reg_trap_cause,
     output [63:0]           ID_EX_reg_trap_tval,
     //operand
@@ -229,6 +231,7 @@ wire                    atomic_signed;
 wire                    trap_valid;
 wire                    mret_valid;
 wire                    sret_valid;
+wire                    dret_valid;
 wire [63:0]             trap_cause;
 wire [63:0]             trap_tval;
 //operand
@@ -277,7 +280,7 @@ wire lr_w, sc_w, amoswap_w, amoadd_w, amoxor_w, amoand_w, amoor_w, amomin_w, amo
 wire lr_d, sc_d, amoswap_d, amoadd_d, amoxor_d, amoand_d, amoor_d, amomin_d, amomax_d, amominu_d, amomaxu_d;
 
 //rv64 privileged
-wire mret,sret;
+wire mret, sret, dret;
 wire wfi;
 
 //illegal instruction 
@@ -442,6 +445,7 @@ assign amomaxu_d    =   (A_flag&(funct3==3'h3)&({IF_ID_reg_inst[31:27]}==5'h1C))
 
 assign mret         =   (IF_ID_reg_inst ==  32'h30200073) ? 1'b1 : 1'b0;
 assign sret         =   (IF_ID_reg_inst ==  32'h10200073) ? 1'b1 : 1'b0;
+assign dret         =   (IF_ID_reg_inst ==  32'h7b200073) ? 1'b1 : 1'b0;
 assign wfi          =   (IF_ID_reg_inst ==  32'h10500073) ? 1'b1 : 1'b0;
 //**********************************************************************************************
 // assign Data_Conflict = ((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & rs1_valid & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen) |
@@ -642,7 +646,11 @@ assign csr_addr_legal   = ( (csr_addr == `CSR_ADDR_MISA          ) |
                             (csr_addr == `CSR_ADDR_HPMCOUNTER28  ) |
                             (csr_addr == `CSR_ADDR_HPMCOUNTER29  ) |
                             (csr_addr == `CSR_ADDR_HPMCOUNTER30  ) |
-                            (csr_addr == `CSR_ADDR_HPMCOUNTER31  ));
+                            (csr_addr == `CSR_ADDR_HPMCOUNTER31  ) |
+                            ((csr_addr == `CSR_ADDR_DCSR         ) & debug_mode) |
+                            ((csr_addr == `CSR_ADDR_DPC          ) & debug_mode) |
+                            ((csr_addr == `CSR_ADDR_DSCRATCH0    ) & debug_mode) |
+                            ((csr_addr == `CSR_ADDR_DSCRATCH1    ) & debug_mode));
 assign csr_set          = (csrrs | csrrsi);
 assign csr_clear        = (csrrc | csrrci);
 assign csr_swap         = (csrrw | csrrwi);    
@@ -672,6 +680,7 @@ assign atomic_signed    = (!(amominu_w | amominu_d | amomaxu_w | amomaxu_d));
 assign trap_valid       = (ecall | ebreak | (IF_ID_reg_rresp != 2'h0) | illegal_instruction);
 assign mret_valid       = (mret);
 assign sret_valid       = (sret);
+assign dret_valid       = (dret);
 assign trap_cause       = ((IF_ID_reg_rresp == 2'h2) ? 64'hC : (
                             (illegal_instruction) ? 64'h2 :(
                                 (ebreak) ? 64'h3 : (
@@ -704,7 +713,7 @@ assign operand4         = imm;
 //illegal instruction judge
 assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch_valid | shift_valid | 
                                 set_valid | jump_valid | csr_valid | mul_valid | div_valid | atomic_valid | mret | 
-                                sret | wfi | lui | auipc | add | addi | sub | addw | addiw | subw | ecall | 
+                                sret | dret | wfi | lui | auipc | add | addi | sub | addw | addiw | subw | ecall | 
                                 ebreak | fence | fence_i | sfence_vma)) | 
                                 (csr_valid & ((csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)) | (!csr_addr_legal))) | 
                                 /*disable all access csr form U*/(csr_valid & (current_priv_status == `PRV_U)) | 
@@ -712,6 +721,7 @@ assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch
                                 /*disable wfi time form S&U*/    (wfi & (current_priv_status < `PRV_M) & TW) | 
                                 //! todo need to add the sfence.vma and need to trap the sfence.vma
                                 /*disable access satp form S*/   (csr_valid & (current_priv_status == `PRV_S) & (csr_addr == 12'h180) & TVM) | 
+                                /*disable dret on no debug*/     (dret & (!debug_mode)) |
                                 /*disable sret form S*/          (sret & (current_priv_status == `PRV_S) & TSR) | 
                                 /*disable mret form S*/          (mret & (current_priv_status == `PRV_S)) | 
                                 /*disable sret form U*/          (sret & (current_priv_status == `PRV_U)) | 
@@ -720,9 +730,9 @@ assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch
 //!output 
 assign ID_IF_inst_ready     = IF_ID_reg_inst_valid & (EX_ID_decode_ready | (!ID_EX_reg_decode_valid)) & (!EX_IF_jump_flag) & ((
                             (!(EX_LS_reg_execute_valid & EX_LS_reg_csr_wen)) & (!(LS_WB_reg_ls_valid & LS_WB_reg_csr_wen)) &
-                            (!(ID_EX_reg_decode_valid & ID_EX_reg_csr_wen))) | trap_valid | mret_valid | sret_valid) & (!EX_ID_flush_flag) & 
-                            (!(ID_EX_reg_decode_valid & (ID_EX_reg_trap_valid | ID_EX_reg_mret_valid | ID_EX_reg_sret_valid)));
-assign ID_IF_flush_flag     = (EX_ID_flush_flag | (ID_EX_reg_decode_valid & (ID_EX_reg_trap_valid | ID_EX_reg_mret_valid | ID_EX_reg_sret_valid)));
+                            (!(ID_EX_reg_decode_valid & ID_EX_reg_csr_wen))) | trap_valid | mret_valid | sret_valid | dret_valid) & (!EX_ID_flush_flag) & 
+                            (!(ID_EX_reg_decode_valid & (ID_EX_reg_trap_valid | ID_EX_reg_mret_valid | ID_EX_reg_sret_valid | ID_EX_reg_dret_valid)));
+assign ID_IF_flush_flag     = (EX_ID_flush_flag | (ID_EX_reg_decode_valid & (ID_EX_reg_trap_valid | ID_EX_reg_mret_valid | ID_EX_reg_sret_valid | ID_EX_reg_dret_valid)));
 //common
 FF_D_with_syn_rst #(
     .DATA_LEN 	( 1  ),
@@ -817,6 +827,7 @@ FF_D_without_asyn_rst #(1)  u_atomic_signed (clk,ID_IF_inst_ready,atomic_signed,
 FF_D_without_asyn_rst #(1)  u_trap_valid    (clk,ID_IF_inst_ready,trap_valid,ID_EX_reg_trap_valid);
 FF_D_without_asyn_rst #(1)  u_mret_valid    (clk,ID_IF_inst_ready,mret_valid,ID_EX_reg_mret_valid);
 FF_D_without_asyn_rst #(1)  u_sret_valid    (clk,ID_IF_inst_ready,sret_valid,ID_EX_reg_sret_valid);
+FF_D_without_asyn_rst #(1)  u_dret_valid    (clk,ID_IF_inst_ready,dret_valid,ID_EX_reg_dret_valid);
 FF_D_without_asyn_rst #(64) u_trap_cause    (clk,ID_IF_inst_ready,trap_cause,ID_EX_reg_trap_cause);
 FF_D_without_asyn_rst #(64) u_trap_tval     (clk,ID_IF_inst_ready,trap_tval,ID_EX_reg_trap_tval);
 //operand

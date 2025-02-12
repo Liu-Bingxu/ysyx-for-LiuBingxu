@@ -26,6 +26,7 @@ module csr#(parameter MHARTID = 0,RST_PC=64'h0) (
     input                   mtip,
     input                   meip,
     input                   msip,
+    input                   halt_req,
     output  [1:0]           current_priv_status,
 //interface with mmu
     output                  MXR,
@@ -44,6 +45,7 @@ module csr#(parameter MHARTID = 0,RST_PC=64'h0) (
     output                  TSR,
     output                  TW,
     output                  TVM,
+    output                  debug_mode,
 //interface with exu
     input                   EX_LS_reg_execute_valid,
     output                  WB_EX_interrupt_flag,
@@ -56,6 +58,7 @@ module csr#(parameter MHARTID = 0,RST_PC=64'h0) (
     input                   LS_WB_reg_trap_valid,
     input                   LS_WB_reg_mret_valid,
     input                   LS_WB_reg_sret_valid,
+    input                   LS_WB_reg_dret_valid,
     input  [63:0]           LS_WB_reg_trap_cause,
     input  [63:0]           LS_WB_reg_trap_tval,
     //csr
@@ -69,14 +72,18 @@ module csr#(parameter MHARTID = 0,RST_PC=64'h0) (
 //trap flag
 wire            trap_m_mode_valid;
 wire            trap_s_mode_valid;
+wire            trap_debug_mode_valid;
 wire [63:0] 	epc;
+wire [2:0]      debug_cause;
 wire [63:0] 	cause;
 wire [63:0] 	tval;
 
 //interrupt
 wire        	interrupt_m_flag;
 wire        	interrupt_s_flag;
+wire        	interrupt_debug_flag;
 wire [63:0] 	interrupt_cause;
+wire [2:0]      interrupt_debug_cause;
 
 wire [63:0]     csr_wdata;
 reg  [63:0]     csr_rdata_reg;
@@ -201,6 +208,27 @@ wire [63:0] 	senvcfg;
 wire [63:0] 	satp;
 wire            csr_satp_wen;
 
+//?dcsr
+wire [63:0]     dcsr;
+wire            csr_dcsr_wen;
+wire            dcsr_ebreakm;
+wire            dcsr_ebreaks;
+wire            dcsr_ebreaku;
+wire            dcsr_step;
+wire [1:0]      dcsr_prv;
+
+//?dpc
+wire [63:0]     dpc;
+wire            csr_dpc_wen;
+
+//?dscratch0
+wire [63:0] 	dscratch0;
+wire            csr_dscratch0_wen;
+
+//?dscratch1
+wire [63:0] 	dscratch1;
+wire            csr_dscratch1_wen;
+
 //!M mode
 //RO
 
@@ -239,9 +267,12 @@ csr_mstatus u_csr_mstatus(
     .csr_sstatus_wen      	( csr_sstatus_wen       ),
     .trap_m_mode_valid    	( trap_m_mode_valid     ),
     .trap_s_mode_valid    	( trap_s_mode_valid     ),
+    .trap_debug_mode_valid  ( trap_debug_mode_valid ),
     .LS_WB_reg_ls_valid     ( LS_WB_reg_ls_valid    ),
     .LS_WB_reg_mret_valid 	( LS_WB_reg_mret_valid  ),
     .LS_WB_reg_sret_valid 	( LS_WB_reg_sret_valid  ),
+    .LS_WB_reg_dret_valid   ( LS_WB_reg_dret_valid  ),
+    .dcsr_prv               ( dcsr_prv              ),
     .current_priv_status  	( current_priv_status   ),
     .csr_wdata            	( csr_wdata             ),
     .mstatus_TSR          	( mstatus_TSR           ),
@@ -461,22 +492,80 @@ csr_satp u_csr_satp(
     .satp         	( satp          )
 );
 
+//!Debug mode
+
+csr_dcsr u_csr_dcsr(
+    .clk                   	(clk                    ),
+    .rst_n                 	(rst_n                  ),
+    .debug_cause           	(debug_cause            ),
+    .current_priv_status   	(current_priv_status    ),
+    .csr_dcsr_wen          	(csr_dcsr_wen           ),
+    .trap_debug_mode_valid 	(trap_debug_mode_valid  ),
+    .LS_WB_reg_ls_valid    	(LS_WB_reg_ls_valid     ),
+    .LS_WB_reg_trap_valid  	(LS_WB_reg_trap_valid   ),
+    .LS_WB_reg_dret_valid  	(LS_WB_reg_dret_valid   ),
+    .csr_wdata             	(csr_wdata              ),
+    .debug_mode            	(debug_mode             ),
+    .dcsr_ebreakm          	(dcsr_ebreakm           ),
+    .dcsr_ebreaks          	(dcsr_ebreaks           ),
+    .dcsr_ebreaku          	(dcsr_ebreaku           ),
+    .dcsr_step             	(dcsr_step              ),
+    .dcsr_prv              	(dcsr_prv               ),
+    .dcsr                  	(dcsr                   )
+);
+
+csr_dpc u_csr_dpc(
+    .clk                   	(clk                    ),
+    .csr_dpc_wen           	(csr_dpc_wen            ),
+    .trap_debug_mode_valid 	(trap_debug_mode_valid  ),
+    .csr_wdata             	(csr_wdata              ),
+    .epc                    (epc                    ),
+    .dpc                  	(dpc                    )
+);
+
+csr_dscratch u_csr_dscratch0(
+    .clk              	( clk               ),
+    .csr_dscratch_wen 	( csr_dscratch0_wen ),
+    .csr_wdata        	( csr_wdata         ),
+    .dscratch         	( dscratch0         )
+);
+
+csr_dscratch u_csr_dscratch1(
+    .clk              	( clk               ),
+    .csr_dscratch_wen 	( csr_dscratch1_wen ),
+    .csr_wdata        	( csr_wdata         ),
+    .dscratch         	( dscratch1         )
+);
+
 interrupt_control u_interrupt_control(
-    .mstatus_MIE         	( mstatus_MIE          ),
-    .mstatus_SIE         	( mstatus_SIE          ),
-    .current_priv_status 	( current_priv_status  ),
-    .mip                 	( mip                  ),
-    .sip                 	( sip                  ),
-    .mie                 	( mie                  ),
-    .sie                 	( sie                  ),
-    .interrupt_m_flag    	( interrupt_m_flag     ),
-    .interrupt_s_flag    	( interrupt_s_flag     ),
-    .interrupt_cause     	( interrupt_cause      )
+    .clk                        ( clk                       ),
+    .rst_n                      ( rst_n                     ),
+    .mstatus_MIE         	    ( mstatus_MIE               ),
+    .mstatus_SIE         	    ( mstatus_SIE               ),
+    .current_priv_status 	    ( current_priv_status       ),
+    .mip                 	    ( mip                       ),
+    .sip                 	    ( sip                       ),
+    .mie                 	    ( mie                       ),
+    .sie                 	    ( sie                       ),
+    .halt_req                   ( halt_req                  ),
+    .debug_mode                 ( debug_mode                ),
+    .dcsr_step                  ( dcsr_step                 ),
+    .EX_LS_reg_execute_valid    ( EX_LS_reg_execute_valid   ),
+    .LS_WB_reg_ls_valid         ( LS_WB_reg_ls_valid        ),
+    .LS_WB_reg_trap_valid    	( LS_WB_reg_trap_valid      ),
+    .LS_WB_reg_dret_valid    	( LS_WB_reg_dret_valid      ),
+    .trap_debug_mode_valid      ( trap_debug_mode_valid     ),
+    .interrupt_m_flag    	    ( interrupt_m_flag          ),
+    .interrupt_s_flag    	    ( interrupt_s_flag          ),
+    .interrupt_debug_flag       ( interrupt_debug_flag      ),
+    .interrupt_cause     	    ( interrupt_cause           ),
+    .interrupt_debug_cause     	( interrupt_debug_cause     )
 );
 
 trap_control #(RST_PC)u_trap_control(
     .clk                     	( clk                      ),
     .rst_n                   	( rst_n                    ),
+    .debug_mode                 ( debug_mode               ),
     .current_priv_status     	( current_priv_status      ),
     .WB_IF_jump_flag         	( WB_IF_jump_flag          ),
     .WB_IF_jump_addr         	( WB_IF_jump_addr          ),
@@ -487,19 +576,28 @@ trap_control #(RST_PC)u_trap_control(
     .LS_WB_reg_trap_valid    	( LS_WB_reg_trap_valid     ),
     .LS_WB_reg_mret_valid    	( LS_WB_reg_mret_valid     ),
     .LS_WB_reg_sret_valid    	( LS_WB_reg_sret_valid     ),
+    .LS_WB_reg_dret_valid    	( LS_WB_reg_dret_valid     ),
     .LS_WB_reg_trap_cause    	( LS_WB_reg_trap_cause     ),
     .LS_WB_reg_trap_tval     	( LS_WB_reg_trap_tval      ),
     .interrupt_m_flag        	( interrupt_m_flag         ),
     .interrupt_s_flag        	( interrupt_s_flag         ),
+    .interrupt_debug_flag       ( interrupt_debug_flag     ),
     .interrupt_cause         	( interrupt_cause          ),
+    .interrupt_debug_cause     	( interrupt_debug_cause    ),
     .trap_m_mode_valid       	( trap_m_mode_valid        ),
     .trap_s_mode_valid       	( trap_s_mode_valid        ),
+    .trap_debug_mode_valid      ( trap_debug_mode_valid    ),
     .epc                     	( epc                      ),
+    .debug_cause           	    ( debug_cause              ),
     .cause                   	( cause                    ),
     .tval                    	( tval                     ),
+    .dcsr_ebreakm          	    ( dcsr_ebreakm             ),
+    .dcsr_ebreaks          	    ( dcsr_ebreaks             ),
+    .dcsr_ebreaku          	    ( dcsr_ebreaku             ),
     .medeleg                 	( medeleg                  ),
     .mepc                    	( mepc                     ),
     .sepc                    	( sepc                     ),
+    .dpc                    	( dpc                      ),
     .mtvec                   	( mtvec                    ),
     .stvec                   	( stvec                    )
 );
@@ -548,6 +646,10 @@ assign csr_sepc_wen             = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | tra
 assign csr_scause_wen           = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h142);
 assign csr_stval_wen            = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h143);
 assign csr_satp_wen             = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h180);
+assign csr_dcsr_wen             = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B0);
+assign csr_dpc_wen              = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B1);
+assign csr_dscratch0_wen        = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B2);
+assign csr_dscratch1_wen        = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B3);
 assign csr_wdata                = LS_WB_reg_data;
 //**********************************************************************************************
 //?output csr
@@ -675,6 +777,10 @@ always @(*) begin
         `CSR_ADDR_HPMCOUNTER29      : WB_ID_csr_rdata_reg = Performance_Monitor[29];
         `CSR_ADDR_HPMCOUNTER30      : WB_ID_csr_rdata_reg = Performance_Monitor[30];
         `CSR_ADDR_HPMCOUNTER31      : WB_ID_csr_rdata_reg = Performance_Monitor[31];
+        `CSR_ADDR_DCSR              : WB_ID_csr_rdata_reg = dcsr;
+        `CSR_ADDR_DPC               : WB_ID_csr_rdata_reg = dpc;
+        `CSR_ADDR_DSCRATCH0         : WB_ID_csr_rdata_reg = dscratch0;
+        `CSR_ADDR_DSCRATCH1         : WB_ID_csr_rdata_reg = dscratch1;
         default: WB_ID_csr_rdata_reg = 64'h0;
     endcase
 end
@@ -802,6 +908,10 @@ always @(*) begin
         `CSR_ADDR_HPMCOUNTER29      : csr_rdata_reg = Performance_Monitor[29];
         `CSR_ADDR_HPMCOUNTER30      : csr_rdata_reg = Performance_Monitor[30];
         `CSR_ADDR_HPMCOUNTER31      : csr_rdata_reg = Performance_Monitor[31];
+        `CSR_ADDR_DCSR              : csr_rdata_reg = dcsr;
+        `CSR_ADDR_DPC               : csr_rdata_reg = dpc;
+        `CSR_ADDR_DSCRATCH0         : csr_rdata_reg = dscratch0;
+        `CSR_ADDR_DSCRATCH1         : csr_rdata_reg = dscratch1;
         default: csr_rdata_reg = 64'h0;
     endcase
 end
@@ -817,7 +927,7 @@ assign MPP                  = mstatus_MPP;
 assign satp_mode            = satp[63:60];
 assign satp_asid            = satp[59:44];
 assign satp_ppn             = satp[43:0];
-assign WB_EX_interrupt_flag = (interrupt_m_flag | interrupt_s_flag);
+assign WB_EX_interrupt_flag = (interrupt_m_flag | interrupt_s_flag | interrupt_debug_flag);
 //**********************************************************************************************
 
 endmodule //csr
@@ -877,9 +987,12 @@ module csr_mstatus(
     input                   csr_sstatus_wen,
     input                   trap_m_mode_valid,
     input                   trap_s_mode_valid,
+    input                   trap_debug_mode_valid,
+    input  [1:0]            dcsr_prv,
     input                   LS_WB_reg_ls_valid,
     input                   LS_WB_reg_mret_valid,
     input                   LS_WB_reg_sret_valid,
+    input                   LS_WB_reg_dret_valid,
     input  [63:0]           csr_wdata,
     output                  mstatus_TSR,
     output                  mstatus_TW,    
@@ -923,7 +1036,6 @@ always @(posedge clk or negedge rst_n) begin
         SPIE                    <= 1'b0;
         MIE                     <= 1'b0;
         SIE                     <= 1'b0;
-        current_priv_status_reg <= 2'h3;
     end
     else if(csr_mstatus_wen)begin
         TSR     <= csr_wdata[22];
@@ -947,30 +1059,53 @@ always @(posedge clk or negedge rst_n) begin
         SIE     <= csr_wdata[1];
     end
     else if(trap_m_mode_valid)begin
-        current_priv_status_reg <= 2'h3;
         MPP                     <= current_priv_status;
         MPIE                    <= MIE;
         MIE                     <= 1'b0;
     end
     else if(trap_s_mode_valid)begin
-        current_priv_status_reg <= 2'h1;
         SPP                     <= (current_priv_status == 2'h1);
         SPIE                    <= SIE;
         SIE                     <= 1'b0;
     end
     else if(LS_WB_reg_ls_valid & LS_WB_reg_mret_valid)begin
-        current_priv_status_reg <= MPP;
         MPRV                    <= ((MPP == `PRV_M) & MPRV);
         MPP                     <= 2'h0;
         MPIE                    <= 1'b1;
         MIE                     <= MPIE;
     end
     else if(LS_WB_reg_ls_valid & LS_WB_reg_sret_valid)begin
-        current_priv_status_reg <= {1'b0, SPP};
         MPRV                    <= 1'b0;
         SPP                     <= 1'b0;
         SPIE                    <= 1'b1;
         SIE                     <= SPIE;
+    end
+    else if(LS_WB_reg_ls_valid & LS_WB_reg_dret_valid)begin
+        MPRV                    <= ((dcsr_prv == `PRV_M) & MPRV);
+    end
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        current_priv_status_reg <= 2'h3;
+    end
+    else if(trap_debug_mode_valid)begin
+        current_priv_status_reg <= 2'h3;
+    end
+    else if(trap_m_mode_valid)begin
+        current_priv_status_reg <= 2'h3;
+    end
+    else if(trap_s_mode_valid)begin
+        current_priv_status_reg <= 2'h1;
+    end
+    else if(LS_WB_reg_ls_valid & LS_WB_reg_mret_valid)begin
+        current_priv_status_reg <= MPP;
+    end
+    else if(LS_WB_reg_ls_valid & LS_WB_reg_sret_valid)begin
+        current_priv_status_reg <= {1'b0, SPP};
+    end
+    else if(LS_WB_reg_ls_valid & LS_WB_reg_dret_valid)begin
+        current_priv_status_reg <= dcsr_prv;
     end
 end
 
@@ -1549,7 +1684,128 @@ assign satp = satp_reg;
 
 endmodule //csr_satp
 
+module csr_dcsr(
+    input                   clk,
+    input                   rst_n,
+    input  [2:0]            debug_cause,
+    input  [1:0]            current_priv_status,
+    input                   csr_dcsr_wen,
+    input                   trap_debug_mode_valid,
+    input                   LS_WB_reg_ls_valid,
+    input                   LS_WB_reg_trap_valid,
+    input                   LS_WB_reg_dret_valid,
+    input  [63:0]           csr_wdata,
+    output                  debug_mode,
+    output                  dcsr_ebreakm,
+    output                  dcsr_ebreaks,
+    output                  dcsr_ebreaku,
+    output                  dcsr_step,
+    output [1:0]            dcsr_prv,
+    output [63:0]           dcsr
+);
+
+reg             ebreakm;
+reg             ebreaks;
+reg             ebreaku;
+reg [2:0]       cause;
+reg             step;
+reg [1:0]       prv;
+reg             debug_mode_reg;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        ebreakm <= 1'h0;
+        ebreaks <= 1'h0;
+        ebreaku <= 1'h0;
+        cause   <= 3'h0;
+        step    <= 1'h0;
+        prv     <= 2'h3;
+    end
+    else if(csr_dcsr_wen)begin
+        ebreakm <= csr_wdata[15];
+        ebreaks <= csr_wdata[13];
+        ebreaku <= csr_wdata[12];
+        cause   <= csr_wdata[8:6];
+        step    <= csr_wdata[2];
+        prv     <= csr_wdata[1:0];
+    end
+    else if(trap_debug_mode_valid)begin
+        cause   <= debug_cause;
+        prv     <= current_priv_status;
+    end
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        debug_mode_reg <= 1'b0;
+    end
+    else if(trap_debug_mode_valid)begin
+        debug_mode_reg <= 1'b1;
+    end
+    else if(LS_WB_reg_ls_valid & LS_WB_reg_dret_valid & (!LS_WB_reg_trap_valid))begin
+        debug_mode_reg <= 1'b0;
+    end
+end
+
+assign debug_mode = debug_mode_reg;
+assign dcsr_ebreakm = ebreakm;
+assign dcsr_ebreaks = ebreaks;
+assign dcsr_ebreaku = ebreaku;
+assign dcsr_step    = step;
+assign dcsr_prv     = prv;
+
+assign dcsr = {32'h0, 4'h4/* debugver */, 1'b0, 3'h0/* ext_cause */, 4'h0, 1'b0/* cetrig */, 1'b0, 
+            1'b0/* ebreakvs */, 1'b0/* ebreakvu */, ebreakm, 1'b0, ebreaks, ebreaku, 1'b1/* stepie */, 
+            1'b0/* stopcount */, 1'b0/* stoptime */, cause, 1'b0/* v */, 1'b1/* mprven */, 1'b0/* nmip */, step, prv};
+
+endmodule //csr_dcsr
+
+module csr_dpc(
+    input                   clk,
+    input                   csr_dpc_wen,
+    input                   trap_debug_mode_valid,
+    input  [63:0]           csr_wdata,
+    input  [63:0]           epc,
+    output [63:0]           dpc
+);
+
+reg [63:0]  dpc_reg;
+
+always @(posedge clk) begin
+    if(csr_dpc_wen)begin
+        dpc_reg <= csr_wdata;
+    end
+    else if(trap_debug_mode_valid)begin
+        dpc_reg <= epc;
+    end
+end
+
+assign dpc = {dpc_reg[63:1], 1'b0};
+
+endmodule //csr_dpc
+
+module csr_dscratch(
+    input                   clk,
+    input                   csr_dscratch_wen,
+    input  [63:0]           csr_wdata,
+    output [63:0]           dscratch
+);
+
+reg [63:0]      dscratch_reg;
+
+always @(posedge clk) begin
+    if(csr_dscratch_wen)begin
+        dscratch_reg <= csr_wdata;
+    end
+end
+
+assign dscratch = dscratch_reg;
+
+endmodule //csr_dscratch
+
 module interrupt_control(
+    input                   clk,
+    input                   rst_n,
     input                   mstatus_MIE,
     input                   mstatus_SIE,
     input  [1:0]            current_priv_status,
@@ -1557,9 +1813,19 @@ module interrupt_control(
     input  [63:0]           sip,
     input  [63:0]           mie,
     input  [63:0]           sie,
+    input                   halt_req,
+    input                   debug_mode,
+    input                   dcsr_step,
+    input                   EX_LS_reg_execute_valid,
+    input                   LS_WB_reg_ls_valid,
+    input                   LS_WB_reg_trap_valid,
+    input                   LS_WB_reg_dret_valid,
+    input                   trap_debug_mode_valid,
     output                  interrupt_m_flag,
     output                  interrupt_s_flag,
-    output [63:0]           interrupt_cause
+    output                  interrupt_debug_flag,
+    output [63:0]           interrupt_cause,
+    output [2:0]            interrupt_debug_cause
 );
 
 wire            m_mode_interrupt_enable;
@@ -1567,13 +1833,31 @@ wire            s_mode_interrupt_enable;
 wire [63:0]     m_mode_interrupt_pending;
 wire [63:0]     s_mode_interrupt_pending;
 
+reg  [1:0]      debug_step_flag;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        debug_step_flag <= 2'h0;
+    end
+    else if(LS_WB_reg_ls_valid & LS_WB_reg_dret_valid & (!LS_WB_reg_trap_valid) & dcsr_step)begin
+        debug_step_flag <= 2'h1;
+    end
+    else if((debug_step_flag == 2'h1) & EX_LS_reg_execute_valid)begin
+        debug_step_flag <= 2'h2;
+    end
+    else if((debug_step_flag == 2'h2) & trap_debug_mode_valid)begin
+        debug_step_flag <= 2'h0;
+    end
+end
+
 assign m_mode_interrupt_enable  = (mstatus_MIE | (current_priv_status < `PRV_M));
 assign s_mode_interrupt_enable  = ((mstatus_SIE | (current_priv_status < `PRV_S)) & (current_priv_status != `PRV_M));
 assign m_mode_interrupt_pending = (mie & mip);
 assign s_mode_interrupt_pending = (sie & sip);
 
-assign interrupt_m_flag         = (m_mode_interrupt_enable & m_mode_interrupt_pending[interrupt_cause[5:0]] & (!interrupt_s_flag)); 
-assign interrupt_s_flag         = (s_mode_interrupt_enable & s_mode_interrupt_pending[interrupt_cause[5:0]]); 
+assign interrupt_m_flag         = (m_mode_interrupt_enable & m_mode_interrupt_pending[interrupt_cause[5:0]] & (!interrupt_s_flag) & (!interrupt_debug_flag) & (!debug_mode)); 
+assign interrupt_s_flag         = (s_mode_interrupt_enable & s_mode_interrupt_pending[interrupt_cause[5:0]] & (!interrupt_debug_flag) & (!debug_mode)); 
+assign interrupt_debug_flag     = ((halt_req | (debug_step_flag == 2'h2)) & (!debug_mode));
 
 assign interrupt_cause          = (m_mode_interrupt_pending[11]) ? 64'h8000_0000_0000_000B : (
                                     (m_mode_interrupt_pending[3]) ? 64'h8000_0000_0000_0003 : (
@@ -1586,12 +1870,14 @@ assign interrupt_cause          = (m_mode_interrupt_pending[11]) ? 64'h8000_0000
                                         )
                                     )
                                 );
+assign interrupt_debug_cause    = (debug_step_flag == 2'h2) ? 3'h3 : 3'h4;
 
 endmodule //interrupt_control
 
 module trap_control#(parameter RST_PC=64'h0)(
     input                   clk,
     input                   rst_n,
+    input                   debug_mode,
     input  [1:0]            current_priv_status,
 //interface with ifu
     output                  WB_IF_jump_flag,
@@ -1607,27 +1893,39 @@ module trap_control#(parameter RST_PC=64'h0)(
     input                   LS_WB_reg_trap_valid,
     input                   LS_WB_reg_mret_valid,
     input                   LS_WB_reg_sret_valid,
+    input                   LS_WB_reg_dret_valid,
     input  [63:0]           LS_WB_reg_trap_cause,
     input  [63:0]           LS_WB_reg_trap_tval,
 //interrupt sign input
     input         	        interrupt_m_flag,
     input         	        interrupt_s_flag,
+    input         	        interrupt_debug_flag,
     input  [63:0] 	        interrupt_cause,
+    input  [2:0]            interrupt_debug_cause,
 //trap sign output
     output                  trap_m_mode_valid,
     output                  trap_s_mode_valid,
+    output                  trap_debug_mode_valid,
     output [63:0] 	        epc,
+    output [2:0]            debug_cause,
     output [63:0] 	        cause,
     output [63:0] 	        tval,
+//debug
+    input                   dcsr_ebreakm,
+    input                   dcsr_ebreaks,
+    input                   dcsr_ebreaku,
 //exception
     input  [63:0]           medeleg,
 //return pc
     input  [63:0]           mepc,
     input  [63:0]           sepc,
+    input  [63:0]           dpc,
 //trap vector
     input  [63:0]           mtvec,
     input  [63:0]           stvec
 );
+
+wire            ebreak_entry_debug;
 
 wire [63:0]     tvec;
 wire [63:0]     trap_addr;
@@ -1635,6 +1933,9 @@ wire            trap_m_interrupt;
 wire            trap_m_exception;
 wire            trap_s_interrupt;
 wire            trap_s_exception;
+wire            trap_debug_interrupt;
+wire            trap_debug_exception;
+wire            debug_exception;
 
 reg  [63:0]     next_pc;
 
@@ -1652,18 +1953,33 @@ always @(posedge clk or negedge rst_n) begin
         end
     end
 end
-assign tvec                 = (trap_s_mode_valid) ? stvec : mtvec;
+assign ebreak_entry_debug   =   (dcsr_ebreakm & (current_priv_status == 2'h3)) |
+                                (dcsr_ebreaks & (current_priv_status == 2'h1)) |
+                                (dcsr_ebreaku & (current_priv_status == 2'h0));
+assign tvec                 = ((trap_debug_mode_valid) ? {52'h0, `DEBUG_ENTRY_TVEC} : 
+                                    ((debug_exception) ? {52'h0, `DEBUG_EXCEPTION_TVEC} : 
+                                        ((trap_s_mode_valid) ? stvec : mtvec))
+                            );
 assign trap_addr            = (cause[63] & (tvec[1:0] == 2'h1)) ? ({tvec[63:2], 2'h0} + {cause[61:0], 2'h0}) : tvec;
 assign trap_m_interrupt     = (interrupt_m_flag & ((!(EX_LS_reg_execute_valid | LS_WB_reg_ls_valid)) | (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid)));
 assign trap_s_interrupt     = (interrupt_s_flag & ((!(EX_LS_reg_execute_valid | LS_WB_reg_ls_valid)) | (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid)));
-assign trap_m_exception     = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & (!trap_s_exception));
-assign trap_s_exception     = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & medeleg[LS_WB_reg_trap_cause[5:0]] & (current_priv_status <= `PRV_S));
+assign trap_debug_interrupt = (interrupt_debug_flag & ((!(EX_LS_reg_execute_valid | LS_WB_reg_ls_valid)) | (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid)));
+assign trap_m_exception     = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & (!trap_s_exception) & (!trap_debug_mode_valid) & (!debug_mode));
+assign trap_s_exception     = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & medeleg[LS_WB_reg_trap_cause[5:0]] & (current_priv_status <= `PRV_S) & (!trap_debug_mode_valid) & (!debug_mode));
+assign trap_debug_exception = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & (LS_WB_reg_trap_cause[5:0] == 6'h3) & ebreak_entry_debug & (!debug_mode));
+assign debug_exception      = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & debug_mode);
 //**********************************************************************************************
-assign WB_IF_jump_flag      = (trap_m_mode_valid | trap_s_mode_valid | (LS_WB_reg_ls_valid & (LS_WB_reg_mret_valid | LS_WB_reg_sret_valid)));
-assign WB_IF_jump_addr      = (trap_m_mode_valid | trap_s_mode_valid) ? trap_addr : ((LS_WB_reg_mret_valid) ? mepc : ((LS_WB_reg_sret_valid) ? sepc : 64'h0));
+assign WB_IF_jump_flag      = (trap_m_mode_valid | trap_s_mode_valid | trap_debug_mode_valid | debug_exception |
+                                (LS_WB_reg_ls_valid & (LS_WB_reg_mret_valid | LS_WB_reg_sret_valid | LS_WB_reg_dret_valid)));
+assign WB_IF_jump_addr      = (trap_m_mode_valid | trap_s_mode_valid | trap_debug_mode_valid | debug_exception) ? trap_addr : 
+                                ((LS_WB_reg_mret_valid) ? mepc : 
+                                    ((LS_WB_reg_sret_valid) ? sepc : 
+                                        ((LS_WB_reg_dret_valid) ? dpc : 64'h0)));
 assign trap_m_mode_valid    = (trap_m_interrupt | trap_m_exception);
 assign trap_s_mode_valid    = (trap_s_interrupt | trap_s_exception);
-assign epc                  = (trap_m_interrupt | trap_s_interrupt) ? next_pc : LS_WB_reg_PC;
+assign trap_debug_mode_valid= (trap_debug_interrupt | trap_debug_exception);
+assign epc                  = (trap_m_interrupt | trap_s_interrupt | trap_debug_interrupt) ? next_pc : LS_WB_reg_PC;
+assign debug_cause          = (trap_debug_interrupt) ? interrupt_debug_cause : 3'h1;
 assign cause                = (trap_m_interrupt | trap_s_interrupt) ? interrupt_cause : LS_WB_reg_trap_cause;
 assign tval                 = (trap_m_interrupt | trap_s_interrupt) ? 64'h0 : LS_WB_reg_trap_tval;
 //**********************************************************************************************

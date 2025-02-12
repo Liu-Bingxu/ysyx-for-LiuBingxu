@@ -26,6 +26,7 @@ module core_top#(parameter MHARTID = 0,RST_PC=64'h0)(
     input                   mtip_asyn,
     input                   meip_asyn,
     input                   msip_asyn,
+    input                   halt_req,
 //interface with mmu
     output        	        MXR,
     output        	        SUM,
@@ -157,6 +158,7 @@ wire        	ID_EX_reg_atomic_signed;
 wire        	ID_EX_reg_trap_valid;
 wire        	ID_EX_reg_mret_valid;
 wire        	ID_EX_reg_sret_valid;
+wire        	ID_EX_reg_dret_valid;
 wire [63:0] 	ID_EX_reg_trap_cause;
 wire [63:0] 	ID_EX_reg_trap_tval;
 wire [63:0] 	ID_EX_reg_operand1;
@@ -205,6 +207,7 @@ wire        	EX_LS_reg_atomic_signed;
 wire        	EX_LS_reg_trap_valid;
 wire        	EX_LS_reg_mret_valid;
 wire        	EX_LS_reg_sret_valid;
+wire        	EX_LS_reg_dret_valid;
 wire [63:0] 	EX_LS_reg_trap_cause;
 wire [63:0] 	EX_LS_reg_trap_tval;
 wire [63:0] 	EX_LS_reg_operand;
@@ -221,6 +224,7 @@ wire [31:0] 	LS_WB_reg_inst;
 wire        	LS_WB_reg_trap_valid;
 wire        	LS_WB_reg_mret_valid;
 wire        	LS_WB_reg_sret_valid;
+wire        	LS_WB_reg_dret_valid;
 wire [63:0] 	LS_WB_reg_trap_cause;
 wire [63:0] 	LS_WB_reg_trap_tval;
 wire        	LS_WB_reg_csr_wen;
@@ -231,6 +235,7 @@ wire        	LS_WB_reg_dest_wen;
 wire [63:0] 	LS_WB_reg_data;
 
 // wbu outports wire
+wire            debug_mode;
 wire [1:0]  	current_priv_status;
 wire        	WB_IF_jump_flag;
 wire [63:0] 	WB_IF_jump_addr;
@@ -269,6 +274,7 @@ ifu #(RST_PC)u_ifu(
 idu u_idu(
     .clk                          	( clk                           ),
     .rst_n                        	( rst_n                         ),
+    .debug_mode                     ( debug_mode                    ),
     .current_priv_status          	( current_priv_status           ),
     .IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
     .IF_ID_reg_inst_compress      	( IF_ID_reg_inst_compress       ),
@@ -352,6 +358,7 @@ idu u_idu(
     .ID_EX_reg_trap_valid         	( ID_EX_reg_trap_valid          ),
     .ID_EX_reg_mret_valid         	( ID_EX_reg_mret_valid          ),
     .ID_EX_reg_sret_valid         	( ID_EX_reg_sret_valid          ),
+    .ID_EX_reg_dret_valid         	( ID_EX_reg_dret_valid          ),
     .ID_EX_reg_trap_cause         	( ID_EX_reg_trap_cause          ),
     .ID_EX_reg_trap_tval          	( ID_EX_reg_trap_tval           ),
     .ID_EX_reg_operand1           	( ID_EX_reg_operand1            ),
@@ -445,6 +452,7 @@ exu u_exu(
     .ID_EX_reg_trap_valid    	( ID_EX_reg_trap_valid     ),
     .ID_EX_reg_mret_valid    	( ID_EX_reg_mret_valid     ),
     .ID_EX_reg_sret_valid    	( ID_EX_reg_sret_valid     ),
+    .ID_EX_reg_dret_valid    	( ID_EX_reg_dret_valid     ),
     .ID_EX_reg_trap_cause    	( ID_EX_reg_trap_cause     ),
     .ID_EX_reg_trap_tval     	( ID_EX_reg_trap_tval      ),
     .ID_EX_reg_operand1      	( ID_EX_reg_operand1       ),
@@ -489,6 +497,7 @@ exu u_exu(
     .EX_LS_reg_trap_valid    	( EX_LS_reg_trap_valid     ),
     .EX_LS_reg_mret_valid    	( EX_LS_reg_mret_valid     ),
     .EX_LS_reg_sret_valid    	( EX_LS_reg_sret_valid     ),
+    .EX_LS_reg_dret_valid    	( EX_LS_reg_dret_valid     ),
     .EX_LS_reg_trap_cause    	( EX_LS_reg_trap_cause     ),
     .EX_LS_reg_trap_tval     	( EX_LS_reg_trap_tval      ),
     .EX_LS_reg_operand       	( EX_LS_reg_operand        ),
@@ -563,6 +572,7 @@ lsu u_lsu(
     .EX_LS_reg_trap_valid    	( EX_LS_reg_trap_valid     ),
     .EX_LS_reg_mret_valid    	( EX_LS_reg_mret_valid     ),
     .EX_LS_reg_sret_valid    	( EX_LS_reg_sret_valid     ),
+    .EX_LS_reg_dret_valid    	( EX_LS_reg_dret_valid     ),
     .EX_LS_reg_trap_cause    	( EX_LS_reg_trap_cause     ),
     .EX_LS_reg_trap_tval     	( EX_LS_reg_trap_tval      ),
     .EX_LS_reg_operand       	( EX_LS_reg_operand        ),
@@ -575,6 +585,7 @@ lsu u_lsu(
     .LS_WB_reg_trap_valid    	( LS_WB_reg_trap_valid     ),
     .LS_WB_reg_mret_valid    	( LS_WB_reg_mret_valid     ),
     .LS_WB_reg_sret_valid    	( LS_WB_reg_sret_valid     ),
+    .LS_WB_reg_dret_valid    	( LS_WB_reg_dret_valid     ),
     .LS_WB_reg_trap_cause    	( LS_WB_reg_trap_cause     ),
     .LS_WB_reg_trap_tval     	( LS_WB_reg_trap_tval      ),
     .LS_WB_reg_csr_wen       	( LS_WB_reg_csr_wen        ),
@@ -592,6 +603,7 @@ wbu #(
 (
     .clk                     	( clk                      ),
     .rst_n                   	( rst_n                    ),
+    .halt_req                   ( halt_req                 ),
     .current_priv_status     	( current_priv_status      ),
     .stip_asyn               	( stip_asyn                ),
     .seip_asyn               	( seip_asyn                ),
@@ -617,6 +629,7 @@ wbu #(
     .TSR                     	( TSR                      ),
     .TW                      	( TW                       ),
     .TVM                     	( TVM                      ),
+    .debug_mode                 ( debug_mode               ),
     .EX_LS_reg_execute_valid 	( EX_LS_reg_execute_valid  ),
     .WB_EX_interrupt_flag    	( WB_EX_interrupt_flag     ),
     .LS_WB_reg_ls_valid      	( LS_WB_reg_ls_valid       ),
@@ -628,6 +641,7 @@ wbu #(
     .LS_WB_reg_trap_valid    	( LS_WB_reg_trap_valid     ),
     .LS_WB_reg_mret_valid    	( LS_WB_reg_mret_valid     ),
     .LS_WB_reg_sret_valid    	( LS_WB_reg_sret_valid     ),
+    .LS_WB_reg_dret_valid    	( LS_WB_reg_dret_valid     ),
     .LS_WB_reg_trap_cause    	( LS_WB_reg_trap_cause     ),
     .LS_WB_reg_trap_tval     	( LS_WB_reg_trap_tval      ),
     .LS_WB_reg_csr_wen       	( LS_WB_reg_csr_wen        ),

@@ -34,6 +34,8 @@
 `define PRV_U   2'h0
 
 `define DEBUG_ROM_START             12'h800
+`define DEBUG_ENTRY_TVEC            12'h800
+`define DEBUG_EXCEPTION_TVEC        12'h808
 `define DEBUG_FLAG_START            12'h400
 `define DEBUG_DATA_START            12'h380
 `define DEBUG_PROGBUF_START         12'h340
@@ -167,4 +169,7 @@
 `define CSR_ADDR_HPMCOUNTER29       12'hC1D
 `define CSR_ADDR_HPMCOUNTER30       12'hC1E
 `define CSR_ADDR_HPMCOUNTER31       12'hC1F
-
+`define CSR_ADDR_DCSR               12'h7B0
+`define CSR_ADDR_DPC                12'h7B1
+`define CSR_ADDR_DSCRATCH0          12'h7B2
+`define CSR_ADDR_DSCRATCH1          12'h7B3

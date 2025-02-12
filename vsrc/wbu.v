@@ -19,6 +19,7 @@
 module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     input                   clk,
     input                   rst_n,
+    input                   halt_req,
     output  [1:0]           current_priv_status,
 //interface with interrupt sign
     input                   stip_asyn,
@@ -44,6 +45,7 @@ module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     output                  TSR,
     output                  TW,
     output                  TVM,
+    output                  debug_mode,
 //interface with exu
     input  [4 :0]           rs1,
     input  [4 :0]           rs2,
@@ -63,6 +65,7 @@ module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     input                   LS_WB_reg_trap_valid,
     input                   LS_WB_reg_mret_valid,
     input                   LS_WB_reg_sret_valid,
+    input                   LS_WB_reg_dret_valid,
     input  [63:0]           LS_WB_reg_trap_cause,
     input  [63:0]           LS_WB_reg_trap_tval,
     //csr
@@ -112,6 +115,7 @@ csr #(
     .mtip                    	( mtip                     ),
     .meip                    	( meip                     ),
     .msip                    	( msip                     ),
+    .halt_req                   ( halt_req                 ),
     .current_priv_status     	( current_priv_status      ),
     .MXR                     	( MXR                      ),
     .SUM                     	( SUM                      ),
@@ -127,6 +131,7 @@ csr #(
     .TSR                     	( TSR                      ),
     .TW                      	( TW                       ),
     .TVM                     	( TVM                      ),
+    .debug_mode                 ( debug_mode               ),
     .EX_LS_reg_execute_valid 	( EX_LS_reg_execute_valid  ),
     .WB_EX_interrupt_flag    	( WB_EX_interrupt_flag     ),
     .LS_WB_reg_ls_valid      	( LS_WB_reg_ls_valid       ),
@@ -135,6 +140,7 @@ csr #(
     .LS_WB_reg_trap_valid    	( LS_WB_reg_trap_valid     ),
     .LS_WB_reg_mret_valid    	( LS_WB_reg_mret_valid     ),
     .LS_WB_reg_sret_valid    	( LS_WB_reg_sret_valid     ),
+    .LS_WB_reg_dret_valid    	( LS_WB_reg_dret_valid     ),
     .LS_WB_reg_trap_cause    	( LS_WB_reg_trap_cause     ),
     .LS_WB_reg_trap_tval     	( LS_WB_reg_trap_tval      ),
     .LS_WB_reg_csr_wen       	( LS_WB_reg_csr_wen        ),

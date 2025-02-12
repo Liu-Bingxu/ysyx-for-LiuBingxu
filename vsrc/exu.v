@@ -109,6 +109,7 @@ module exu (
     input                   ID_EX_reg_trap_valid,
     input                   ID_EX_reg_mret_valid,
     input                   ID_EX_reg_sret_valid,
+    input                   ID_EX_reg_dret_valid,
     input  [63:0]           ID_EX_reg_trap_cause,
     input  [63:0]           ID_EX_reg_trap_tval,
     //operand
@@ -161,6 +162,7 @@ module exu (
     output                  EX_LS_reg_trap_valid,
     output                  EX_LS_reg_mret_valid,
     output                  EX_LS_reg_sret_valid,
+    output                  EX_LS_reg_dret_valid,
     output [63:0]           EX_LS_reg_trap_cause,
     output [63:0]           EX_LS_reg_trap_tval,
     //operand
@@ -301,9 +303,10 @@ always @(posedge clk or negedge rst_n) begin
 end
 //**********************************************************************
 assign EX_ID_decode_ready = (ID_EX_reg_decode_valid & ((!EX_LS_reg_execute_valid) | LS_EX_execute_ready) & (!WB_EX_interrupt_flag) &
-                            (!LS_EX_flush_flag) & (!(EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid))) & 
-                            ((!((ID_EX_reg_mul_valid | ID_EX_reg_div_valid) & (!o_valid))) | ID_EX_reg_trap_valid) & ((!Data_Conflict) | ID_EX_reg_trap_valid));
-assign EX_ID_flush_flag   = (LS_EX_flush_flag | (EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid)));
+                            (!LS_EX_flush_flag) & ((!((ID_EX_reg_mul_valid | ID_EX_reg_div_valid) & (!o_valid))) | ID_EX_reg_trap_valid) &
+                            (!(EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid | EX_LS_reg_dret_valid))) & 
+                            ((!Data_Conflict) | ID_EX_reg_trap_valid));
+assign EX_ID_flush_flag   = (LS_EX_flush_flag | (EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid | EX_LS_reg_dret_valid)));
 assign EX_IF_jump_flag    = (ID_EX_reg_decode_valid & (ID_EX_reg_jump_valid | (ID_EX_reg_branch_valid & branch_flag)) & (!jump_cnt) & (!Data_Conflict));
 assign EX_IF_jump_addr    = {jump_addr[63:1], 1'b0};
 
@@ -360,6 +363,7 @@ FF_D_without_asyn_rst #(1)  u_atomic_signed (clk,EX_ID_decode_ready,ID_EX_reg_at
 FF_D_without_asyn_rst #(1)  u_trap_valid    (clk,EX_ID_decode_ready,ID_EX_reg_trap_valid,EX_LS_reg_trap_valid);
 FF_D_without_asyn_rst #(1)  u_mret_valid    (clk,EX_ID_decode_ready,ID_EX_reg_mret_valid,EX_LS_reg_mret_valid);
 FF_D_without_asyn_rst #(1)  u_sret_valid    (clk,EX_ID_decode_ready,ID_EX_reg_sret_valid,EX_LS_reg_sret_valid);
+FF_D_without_asyn_rst #(1)  u_dret_valid    (clk,EX_ID_decode_ready,ID_EX_reg_dret_valid,EX_LS_reg_dret_valid);
 FF_D_without_asyn_rst #(64) u_trap_cause    (clk,EX_ID_decode_ready,ID_EX_reg_trap_cause,EX_LS_reg_trap_cause);
 FF_D_without_asyn_rst #(64) u_trap_tval     (clk,EX_ID_decode_ready,ID_EX_reg_trap_tval, EX_LS_reg_trap_tval);
 //operand

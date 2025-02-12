@@ -91,6 +91,7 @@ module lsu (
     input                   EX_LS_reg_trap_valid,
     input                   EX_LS_reg_mret_valid,
     input                   EX_LS_reg_sret_valid,
+    input                   EX_LS_reg_dret_valid,
     input  [63:0]           EX_LS_reg_trap_cause,
     input  [63:0]           EX_LS_reg_trap_tval,
     //operand
@@ -107,6 +108,7 @@ module lsu (
     output                  LS_WB_reg_trap_valid,
     output                  LS_WB_reg_mret_valid,
     output                  LS_WB_reg_sret_valid,
+    output                  LS_WB_reg_dret_valid,
     output [63:0]           LS_WB_reg_trap_cause,
     output [63:0]           LS_WB_reg_trap_tval,
     //csr
@@ -627,9 +629,9 @@ assign lsu_bready           = 1'b1;
 //commom
 assign LS_EX_execute_ready  = (EX_LS_reg_execute_valid & ((!LS_WB_reg_ls_valid) | WB_LS_ls_ready) & 
                                 ((((!EX_LS_reg_load_valid) | read_finish) & ((!EX_LS_reg_store_valid) | write_finish) & 
-                                ((!EX_LS_reg_atomic_valid) | atomic_finish)) | trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid) & 
-                                (!WB_LS_flush_flag) & (!(LS_WB_reg_ls_valid & (LS_WB_reg_trap_valid | LS_WB_reg_mret_valid | LS_WB_reg_sret_valid))));
-assign LS_EX_flush_flag     = (WB_LS_flush_flag | (LS_WB_reg_ls_valid & (LS_WB_reg_trap_valid | LS_WB_reg_mret_valid | LS_WB_reg_sret_valid)));
+                                ((!EX_LS_reg_atomic_valid) | atomic_finish)) | trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid | EX_LS_reg_dret_valid) & 
+                                (!WB_LS_flush_flag) & (!(LS_WB_reg_ls_valid & (LS_WB_reg_trap_valid | LS_WB_reg_mret_valid | LS_WB_reg_sret_valid | LS_WB_reg_dret_valid))));
+assign LS_EX_flush_flag     = (WB_LS_flush_flag | (LS_WB_reg_ls_valid & (LS_WB_reg_trap_valid | LS_WB_reg_mret_valid | LS_WB_reg_sret_valid | LS_WB_reg_dret_valid)));
 FF_D_with_syn_rst #(
     .DATA_LEN 	( 1  ),
     .RST_DATA 	( 0  )
@@ -649,6 +651,7 @@ FF_D_without_asyn_rst #(64) u_next_PC       (clk,LS_EX_execute_ready,EX_LS_reg_n
 FF_D_without_asyn_rst #(1)  u_trap_valid    (clk,LS_EX_execute_ready,          trap_valid,LS_WB_reg_trap_valid);
 FF_D_without_asyn_rst #(1)  u_mret_valid    (clk,LS_EX_execute_ready,EX_LS_reg_mret_valid,LS_WB_reg_mret_valid);
 FF_D_without_asyn_rst #(1)  u_sret_valid    (clk,LS_EX_execute_ready,EX_LS_reg_sret_valid,LS_WB_reg_sret_valid);
+FF_D_without_asyn_rst #(1)  u_dret_valid    (clk,LS_EX_execute_ready,EX_LS_reg_dret_valid,LS_WB_reg_dret_valid);
 FF_D_without_asyn_rst #(64) u_trap_cause    (clk,LS_EX_execute_ready,          trap_cause,LS_WB_reg_trap_cause);
 FF_D_without_asyn_rst #(64) u_trap_tval     (clk,LS_EX_execute_ready,           trap_tval,LS_WB_reg_trap_tval);
 //Zicsr:
