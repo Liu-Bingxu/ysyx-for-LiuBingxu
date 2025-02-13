@@ -188,7 +188,7 @@ FF_D_with_syn_rst #(
 u_halt_req(
     .clk      	( dm_clk                            ),
     .rst_n    	( dm_rst_n                          ),
-    .syn_rst  	( dmcontrol_wen & dm_reg_data[0]    ),
+    .syn_rst  	( dmcontrol_wen & (!dm_reg_data[0]) ),
     .wen      	( dmcontrol_wen                     ),
     .data_in  	( dm_reg_data[31]                   ),
     .data_out 	( halt_req                          )
@@ -200,7 +200,7 @@ FF_D_with_syn_rst #(
 u_hartreset(
     .clk      	( dm_clk                            ),
     .rst_n    	( dm_rst_n                          ),
-    .syn_rst  	( dmcontrol_wen & dm_reg_data[0]    ),
+    .syn_rst  	( dmcontrol_wen & (!dm_reg_data[0]) ),
     .wen      	( dmcontrol_wen                     ),
     .data_in  	( dm_reg_data[29]                   ),
     .data_out 	( hartreset                         )
@@ -212,7 +212,7 @@ FF_D_with_syn_rst #(
 u_ndmreset(
     .clk      	( dm_clk                            ),
     .rst_n    	( dm_rst_n                          ),
-    .syn_rst  	( dmcontrol_wen & dm_reg_data[0]    ),
+    .syn_rst  	( dmcontrol_wen & (!dm_reg_data[0]) ),
     .wen      	( dmcontrol_wen                     ),
     .data_in  	( dm_reg_data[1]                    ),
     .data_out 	( ndmreset                          )
