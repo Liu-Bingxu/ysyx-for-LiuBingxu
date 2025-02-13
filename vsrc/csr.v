@@ -1957,7 +1957,7 @@ assign ebreak_entry_debug   =   (dcsr_ebreakm & (current_priv_status == 2'h3)) |
                                 (dcsr_ebreaks & (current_priv_status == 2'h1)) |
                                 (dcsr_ebreaku & (current_priv_status == 2'h0));
 assign tvec                 = ((trap_debug_mode_valid) ? {52'h0, `DEBUG_ENTRY_TVEC} : 
-                                    ((debug_exception) ? {52'h0, `DEBUG_EXCEPTION_TVEC} : 
+                                    ((debug_exception) ? ((LS_WB_reg_trap_cause[5:0] == 6'h3) ? {52'h0, `DEBUG_ENTRY_TVEC} : {52'h0, `DEBUG_EXCEPTION_TVEC}) : 
                                         ((trap_s_mode_valid) ? stvec : mtvec))
                             );
 assign trap_addr            = (cause[63] & (tvec[1:0] == 2'h1)) ? ({tvec[63:2], 2'h0} + {cause[61:0], 2'h0}) : tvec;
