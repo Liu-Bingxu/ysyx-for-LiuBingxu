@@ -1870,7 +1870,7 @@ assign interrupt_cause          = (m_mode_interrupt_pending[11]) ? 64'h8000_0000
                                         )
                                     )
                                 );
-assign interrupt_debug_cause    = (debug_step_flag == 2'h2) ? 3'h3 : 3'h4;
+assign interrupt_debug_cause    = (halt_req) ? 3'h3 : 3'h4;
 
 endmodule //interrupt_control
 
