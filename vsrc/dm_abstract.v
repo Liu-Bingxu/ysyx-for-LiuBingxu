@@ -425,7 +425,7 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
     if(!dm_rst_n)begin
         dm_abstract_cmderr <= 3'h0; //? CMDERR_NONE
     end
-    else if((!busy) & dm_abstractcs_visit)begin
+    else if(dm_abstractcs_visit)begin
         dm_abstract_cmderr <= dm_abstract_cmderr & (~dm_reg_data[10:8]);
     end
     else if((dm_abstract_cmderr == 3'h0) & (axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_EXCEPTION_START}))begin
