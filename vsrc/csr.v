@@ -1857,7 +1857,7 @@ assign s_mode_interrupt_pending = (sie & sip);
 
 assign interrupt_m_flag         = (m_mode_interrupt_enable & m_mode_interrupt_pending[interrupt_cause[5:0]] & (!interrupt_s_flag) & (!interrupt_debug_flag) & (!debug_mode)); 
 assign interrupt_s_flag         = (s_mode_interrupt_enable & s_mode_interrupt_pending[interrupt_cause[5:0]] & (!interrupt_debug_flag) & (!debug_mode)); 
-assign interrupt_debug_flag     = ((halt_req | (debug_step_flag == 2'h2)) & (!debug_mode));
+assign interrupt_debug_flag     = ((halt_req | ((debug_step_flag == 2'h1) & EX_LS_reg_execute_valid) | (debug_step_flag == 2'h2)) & (!debug_mode));
 
 assign interrupt_cause          = (m_mode_interrupt_pending[11]) ? 64'h8000_0000_0000_000B : (
                                     (m_mode_interrupt_pending[3]) ? 64'h8000_0000_0000_0003 : (
