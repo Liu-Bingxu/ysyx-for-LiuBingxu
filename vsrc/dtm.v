@@ -74,8 +74,8 @@ reg         busy_sticky;
 
 assign      dmisata = (in_busy | busy_sticky) ? 2'h3 : transfer_res[1:0];
 
-wire        dmi_rst     = (jtag_tap_state == UPDATE_IR) & shift_reg[16];
-wire        dmihard_rst = (jtag_tap_state == UPDATE_IR) & shift_reg[17];
+wire        dmi_rst     = (jtag_tap_state == UPDATE_DR) & (ir_reg == 5'h10) & shift_reg[16];
+wire        dmihard_rst = (jtag_tap_state == UPDATE_DR) & (ir_reg == 5'h10) & shift_reg[17];
 
 always @(posedge tck or negedge trst_n) begin
     if(!trst_n)begin
