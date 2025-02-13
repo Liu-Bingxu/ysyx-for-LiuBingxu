@@ -1963,7 +1963,7 @@ assign tvec                 = ((trap_debug_mode_valid) ? {52'h0, `DEBUG_ENTRY_TV
 assign trap_addr            = (cause[63] & (tvec[1:0] == 2'h1)) ? ({tvec[63:2], 2'h0} + {cause[61:0], 2'h0}) : tvec;
 assign trap_m_interrupt     = (interrupt_m_flag & ((!(EX_LS_reg_execute_valid | LS_WB_reg_ls_valid)) | (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid)));
 assign trap_s_interrupt     = (interrupt_s_flag & ((!(EX_LS_reg_execute_valid | LS_WB_reg_ls_valid)) | (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid)));
-assign trap_debug_interrupt = (interrupt_debug_flag & ((!(EX_LS_reg_execute_valid | LS_WB_reg_ls_valid)) | (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid)));
+assign trap_debug_interrupt = (interrupt_debug_flag & ((!(EX_LS_reg_execute_valid | LS_WB_reg_ls_valid)) | (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & (interrupt_debug_cause == 3'h3))));
 assign trap_m_exception     = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & (!trap_s_exception) & (!trap_debug_mode_valid) & (!debug_mode));
 assign trap_s_exception     = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & medeleg[LS_WB_reg_trap_cause[5:0]] & (current_priv_status <= `PRV_S) & (!trap_debug_mode_valid) & (!debug_mode));
 assign trap_debug_exception = (LS_WB_reg_ls_valid & LS_WB_reg_trap_valid & (LS_WB_reg_trap_cause[5:0] == 6'h3) & ebreak_entry_debug & (!debug_mode));
