@@ -2,6 +2,12 @@
 module core_debugger_top (
     input       clock,
     input       rst_n,
+
+    input 		tck,
+    input		tms,
+    input		tdi,
+    output		tdo,
+
     input       stip_asyn,
     input       seip_asyn,
     input       ssip_asyn,
@@ -227,6 +233,40 @@ wire [AXI_ID_W-1:0] mst3_arid;
 wire [AXI_AUSER_W-1:0] mst3_aruser;
 wire mst3_rready;
 
+// output declaration of module dm_top
+wire halt_req;
+wire hartreset;
+wire ndmreset;
+wire slv2_awvalid;
+wire [AXI_ADDR_W-1:0] slv2_awaddr;
+wire [8-1:0] slv2_awlen;
+wire [3-1:0] slv2_awsize;
+wire [2-1:0] slv2_awburst;
+wire slv2_awlock;
+wire [4-1:0] slv2_awcache;
+wire [3-1:0] slv2_awprot;
+wire [4-1:0] slv2_awqos;
+wire [4-1:0] slv2_awregion;
+wire [AXI_ID_W-1:0] slv2_awid;
+wire slv2_wvalid;
+wire slv2_wlast;
+wire [AXI_DATA_W-1:0] slv2_wdata;
+wire [AXI_DATA_W/8-1:0] slv2_wstrb;
+wire slv2_bready;
+wire slv2_arvalid;
+wire [AXI_ADDR_W-1:0] slv2_araddr;
+wire [8-1:0] slv2_arlen;
+wire [3-1:0] slv2_arsize;
+wire [2-1:0] slv2_arburst;
+wire slv2_arlock;
+wire [4-1:0] slv2_arcache;
+wire [3-1:0] slv2_arprot;
+wire [4-1:0] slv2_arqos;
+wire [4-1:0] slv2_arregion;
+wire [AXI_ID_W-1:0] slv2_arid;
+wire slv2_rready;
+
+
 // output declaration of module dummy_axi_slv0
 wire mst0_awready;
 wire mst0_wready;
@@ -279,18 +319,67 @@ wire [2-1:0] mst3_rresp;
 wire [AXI_DATA_W-1:0] mst3_rdata;
 wire mst3_rlast;
 
+reg core_rst_n_r;
+reg core_rst_n;
+reg dm_rst_n_r;
+reg dm_rst_n;
+reg trst_n_r;
+reg trst_n;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        core_rst_n_r <= 1'b0;
+        core_rst_n   <= 1'b0;
+    end
+    else if(hartreset)begin
+        core_rst_n_r <= 1'b0;
+        core_rst_n   <= 1'b0;
+    end
+    else if(ndmreset)begin
+        core_rst_n_r <= 1'b0;
+        core_rst_n   <= 1'b0;
+    end
+    else begin
+        core_rst_n_r <= 1'b1;
+        core_rst_n   <= core_rst_n_r;
+    end
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        dm_rst_n_r <= 1'b0;
+        dm_rst_n   <= 1'b0;
+    end
+    else begin
+        dm_rst_n_r <= 1'b1;
+        dm_rst_n   <= dm_rst_n_r;
+    end
+end
+
+always @(posedge tck or negedge rst_n) begin
+    if(!rst_n)begin
+        trst_n_r <= 1'b0;
+        trst_n   <= 1'b0;
+    end
+    else begin
+        trst_n_r <= 1'b1;
+        trst_n   <= trst_n_r;
+    end
+end
+
 core_top #(
     .MHARTID 	(0          ),
     .RST_PC  	(`RST_PC    ))
 u_core_top(
     .clk         	(clk          ),
-    .rst_n       	(rst_n        ),
+    .rst_n       	(core_rst_n   ),
     .stip_asyn   	(stip_asyn    ),
     .seip_asyn   	(seip_asyn    ),
     .ssip_asyn   	(ssip_asyn    ),
     .mtip_asyn   	(mtip_asyn    ),
     .meip_asyn   	(meip_asyn    ),
     .msip_asyn   	(msip_asyn    ),
+    .halt_req       (halt_req     ),
     .MXR         	(MXR          ),
     .SUM         	(SUM          ),
     .MPRV        	(MPRV         ),
@@ -368,13 +457,13 @@ axicb_crossbar_top #(
     .MST1_ID_MASK        	(8'h20       ),
     .MST1_RW             	(0        ),
 
-    // .MST2_CDC            	(0        ),
-    // .MST2_OSTDREQ_NUM    	(4        ),
-    // .MST2_OSTDREQ_SIZE   	(1        ),
-    // .MST2_PRIORITY       	(0        ),
-    // .MST2_ROUTES         	(1_1_1_1  ),
-    // .MST2_ID_MASK        	(30       ),
-    // .MST2_RW             	(0        ),
+    .MST2_CDC            	(1        ),
+    .MST2_OSTDREQ_NUM    	(4        ),
+    .MST2_OSTDREQ_SIZE   	(1        ),
+    .MST2_PRIORITY       	(0        ),
+    .MST2_ROUTES         	(4'b1_1_1_1  ),
+    .MST2_ID_MASK        	(8'h40       ),
+    .MST2_RW             	(0        ),
 
     // .MST3_CDC            	(0        ),
     // .MST3_OSTDREQ_NUM    	(4        ),
@@ -384,16 +473,16 @@ axicb_crossbar_top #(
     // .MST3_ID_MASK        	(40       ),
     // .MST3_RW             	(0        ),
 
-    .SLV0_CDC            	(0        ),
-    .SLV0_START_ADDR     	(64'd0        ),
-    .SLV0_END_ADDR       	(64'd4095     ),
+    .SLV0_CDC            	(1        ),
+    .SLV0_START_ADDR     	(64'h0000_0000    ),
+    .SLV0_END_ADDR       	(64'h0000_0fff    ),
     .SLV0_OSTDREQ_NUM    	(4        ),
     .SLV0_OSTDREQ_SIZE   	(1        ),
     .SLV0_KEEP_BASE_ADDR 	(1        ),
 
     .SLV1_CDC            	(0        ),
-    .SLV1_START_ADDR     	(64'd4096     ),
-    .SLV1_END_ADDR       	(64'd8191     ),
+    .SLV1_START_ADDR     	(64'h0000_1000    ),
+    .SLV1_END_ADDR       	(64'h7fff_ffff    ),
     .SLV1_OSTDREQ_NUM    	(4        ),
     .SLV1_OSTDREQ_SIZE   	(1        ),
     .SLV1_KEEP_BASE_ADDR 	(1        ),
@@ -413,11 +502,11 @@ axicb_crossbar_top #(
     .SLV3_KEEP_BASE_ADDR 	(1        ))
 u_axicb_crossbar_top(
     .aclk          	(clk            ),
-    .aresetn       	(rst_n          ),
+    .aresetn       	(core_rst_n     ),
     .srst          	(1'b0           ),
 
     .slv0_aclk     	(clk            ),
-    .slv0_aresetn  	(rst_n          ),
+    .slv0_aresetn  	(core_rst_n     ),
     .slv0_srst     	(1'b0           ),
     .slv0_awvalid  	(1'b0           ),
     .slv0_awready  	(slv0_awready   ),
@@ -465,7 +554,7 @@ u_axicb_crossbar_top(
     .slv0_ruser    	(slv0_ruser     ),
 
     .slv1_aclk     	(clk            ),
-    .slv1_aresetn  	(rst_n          ),
+    .slv1_aresetn  	(core_rst_n     ),
     .slv1_srst     	(1'b0           ),
     .slv1_awvalid  	(lsu_awvalid    ),
     .slv1_awready  	(slv1_awready   ),
@@ -513,47 +602,47 @@ u_axicb_crossbar_top(
     .slv1_ruser    	(slv1_ruser     ),
 
     .slv2_aclk     	(clk            ),
-    .slv2_aresetn  	(rst_n          ),
+    .slv2_aresetn  	(dm_rst_n       ),
     .slv2_srst     	(1'b0           ),
-    .slv2_awvalid  	(1'b0           ),
+    .slv2_awvalid  	(slv2_awvalid   ),
     .slv2_awready  	(slv2_awready   ),
-    .slv2_awaddr   	(64'h0          ),
-    .slv2_awlen    	(8'h0           ),
-    .slv2_awsize   	(3'h0           ),
-    .slv2_awburst  	(2'h0           ),
-    .slv2_awlock   	(1'h0           ),
-    .slv2_awcache  	(4'h0           ),
-    .slv2_awprot   	(3'h0           ),
-    .slv2_awqos    	(4'h0           ),
-    .slv2_awregion 	(4'h0           ),
-    .slv2_awid     	(8'h2           ),
-    .slv2_awuser   	(1'h0           ),
-    .slv2_wvalid   	(1'h0           ),
+    .slv2_awaddr   	(slv2_awaddr    ),
+    .slv2_awlen    	(slv2_awlen     ),
+    .slv2_awsize   	(slv2_awsize    ),
+    .slv2_awburst  	(slv2_awburst   ),
+    .slv2_awlock   	(slv2_awlock    ),
+    .slv2_awcache  	(slv2_awcache   ),
+    .slv2_awprot   	(slv2_awprot    ),
+    .slv2_awqos    	(slv2_awqos     ),
+    .slv2_awregion 	(slv2_awregion  ),
+    .slv2_awid     	(slv2_awid      ),
+    .slv2_awuser   	(1'b0           ),
+    .slv2_wvalid   	(slv2_wvalid    ),
     .slv2_wready   	(slv2_wready    ),
-    .slv2_wlast    	(1'h0           ),
-    .slv2_wdata    	(64'h0          ),
-    .slv2_wstrb    	(8'h0           ),
+    .slv2_wlast    	(slv2_wlast     ),
+    .slv2_wdata    	(slv2_wdata     ),
+    .slv2_wstrb    	(slv2_wstrb     ),
     .slv2_wuser    	(1'b0           ),
     .slv2_bvalid   	(slv2_bvalid    ),
-    .slv2_bready   	(1'h0           ),
+    .slv2_bready   	(slv2_bready    ),
     .slv2_bid      	(slv2_bid       ),
     .slv2_bresp    	(slv2_bresp     ),
     .slv2_buser    	(slv2_buser     ),
-    .slv2_arvalid  	(1'b0           ),
+    .slv2_arvalid  	(slv2_arvalid   ),
     .slv2_arready  	(slv2_arready   ),
-    .slv2_araddr   	(64'h0          ),
-    .slv2_arlen    	(8'h0           ),
-    .slv2_arsize   	(3'h0           ),
-    .slv2_arburst  	(2'h0           ),
-    .slv2_arlock   	(1'h0           ),
-    .slv2_arcache  	(4'h0           ),
-    .slv2_arprot   	(3'h0           ),
-    .slv2_arqos    	(4'h0           ),
-    .slv2_arregion 	(4'h0           ),
-    .slv2_arid     	(8'h2           ),
+    .slv2_araddr   	(slv2_araddr    ),
+    .slv2_arlen    	(slv2_arlen     ),
+    .slv2_arsize   	(slv2_arsize    ),
+    .slv2_arburst  	(slv2_arburst   ),
+    .slv2_arlock   	(slv2_arlock    ),
+    .slv2_arcache  	(slv2_arcache   ),
+    .slv2_arprot   	(slv2_arprot    ),
+    .slv2_arqos    	(slv2_arqos     ),
+    .slv2_arregion 	(slv2_arregion  ),
+    .slv2_arid     	(slv2_arid      ),
     .slv2_aruser   	(1'b0           ),
     .slv2_rvalid   	(slv2_rvalid    ),
-    .slv2_rready   	(1'b0           ),
+    .slv2_rready   	(slv2_rready    ),
     .slv2_rid      	(slv2_rid       ),
     .slv2_rresp    	(slv2_rresp     ),
     .slv2_rdata    	(slv2_rdata     ),
@@ -561,7 +650,7 @@ u_axicb_crossbar_top(
     .slv2_ruser    	(slv2_ruser     ),
 
     .slv3_aclk     	(clk            ),
-    .slv3_aresetn  	(rst_n          ),
+    .slv3_aresetn  	(core_rst_n     ),
     .slv3_srst     	(1'b0           ),
     .slv3_awvalid  	(1'b0           ),
     .slv3_awready  	(slv3_awready   ),
@@ -609,7 +698,7 @@ u_axicb_crossbar_top(
     .slv3_ruser    	(slv3_ruser     ),
 
     .mst0_aclk     	(clk            ),
-    .mst0_aresetn  	(rst_n          ),
+    .mst0_aresetn  	(dm_rst_n       ),
     .mst0_srst     	(1'b0           ),
     .mst0_awvalid  	(mst0_awvalid   ),
     .mst0_awready  	(mst0_awready   ),
@@ -657,7 +746,7 @@ u_axicb_crossbar_top(
     .mst0_ruser    	(1'b0           ),
 
     .mst1_aclk      (clk            ),
-    .mst1_aresetn   (rst_n          ),
+    .mst1_aresetn   (core_rst_n     ),
     .mst1_srst      (1'b0           ),
     .mst1_awvalid  	(mst1_awvalid   ),
     .mst1_awready  	(mst1_awready   ),
@@ -705,7 +794,7 @@ u_axicb_crossbar_top(
     .mst1_ruser    	(1'b0           ),
 
     .mst2_aclk     	(clk            ),
-    .mst2_aresetn  	(rst_n          ),
+    .mst2_aresetn  	(core_rst_n     ),
     .mst2_srst     	(1'b0           ),
     .mst2_awvalid  	(mst2_awvalid   ),
     .mst2_awready  	(mst2_awready   ),
@@ -753,7 +842,7 @@ u_axicb_crossbar_top(
     .mst2_ruser    	(1'b0           ),
 
     .mst3_aclk     	(clk            ),
-    .mst3_aresetn  	(rst_n          ),
+    .mst3_aresetn  	(core_rst_n     ),
     .mst3_srst     	(1'b0           ),
     .mst3_awvalid  	(mst3_awvalid   ),
     .mst3_awready  	(mst3_awready   ),
@@ -801,51 +890,51 @@ u_axicb_crossbar_top(
     .mst3_ruser    	(1'b0           )
 );
 
-dummy_axi_slv #(
-    .AXI_ADDR_W 	(AXI_ADDR_W     ),
-    .AXI_ID_W   	(AXI_ID_W       ),
-    .AXI_DATA_W 	(AXI_DATA_W     ))
-u_dummy_axi_slv0(
-    .mst_awvalid  	(mst0_awvalid   ),
-    .mst_awready  	(mst0_awready   ),
-    .mst_awaddr   	(mst0_awaddr    ),
-    .mst_awlen    	(mst0_awlen     ),
-    .mst_awsize   	(mst0_awsize    ),
-    .mst_awburst  	(mst0_awburst   ),
-    .mst_awlock   	(mst0_awlock    ),
-    .mst_awcache  	(mst0_awcache   ),
-    .mst_awprot   	(mst0_awprot    ),
-    .mst_awqos    	(mst0_awqos     ),
-    .mst_awregion 	(mst0_awregion  ),
-    .mst_awid     	(mst0_awid      ),
-    .mst_wvalid   	(mst0_wvalid    ),
-    .mst_wready   	(mst0_wready    ),
-    .mst_wlast    	(mst0_wlast     ),
-    .mst_wdata    	(mst0_wdata     ),
-    .mst_wstrb    	(mst0_wstrb     ),
-    .mst_bvalid   	(mst0_bvalid    ),
-    .mst_bready   	(mst0_bready    ),
-    .mst_bid      	(mst0_bid       ),
-    .mst_bresp    	(mst0_bresp     ),
-    .mst_arvalid  	(mst0_arvalid   ),
-    .mst_arready  	(mst0_arready   ),
-    .mst_araddr   	(mst0_araddr    ),
-    .mst_arlen    	(mst0_arlen     ),
-    .mst_arsize   	(mst0_arsize    ),
-    .mst_arburst  	(mst0_arburst   ),
-    .mst_arlock   	(mst0_arlock    ),
-    .mst_arcache  	(mst0_arcache   ),
-    .mst_arprot   	(mst0_arprot    ),
-    .mst_arqos    	(mst0_arqos     ),
-    .mst_arregion 	(mst0_arregion  ),
-    .mst_arid     	(mst0_arid      ),
-    .mst_rvalid   	(mst0_rvalid    ),
-    .mst_rready   	(mst0_rready    ),
-    .mst_rid      	(mst0_rid       ),
-    .mst_rresp    	(mst0_rresp     ),
-    .mst_rdata    	(mst0_rdata     ),
-    .mst_rlast    	(mst0_rlast     )
-);
+// dummy_axi_slv #(
+//     .AXI_ADDR_W 	(AXI_ADDR_W     ),
+//     .AXI_ID_W   	(AXI_ID_W       ),
+//     .AXI_DATA_W 	(AXI_DATA_W     ))
+// u_dummy_axi_slv0(
+//     .mst_awvalid  	(mst0_awvalid   ),
+//     .mst_awready  	(mst0_awready   ),
+//     .mst_awaddr   	(mst0_awaddr    ),
+//     .mst_awlen    	(mst0_awlen     ),
+//     .mst_awsize   	(mst0_awsize    ),
+//     .mst_awburst  	(mst0_awburst   ),
+//     .mst_awlock   	(mst0_awlock    ),
+//     .mst_awcache  	(mst0_awcache   ),
+//     .mst_awprot   	(mst0_awprot    ),
+//     .mst_awqos    	(mst0_awqos     ),
+//     .mst_awregion 	(mst0_awregion  ),
+//     .mst_awid     	(mst0_awid      ),
+//     .mst_wvalid   	(mst0_wvalid    ),
+//     .mst_wready   	(mst0_wready    ),
+//     .mst_wlast    	(mst0_wlast     ),
+//     .mst_wdata    	(mst0_wdata     ),
+//     .mst_wstrb    	(mst0_wstrb     ),
+//     .mst_bvalid   	(mst0_bvalid    ),
+//     .mst_bready   	(mst0_bready    ),
+//     .mst_bid      	(mst0_bid       ),
+//     .mst_bresp    	(mst0_bresp     ),
+//     .mst_arvalid  	(mst0_arvalid   ),
+//     .mst_arready  	(mst0_arready   ),
+//     .mst_araddr   	(mst0_araddr    ),
+//     .mst_arlen    	(mst0_arlen     ),
+//     .mst_arsize   	(mst0_arsize    ),
+//     .mst_arburst  	(mst0_arburst   ),
+//     .mst_arlock   	(mst0_arlock    ),
+//     .mst_arcache  	(mst0_arcache   ),
+//     .mst_arprot   	(mst0_arprot    ),
+//     .mst_arqos    	(mst0_arqos     ),
+//     .mst_arregion 	(mst0_arregion  ),
+//     .mst_arid     	(mst0_arid      ),
+//     .mst_rvalid   	(mst0_rvalid    ),
+//     .mst_rready   	(mst0_rready    ),
+//     .mst_rid      	(mst0_rid       ),
+//     .mst_rresp    	(mst0_rresp     ),
+//     .mst_rdata    	(mst0_rdata     ),
+//     .mst_rlast    	(mst0_rlast     )
+// );
 
 dummy_axi_slv #(
     .AXI_ADDR_W 	(AXI_ADDR_W     ),
@@ -945,7 +1034,7 @@ sim_sram_dpic #(
     .AXI_DATA_W 	(64  ))
 u_sim_sram_dpic(
     .aclk         	(clk           ),
-    .arst_n       	(rst_n         ),
+    .arst_n       	(core_rst_n    ),
     .mst_awvalid  	(mst2_awvalid  ),
     .mst_awready  	(mst2_awready  ),
     .mst_awaddr   	(mst2_awaddr   ),
@@ -993,7 +1082,7 @@ sim_periph_dpic #(
     .AXI_DATA_W 	(AXI_DATA_W  ))
 u_sim_periph_dpic(
     .aclk         	(clk           ),
-    .arst_n       	(rst_n         ),
+    .arst_n       	(core_rst_n    ),
     .mst_awvalid  	(mst3_awvalid  ),
     .mst_awready  	(mst3_awready  ),
     .mst_awaddr   	(mst3_awaddr   ),
@@ -1034,6 +1123,106 @@ u_sim_periph_dpic(
     .mst_rdata    	(mst3_rdata    ),
     .mst_rlast    	(mst3_rlast    )
 );
+
+
+dm_top #(
+    .ABITS      	(7           ),
+    .AXI_ID_SB  	(8'h40       ),
+    .AXI_ADDR_W 	(AXI_ADDR_W  ),
+    .AXI_ID_W   	(AXI_ID_W    ),
+    .AXI_DATA_W 	(AXI_DATA_W  ))
+u_dm_top(
+    .dm_clk        	(clk            ),
+    .dm_rst_n      	(dm_rst_n       ),
+    .dm_core_rst_n 	(core_rst_n     ),
+    .halt_req      	(halt_req       ),
+    .hartreset     	(hartreset      ),
+    .ndmreset      	(ndmreset       ),
+    .tck           	(tck            ),
+    .trst_n        	(trst_n         ),
+    .tms           	(tms            ),
+    .tdi           	(tdi            ),
+    .tdo           	(tdo            ),
+    .slv_awvalid   	(slv2_awvalid   ),
+    .slv_awready   	(slv2_awready   ),
+    .slv_awaddr    	(slv2_awaddr    ),
+    .slv_awlen     	(slv2_awlen     ),
+    .slv_awsize    	(slv2_awsize    ),
+    .slv_awburst   	(slv2_awburst   ),
+    .slv_awlock    	(slv2_awlock    ),
+    .slv_awcache   	(slv2_awcache   ),
+    .slv_awprot    	(slv2_awprot    ),
+    .slv_awqos     	(slv2_awqos     ),
+    .slv_awregion  	(slv2_awregion  ),
+    .slv_awid      	(slv2_awid      ),
+    .slv_wvalid    	(slv2_wvalid    ),
+    .slv_wready    	(slv2_wready    ),
+    .slv_wlast     	(slv2_wlast     ),
+    .slv_wdata     	(slv2_wdata     ),
+    .slv_wstrb     	(slv2_wstrb     ),
+    .slv_bvalid    	(slv2_bvalid    ),
+    .slv_bready    	(slv2_bready    ),
+    .slv_bid       	(slv2_bid       ),
+    .slv_bresp     	(slv2_bresp     ),
+    .slv_arvalid   	(slv2_arvalid   ),
+    .slv_arready   	(slv2_arready   ),
+    .slv_araddr    	(slv2_araddr    ),
+    .slv_arlen     	(slv2_arlen     ),
+    .slv_arsize    	(slv2_arsize    ),
+    .slv_arburst   	(slv2_arburst   ),
+    .slv_arlock    	(slv2_arlock    ),
+    .slv_arcache   	(slv2_arcache   ),
+    .slv_arprot    	(slv2_arprot    ),
+    .slv_arqos     	(slv2_arqos     ),
+    .slv_arregion  	(slv2_arregion  ),
+    .slv_arid      	(slv2_arid      ),
+    .slv_rvalid    	(slv2_rvalid    ),
+    .slv_rready    	(slv2_rready    ),
+    .slv_rid       	(slv2_rid       ),
+    .slv_rresp     	(slv2_rresp     ),
+    .slv_rdata     	(slv2_rdata     ),
+    .slv_rlast     	(slv2_rlast     ),
+    .mst_awvalid   	(mst0_awvalid   ),
+    .mst_awready   	(mst0_awready   ),
+    .mst_awaddr    	(mst0_awaddr    ),
+    .mst_awlen     	(mst0_awlen     ),
+    .mst_awsize    	(mst0_awsize    ),
+    .mst_awburst   	(mst0_awburst   ),
+    .mst_awlock    	(mst0_awlock    ),
+    .mst_awcache   	(mst0_awcache   ),
+    .mst_awprot    	(mst0_awprot    ),
+    .mst_awqos     	(mst0_awqos     ),
+    .mst_awregion  	(mst0_awregion  ),
+    .mst_awid      	(mst0_awid      ),
+    .mst_wvalid    	(mst0_wvalid    ),
+    .mst_wready    	(mst0_wready    ),
+    .mst_wlast     	(mst0_wlast     ),
+    .mst_wdata     	(mst0_wdata     ),
+    .mst_wstrb     	(mst0_wstrb     ),
+    .mst_bvalid    	(mst0_bvalid    ),
+    .mst_bready    	(mst0_bready    ),
+    .mst_bid       	(mst0_bid       ),
+    .mst_bresp     	(mst0_bresp     ),
+    .mst_arvalid   	(mst0_arvalid   ),
+    .mst_arready   	(mst0_arready   ),
+    .mst_araddr    	(mst0_araddr    ),
+    .mst_arlen     	(mst0_arlen     ),
+    .mst_arsize    	(mst0_arsize    ),
+    .mst_arburst   	(mst0_arburst   ),
+    .mst_arlock    	(mst0_arlock    ),
+    .mst_arcache   	(mst0_arcache   ),
+    .mst_arprot    	(mst0_arprot    ),
+    .mst_arqos     	(mst0_arqos     ),
+    .mst_arregion  	(mst0_arregion  ),
+    .mst_arid      	(mst0_arid      ),
+    .mst_rvalid    	(mst0_rvalid    ),
+    .mst_rready    	(mst0_rready    ),
+    .mst_rid       	(mst0_rid       ),
+    .mst_rresp     	(mst0_rresp     ),
+    .mst_rdata     	(mst0_rdata     ),
+    .mst_rlast     	(mst0_rlast     )
+);
+
 
 DifftestArchIntRegState u_DifftestArchIntRegState(
     .io_value_0  	(64'h0                                  ),
