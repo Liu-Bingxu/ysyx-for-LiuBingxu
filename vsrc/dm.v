@@ -247,9 +247,6 @@ assign dm_control    = {halt_req, 1'b0, hartreset, 1'b0, 1'b0, 1'b0, 10'h0, 10'h
 assign dm_status     = {7'h0, ndmreset, 1'b0, impebreak, 2'h0, dm_havereset, dm_havereset, allresumeack, anyresumeack, 2'h0, 2'h0,
                         (!anyhalt), (!allhalt), allhalt, anyhalt, 1'b1, 1'b0, 1'b0, 1'b0, 4'h2};
 
-assign dm_reg_addr = dtm2dm_data_out[ABITS + 33:34];
-assign dm_reg_data = dtm2dm_data_out[33:2];
-
 generate 
     if(READ_THROUGH == "TRUE") begin : read_through
         reg [ABITS + 33 : 0] trans_data_reg;
