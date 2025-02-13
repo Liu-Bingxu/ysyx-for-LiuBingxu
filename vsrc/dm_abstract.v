@@ -163,7 +163,7 @@ wire                      mst_rsel_data         = (({mst_araddr[AXI_ADDR_W - 1 :
 wire [AXI_DATA_W    -1:0] mst_rdata_data;
 wire                      mst_rsel_progbuf      = ({mst_araddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_PROGBUF_START});
 wire [AXI_DATA_W    -1:0] mst_rdata_progbuf;
-wire                      mst_rsel_sbstract     = (({mst_araddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_ABSTRACT_START}) 
+wire                      mst_rsel_sbstract     = (({mst_araddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_ROM_WHERETO}) 
                                                     & (mst_araddr[5:4] != 2'h0));
 wire [AXI_DATA_W    -1:0] mst_rdata_abstract;
 wire                      mst_rsel_rom_whereto  = ({mst_araddr[AXI_ADDR_W - 1 : 2], 2'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_ROM_WHERETO});
