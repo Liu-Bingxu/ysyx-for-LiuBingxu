@@ -83,14 +83,14 @@ wire [31:0]                   dm_systembus_addr_increment[AXI_ADDR_W/32 -1 : 0];
 wire                          dm_systembus_addr_wen[AXI_ADDR_W/32 -1 : 0];
 wire                          dm_systembus_addr_dtm_wen[AXI_ADDR_W/32 -1 : 0];
 wire                          dm_systembus_addr_increment_wen[AXI_ADDR_W/32 -1 : 0];
-wire                          dm_systembus_addr_dtm_access[AXI_ADDR_W/32 -1 : 0];
+wire [AXI_ADDR_W/32 -1 : 0]   dm_systembus_addr_dtm_access;
 wire [31:0]                   dm_systembus_data[AXI_DATA_W/32 -1 : 0];
 wire [31:0]                   dm_systembus_data_w[AXI_DATA_W/32 -1 : 0];
 wire [31:0]                   dm_systembus_data_axi_w[AXI_DATA_W/32 -1 : 0];
 wire                          dm_systembus_data_wen[AXI_DATA_W/32 -1 : 0];
 wire                          dm_systembus_data_dtm_wen[AXI_DATA_W/32 -1 : 0];
 wire                          dm_systembus_data_axi_wen[AXI_DATA_W/32 -1 : 0];
-wire                          dm_systembus_data_dtm_access[AXI_DATA_W/32 -1 : 0];
+wire [AXI_DATA_W/32 -1 : 0]   dm_systembus_data_dtm_access;
 wire                          dm_systembus_data_dtm_ren[0 : 0];
 
 wire [AXI_ADDR_W    -1:0]     slv_addr;
