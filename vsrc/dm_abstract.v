@@ -350,7 +350,7 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
                 if((dm_abstract_cmderr == 3'h0) & dm_core_halted & ((|dm_abstract_data_dtm_accsee) | (|dm_abstract_progbuf_dtm_accsee)) & dm_abstract_commad_legal)begin
                     dm_abstract_state <= RUNING;
                 end
-                else if((dm_abstract_cmderr == 3'h0) & dm_core_halted & dm_abstractauto_wen & dm_abstract_commad_write_legal)begin
+                else if((dm_abstract_cmderr == 3'h0) & dm_core_halted & dm_abstract_commad_wen & dm_abstract_commad_write_legal)begin
                     dm_abstract_state <= RUNING;
                 end
             end
@@ -376,7 +376,7 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
     else if((!busy) & (dm_abstract_cmderr == 3'h0) & dm_core_halted & ((|dm_abstract_data_dtm_accsee) | (|dm_abstract_progbuf_dtm_accsee)) & dm_abstract_commad_legal)begin
         dm_going_flag <= 1'b1;
     end
-    else if((!busy) & (dm_abstract_cmderr == 3'h0) & dm_core_halted & dm_abstractauto_wen & dm_abstract_commad_write_legal)begin
+    else if((!busy) & (dm_abstract_cmderr == 3'h0) & dm_core_halted & dm_abstract_commad_wen & dm_abstract_commad_write_legal)begin
         dm_going_flag <= 1'b1;
     end
 end
@@ -437,13 +437,13 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
     else if((!busy) & (dm_abstract_cmderr == 3'h0) & (!dm_core_halted) & ((|dm_abstract_data_dtm_accsee) | (|dm_abstract_progbuf_dtm_accsee)) & dm_abstract_commad_legal)begin
         dm_abstract_cmderr <= 3'h4; //? CMDERR_HALTRESUME
     end
-    else if((!busy) & (dm_abstract_cmderr == 3'h0) & (!dm_core_halted) & dm_abstractauto_wen & dm_abstract_commad_write_legal)begin
+    else if((!busy) & (dm_abstract_cmderr == 3'h0) & (!dm_core_halted) & dm_abstract_commad_wen & dm_abstract_commad_write_legal)begin
         dm_abstract_cmderr <= 3'h4; //? CMDERR_HALTRESUME
     end
     else if((!busy) & (dm_abstract_cmderr == 3'h0) & dm_core_halted & ((|dm_abstract_data_dtm_accsee) | (|dm_abstract_progbuf_dtm_accsee)) & (!dm_abstract_commad_legal))begin
         dm_abstract_cmderr <= 3'h2; //? CMDERR_NOTSUP
     end
-    else if((!busy) & (dm_abstract_cmderr == 3'h0) & dm_core_halted & dm_abstractauto_wen & (!dm_abstract_commad_write_legal))begin
+    else if((!busy) & (dm_abstract_cmderr == 3'h0) & dm_core_halted & dm_abstract_commad_wen & (!dm_abstract_commad_write_legal))begin
         dm_abstract_cmderr <= 3'h2; //? CMDERR_NOTSUP
     end
 end
