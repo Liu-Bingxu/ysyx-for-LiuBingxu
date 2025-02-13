@@ -7,6 +7,7 @@ module core_debugger_top (
     input		tms,
     input		tdi,
     output		tdo,
+    output [3:0]tap_state,
 
     input       stip_asyn,
     input       seip_asyn,
@@ -1222,6 +1223,7 @@ u_dm_top(
     .mst_rdata     	(mst0_rdata     ),
     .mst_rlast     	(mst0_rlast     )
 );
+assign tap_state = u_dm_top.u_dtm.jtag_tap_state;
 
 
 DifftestArchIntRegState u_DifftestArchIntRegState(
