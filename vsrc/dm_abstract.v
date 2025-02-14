@@ -195,11 +195,11 @@ u_dm_debug_rom(
 
 generate 
     if(AXI_DATA_W == 64) begin : gen_64bit_axi_data_progbuf
-        assign mst_rdata_data    = (&mst_araddr[5:4]) ? 64'h0 : {dm_abstract_data[{mst_araddr[5:3], 1'b1}], dm_abstract_data[{mst_araddr[5:3], 1'b0}]};
+        assign mst_rdata_data    = (&mst_araddr[5:4]) ? 64'h0 : {dm_abstract_data[({mst_araddr[5:3], 1'b1} + 4'h4)], dm_abstract_data[({mst_araddr[5:3], 1'b0} + 4'h4)]};
         assign mst_rdata_progbuf = {dm_abstract_progbuf[{mst_araddr[5:3], 1'b1}], dm_abstract_progbuf[{mst_araddr[5:3], 1'b0}]};
     end
     else if(AXI_DATA_W == 32) begin : gen_32bit_axi_data_progbuf
-        assign mst_rdata_data    = (&mst_araddr[5:4]) ? 32'h0 : dm_abstract_data[mst_araddr[5:2]];
+        assign mst_rdata_data    = (&mst_araddr[5:4]) ? 32'h0 : dm_abstract_data[(mst_araddr[5:2] + 4'h4)];
         assign mst_rdata_progbuf = dm_abstract_progbuf[mst_araddr[5:2]];
     end
     else begin : gen_error_messge
