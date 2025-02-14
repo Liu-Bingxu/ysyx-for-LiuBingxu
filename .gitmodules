@@ -1,3 +1,3 @@
 [submodule "axi-crossbar"]
-	path = axi-crossbar
+	path = rtl/sys_bus
 	url = https://github.com/dpretet/axi-crossbar.git
