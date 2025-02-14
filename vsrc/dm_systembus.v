@@ -434,7 +434,7 @@ generate for(addr_index = 0 ; addr_index < AXI_ADDR_W/32; addr_index = addr_inde
     FF_D_with_syn_rst #(
         .DATA_LEN 	( 32  ),
         .RST_DATA 	( 0   ))
-    u_abstract_progbuf(
+    u_systembus_addr(
         .clk      	( dm_clk                                ),
         .rst_n    	( dm_rst_n                              ),
         .syn_rst  	( !dmactive                             ),
@@ -454,7 +454,7 @@ generate for(data_index = 0 ; data_index < AXI_DATA_W/32; data_index = data_inde
     FF_D_with_syn_rst #(
         .DATA_LEN 	( 32  ),
         .RST_DATA 	( 0   ))
-    u_abstract_data(
+    u_systembus_data(
         .clk      	( dm_clk                            ),
         .rst_n    	( dm_rst_n                          ),
         .syn_rst  	( !dmactive                         ),
