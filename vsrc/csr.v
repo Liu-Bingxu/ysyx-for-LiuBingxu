@@ -605,51 +605,51 @@ trap_control #(RST_PC)u_trap_control(
 
 //**********************************************************************************************
 //? wen 
-assign csr_mstatus_wen          = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h300);
-assign csr_sstatus_wen          = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h100);
-assign csr_mtvec_wen            = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h305);
-assign csr_medeleg_wen          = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h302);
-assign csr_mideleg_wen          = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h303);
-assign csr_mip_wen              = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h344);
-assign csr_sip_wen              = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h144);
-assign csr_mie_wen              = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h304);
-assign csr_sie_wen              = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h104);
+assign csr_mstatus_wen          = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h300);
+assign csr_sstatus_wen          = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h100);
+assign csr_mtvec_wen            = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h305);
+assign csr_medeleg_wen          = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h302);
+assign csr_mideleg_wen          = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h303);
+assign csr_mip_wen              = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h344);
+assign csr_sip_wen              = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h144);
+assign csr_mie_wen              = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h304);
+assign csr_sie_wen              = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h104);
 generate 
 for(csr_MPerformance_Monitor_index = 1 ; csr_MPerformance_Monitor_index < 32; csr_MPerformance_Monitor_index = csr_MPerformance_Monitor_index + 1) begin : csr_Performance_Monitor_wen
-if(csr_MPerformance_Monitor_index == 1)begin
-assign csr_MPerformance_Monitor_wen[1] = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'hB00);
-assign MPerformance_Monitor_inc[1]     = 1'b1;
-end
-else if(csr_MPerformance_Monitor_index == 2)begin
-assign csr_MPerformance_Monitor_wen[2] = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'hB02);
-assign MPerformance_Monitor_inc[2]     = LS_WB_reg_ls_valid & (!LS_WB_reg_trap_valid);
-end
-else begin
-assign csr_MPerformance_Monitor_wen[csr_MPerformance_Monitor_index] = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == (12'hB00 + csr_MPerformance_Monitor_index));
-assign MPerformance_Monitor_inc[csr_MPerformance_Monitor_index]     = 1'b0;
-end
+    if(csr_MPerformance_Monitor_index == 1)begin
+        assign csr_MPerformance_Monitor_wen[1] = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'hB00);
+        assign MPerformance_Monitor_inc[1]     = 1'b1;
+    end
+    else if(csr_MPerformance_Monitor_index == 2)begin
+        assign csr_MPerformance_Monitor_wen[2] = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'hB02);
+        assign MPerformance_Monitor_inc[2]     = LS_WB_reg_ls_valid & (!LS_WB_reg_trap_valid);
+    end
+    else begin
+        assign csr_MPerformance_Monitor_wen[csr_MPerformance_Monitor_index] = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == (12'hB00 + csr_MPerformance_Monitor_index));
+        assign MPerformance_Monitor_inc[csr_MPerformance_Monitor_index]     = 1'b0;
+    end
 end
 endgenerate
 generate 
 for(csr_mhpmevent_index = 3 ; csr_mhpmevent_index < 32; csr_mhpmevent_index = csr_mhpmevent_index + 1) begin : csr_hpmevent_index_wen
-assign csr_mhpmevent_wen[csr_mhpmevent_index]                       = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == (12'h320 + csr_mhpmevent_index));
+    assign csr_mhpmevent_wen[csr_mhpmevent_index]                       = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == (12'h320 + csr_mhpmevent_index));
 end
 endgenerate
-assign csr_mcountinhibit_wen    = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h320);
-assign csr_mscratch_wen         = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h340);
-assign csr_mepc_wen             = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h341);
-assign csr_mcause_wen           = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h342);
-assign csr_mtval_wen            = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h343);
-assign csr_stvec_wen            = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h105);
-assign csr_sscratch_wen         = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h140);
-assign csr_sepc_wen             = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h141);
-assign csr_scause_wen           = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h142);
-assign csr_stval_wen            = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h143);
-assign csr_satp_wen             = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h180);
-assign csr_dcsr_wen             = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B0);
-assign csr_dpc_wen              = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B1);
-assign csr_dscratch0_wen        = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B2);
-assign csr_dscratch1_wen        = LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B3);
+assign csr_mcountinhibit_wen    = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h320);
+assign csr_mscratch_wen         = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h340);
+assign csr_mepc_wen             = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h341);
+assign csr_mcause_wen           = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h342);
+assign csr_mtval_wen            = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h343);
+assign csr_stvec_wen            = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h105);
+assign csr_sscratch_wen         = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h140);
+assign csr_sepc_wen             = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h141);
+assign csr_scause_wen           = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h142);
+assign csr_stval_wen            = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h143);
+assign csr_satp_wen             = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h180);
+assign csr_dcsr_wen             = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B0);
+assign csr_dpc_wen              = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B1);
+assign csr_dscratch0_wen        = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B2);
+assign csr_dscratch1_wen        = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == 12'h7B3);
 assign csr_wdata                = LS_WB_reg_data;
 //**********************************************************************************************
 //?output csr
