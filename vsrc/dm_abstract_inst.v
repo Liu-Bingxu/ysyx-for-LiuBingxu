@@ -37,74 +37,134 @@ wire        sel_fcsr_w_inst     = (transfer & (regno[15:12] == 4'h0) & write & c
 wire        sel_fgpr_r_inst     = (transfer & (regno[15:5]  == 11'h081) & (!write));
 wire        sel_fgpr_w_inst     = (transfer & (regno[15:5]  == 11'h081) & write);
 
+//* jal x0, 0x30; ebreak
 assign no_transfer          = (postexec) ? 32'h0300006f : 32'h00100073;
 
+//* csrrw x0, dscratch0, s0
 assign csr_r_inst[0] = 32'h7b241073;
+//* csrrs s0, csr, x0
 assign csr_r_inst[1] = {regno[11:0], 20'h02473};
+//* sw/sd s0, 0x380(x0)
 assign csr_r_inst[2] = {16'h3880, 1'b0, aarsize, 12'h023};
+//* csrrs s0, dscratch0, x0
 assign csr_r_inst[3] = 32'h7b202473;
+//* jal x0, 0x20; ebreak
 assign csr_r_inst[4] = (postexec) ? 32'h0200006f : 32'h00100073;
 
+//* csrrw x0, dscratch0, s0
 assign csr_w_inst[0] = 32'h7b241073;
-assign csr_w_inst[1] = {16'h3800, 1'b0, aarsize, 12'h423};
+//* lw/ld s0, 0x380(x0)
+assign csr_w_inst[1] = {16'h3800, 1'b0, aarsize, 12'h403};
+//* csrrw x0, csr, s0
 assign csr_w_inst[2] = {regno[11:0], 20'h41073};
+//* csrrs s0, dscratch0, x0
 assign csr_w_inst[3] = 32'h7b202473;
+//* jal x0, 0x20; ebreak
 assign csr_w_inst[4] = (postexec) ? 32'h0200006f : 32'h00100073;
 
+//* sw/sd gpr, 0x380(x0)
 assign gpr_r_inst[0] = {7'h1c, regno[4:0], 5'h0, aarsize, 12'h023};
+//* jal x0, 0x2C; ebreak
 assign gpr_r_inst[1] = (postexec) ? 32'h02c0006f : 32'h00100073;
 
+//* lw/ld gpr, 0x380(x0)
 assign gpr_w_inst[0] = {16'h3800, 1'b0, aarsize, regno[4:0], 7'h03};
+//* jal x0, 0x2C; ebreak
 assign gpr_w_inst[1] = (postexec) ? 32'h02c0006f : 32'h00100073;
 
+//* lw/ld gpr, 0x380(x0)
 assign gpr_s0_w_inst[0] = {16'h3800, 1'b0, aarsize, regno[4:0], 7'h03};
+//* csrrw x0, dscratch0, s0
 assign gpr_s0_w_inst[1] = 32'h7b241073;
+//* jal x0, 0x28; ebreak
 assign gpr_s0_w_inst[2] = (postexec) ? 32'h0280006f : 32'h00100073;
 
+//* csrrw x0, dscratch0, s0
 assign fcsr_r_inst[0]  = 32'h7b241073;
+//* csrrs s0, mstatus, x0
 assign fcsr_r_inst[1]  = 32'h30002473;
+//* csrrw x0, dscratch1, s0
 assign fcsr_r_inst[2]  = 32'h7b341073;
-assign fcsr_r_inst[3]  = 32'h00600437;
+//* lui s0, 0x6
+assign fcsr_r_inst[3]  = 32'h00006437;
+//* csrrs x0, mstatus, s0
 assign fcsr_r_inst[4]  = 32'h30042073;
+//* csrrs s0, csr, x0
 assign fcsr_r_inst[5]  = {regno[11:0], 20'h02473};
+//* sw/sd s0, 0x380(x0)
 assign fcsr_r_inst[6]  = {16'h3880, 1'b0, aarsize, 12'h023};
+//* csrrs s0, dscratch1, x0
 assign fcsr_r_inst[7]  = 32'h7b302473;
+//* csrrw x0, mstatus, s0
 assign fcsr_r_inst[8]  = 32'h30041073;
+//* csrrs s0, dscratch0, x0
 assign fcsr_r_inst[9]  = 32'h7b202473;
+//* jal x0, 0x8; ebreak
 assign fcsr_r_inst[10] = (postexec) ? 32'h0080006f : 32'h00100073;
 
+//* csrrw x0, dscratch0, s0
 assign fcsr_w_inst[0]  = 32'h7b241073;
+//* csrrs s0, mstatus, x0
 assign fcsr_w_inst[1]  = 32'h30002473;
+//* csrrw x0, dscratch1, s0
 assign fcsr_w_inst[2]  = 32'h7b341073;
-assign fcsr_w_inst[3]  = 32'h00600437;
+//* lui s0, 0x6
+assign fcsr_w_inst[3]  = 32'h00006437;
+//* csrrs x0, mstatus, s0
 assign fcsr_w_inst[4]  = 32'h30042073;
-assign fcsr_w_inst[5]  = {16'h3800, 1'b0, aarsize, 12'h423};
+//* lw/ld s0, 0x380(x0)
+assign fcsr_w_inst[5]  = {16'h3800, 1'b0, aarsize, 12'h403};
+//* csrrw x0, csr, s0
 assign fcsr_w_inst[6]  = {regno[11:0], 20'h41073};
+//* csrrs s0, dscratch1, x0
 assign fcsr_w_inst[7]  = 32'h7b302473;
+//* csrrw x0, mstatus, s0
 assign fcsr_w_inst[8]  = 32'h30041073;
+//* csrrs s0, dscratch0, x0
 assign fcsr_w_inst[9]  = 32'h7b202473;
+//* jal x0, 0x8; ebreak
 assign fcsr_w_inst[10] = (postexec) ? 32'h0080006f : 32'h00100073;
 
+//* csrrw x0, dscratch0, s0
 assign fgpr_r_inst[0]  = 32'h7b241073;
+//* csrrs s0, mstatus, x0
 assign fgpr_r_inst[1]  = 32'h30002473;
+//* csrrw x0, dscratch1, s0
 assign fgpr_r_inst[2]  = 32'h7b341073;
-assign fgpr_r_inst[3]  = 32'h00600437;
+//* lui s0, 0x6
+assign fgpr_r_inst[3]  = 32'h00006437;
+//* csrrs x0, mstatus, s0
 assign fgpr_r_inst[4]  = 32'h30042073;
+//* fsw/d fgpr, 0x380(x0)
 assign fgpr_r_inst[5]  = {7'h1c, regno[4:0], 5'h0, aarsize, 12'h027};
+//* csrrs s0, dscratch1, x0
 assign fgpr_r_inst[6]  = 32'h7b302473;
+//* csrrw x0, mstatus, s0
 assign fgpr_r_inst[7]  = 32'h30041073;
+//* csrrs s0, dscratch0, x0
 assign fgpr_r_inst[8]  = 32'h7b202473;
+//* jal x0, 0xC; ebreak
 assign fgpr_r_inst[9]  = (postexec) ? 32'h00c0006f : 32'h00100073;
 
+//* csrrw x0, dscratch0, s0
 assign fgpr_w_inst[0]  = 32'h7b241073;
+//* csrrs s0, mstatus, x0
 assign fgpr_w_inst[1]  = 32'h30002473;
+//* csrrw x0, dscratch1, s0
 assign fgpr_w_inst[2]  = 32'h7b341073;
-assign fgpr_w_inst[3]  = 32'h00600437;
+//* lui s0, 0x6
+assign fgpr_w_inst[3]  = 32'h00006437;
+//* csrrs x0, mstatus, s0
 assign fgpr_w_inst[4]  = 32'h30042073;
+//* flw/d fgpr, 0x380(x0)
 assign fgpr_w_inst[5]  = {16'h3800, 1'b0, aarsize, regno[4:0], 7'h07};
+//* csrrs s0, dscratch1, x0
 assign fgpr_w_inst[6]  = 32'h7b302473;
+//* csrrw x0, mstatus, s0
 assign fgpr_w_inst[7]  = 32'h30041073;
+//* csrrs s0, dscratch0, x0
 assign fgpr_w_inst[8]  = 32'h7b202473;
+//* jal x0, 0xC; ebreak
 assign fgpr_w_inst[9]  = (postexec) ? 32'h00c0006f : 32'h00100073;
 
 genvar inst_index;
