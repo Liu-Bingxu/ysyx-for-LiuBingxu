@@ -22,7 +22,7 @@ module dm_top#(
     input				            trst_n,
     input				            tms,
     input				            tdi,
-    output	reg			            tdo,
+    output	   			            tdo,
 
     output                          slv_awvalid,
     input                           slv_awready,
