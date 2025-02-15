@@ -988,14 +988,6 @@ u_sram_top(
     .mst_rdata    	(mst1_rdata    ),
     .mst_rlast    	(mst1_rlast    )
 );
-initial begin
-    string image;
-    string image_path = "/home/kuuga/ysyx-workbench/npc/rot13.image";
-    if($value$plusargs("image=%s", image))begin
-        image_path = image;
-    end
-    $readmemh(image_path, u_sram_top.u_sram.ram);
-end
 
 dm_top #(
     .ABITS      	(7           ),
