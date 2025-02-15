@@ -21,18 +21,21 @@ module rv64imac_soc_top#(
     parameter MST3_RW = 0,
 
     parameter SLV2_CDC = 0,
-    parameter SLV2_START_ADDR = 8192,
-    parameter SLV2_END_ADDR = 12287,
+    parameter SLV2_START_ADDR = 64'h100,
+    parameter SLV2_END_ADDR = 64'hff,
     parameter SLV2_OSTDREQ_NUM = 4,
     parameter SLV2_OSTDREQ_SIZE = 1,
     parameter SLV2_KEEP_BASE_ADDR = 0,
 
     parameter SLV3_CDC = 0,
-    parameter SLV3_START_ADDR = 12288,
-    parameter SLV3_END_ADDR = 16383,
+    parameter SLV3_START_ADDR = 64'h100,
+    parameter SLV3_END_ADDR = 64'hff,
     parameter SLV3_OSTDREQ_NUM = 4,
     parameter SLV3_OSTDREQ_SIZE = 1,
-    parameter SLV3_KEEP_BASE_ADDR = 0
+    parameter SLV3_KEEP_BASE_ADDR = 0,
+
+    parameter RAM_START_ADDR    = 64'h8000_0000,
+    parameter RAM_END_ADDR      = 64'h9fff_ffff
 )(
     input                             clock,
     input                             rst_n,
@@ -532,8 +535,8 @@ axicb_crossbar_top #(
     .SLV0_KEEP_BASE_ADDR 	(1        ),
 
     .SLV1_CDC            	(0        ),
-    .SLV2_START_ADDR     	(64'h8000_0000    ),
-    .SLV2_END_ADDR       	(64'h9fff_ffff    ),
+    .SLV1_START_ADDR     	(RAM_START_ADDR    ),
+    .SLV1_END_ADDR       	(RAM_END_ADDR      ),
     .SLV1_OSTDREQ_NUM    	(4        ),
     .SLV1_OSTDREQ_SIZE   	(1        ),
     .SLV1_KEEP_BASE_ADDR 	(1        ),
@@ -944,7 +947,9 @@ u_axicb_crossbar_top(
 sram_top #(
     .AXI_ADDR_W 	(64  ),
     .AXI_ID_W   	(8   ),
-    .AXI_DATA_W 	(64  ))
+    .AXI_DATA_W 	(64  ),
+    .RAM_START_ADDR (RAM_START_ADDR),
+    .RAM_END_ADDR   (RAM_END_ADDR  ))
 u_sram_top(
     .aclk         	(clk           ),
     .arst_n       	(core_rst_n    ),
