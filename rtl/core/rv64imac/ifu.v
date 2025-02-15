@@ -83,9 +83,9 @@ wire [1:0]          rresp_rdata;
 //inst fifo空标志
 wire                inst_empty;
 
-reg [63:0]          my_reg_PC_reg;
-reg [15:0]          inst_rdata_reg;
-reg [1:0]           rresp_rdata_reg;
+reg  [63:0]         my_reg_PC_reg;
+wire [15:0]         inst_rdata_reg;
+wire [1:0]          rresp_rdata_reg;
 wire                inst_my_reg_valid;
 
 reg  [31:0]         inst_rdata_reg_get;
