@@ -196,8 +196,8 @@ reg             atomic_awvalid_reg;
 //atomic write data channel
 reg             atomic_wvalid_reg;
 //trap:
-reg             atomic_load_misaligned;
-reg             atomic_store_misaligned;
+wire            atomic_load_misaligned;
+wire            atomic_store_misaligned;
 reg             atomic_load_page_error;
 reg             atomic_store_page_error;
 reg             atomic_load_access_error;
