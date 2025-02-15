@@ -483,7 +483,7 @@ axicb_crossbar_top #(
 
     .SLV1_CDC            	(0        ),
     .SLV1_START_ADDR     	(64'h0000_1000    ),
-    .SLV1_END_ADDR       	(64'h7fff_ffff    ),
+    .SLV1_END_ADDR       	(64'h0000_0fff    ),
     .SLV1_OSTDREQ_NUM    	(4        ),
     .SLV1_OSTDREQ_SIZE   	(1        ),
     .SLV1_KEEP_BASE_ADDR 	(1        ),
@@ -1029,7 +1029,7 @@ u_dummy_axi_slv1(
 //     .mst_rlast    	(mst2_rlast     )
 // );
 
-sim_sram_dpic #(
+sram_top #(
     .AXI_ADDR_W 	(64  ),
     .AXI_ID_W   	(8   ),
     .AXI_DATA_W 	(64  ))
@@ -1076,6 +1076,14 @@ u_sim_sram_dpic(
     .mst_rdata    	(mst2_rdata    ),
     .mst_rlast    	(mst2_rlast    )
 );
+initial begin
+    string image;
+    string image_path = "/home/kuuga/ysyx-workbench/npc/rot13.image";
+    if($value$plusargs("image=%s", image))begin
+        image_path = image;
+    end
+    $readmemh(image_path, u_sim_sram_dpic.u_sram.ram);
+end
 
 sim_periph_dpic #(
     .AXI_ADDR_W 	(AXI_ADDR_W  ),
