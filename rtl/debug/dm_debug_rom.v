@@ -48,8 +48,12 @@ generate
     else if(AXI_DATA_W == 32) begin : gen_32bit_rom_rdata
         assign rom_rdata = debug_rom[addr];
     end
-    else begin : gen_error_messge
-        $error("data width error");
+    else begin : gen_rom_rdata_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_abstract_rdata_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
 endgenerate
 

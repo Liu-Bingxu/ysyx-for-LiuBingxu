@@ -247,8 +247,12 @@ generate
     else if(AXI_DATA_W == 32) begin : gen_32bit_abstract_rdata
         assign abstract_rdata = abstract_inst[addr];
     end
-    else begin : gen_error_messge
-        $error("data width error");
+    else begin : gen_abstract_rdata_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_abstract_rdata_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
 endgenerate
 

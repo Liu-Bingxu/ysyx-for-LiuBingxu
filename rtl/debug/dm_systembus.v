@@ -251,8 +251,12 @@ generate
         assign slv_addr = dm_systembus_addr[0];
         assign dm_systembus_addr_increment[0] = (dm_systembus_addr[0] + {28'h0, autoincrement_byte});
     end
-    else begin : gen_error_messge
-        $error("addr width error");
+    else begin : gen_axi_addr_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_axi_addr_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
 endgenerate
 
@@ -294,8 +298,12 @@ generate
                 | ({4{(sbaccess == 3'h2) & (slv_addr[1:0] == 2'h0)}} & 4'hf  )
                 ;
     end
-    else begin : gen_error_messge
-        $error("addr width error");
+    else begin : gen_axi_data_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_axi_data_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
 endgenerate
 assign dm_systembus_data_axi_wen[0] = (systembus_axi_state == AXI_WAIT_R) & slv_rvalid & slv_rready & slv_rlast & (slv_rresp == 2'h0) & (slv_rid == AXI_ID_SB);
@@ -478,8 +486,12 @@ generate
         assign dm_sbaddress0 = dm_systembus_addr[0];
         assign dm_sbaddress1 = 32'h0;
     end
-    else begin : gen_error_messge
-        $error("addr width error");
+    else begin : gen_sbaddr_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_sbaddr_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
 endgenerate
 
@@ -492,8 +504,12 @@ generate
         assign dm_sbdata0 = dm_systembus_data[0];
         assign dm_sbdata1 = 32'h0;
     end
-    else begin : gen_error_messge
-        $error("data width error");
+    else begin : gen_sbdata_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_sbdata_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
 endgenerate
 

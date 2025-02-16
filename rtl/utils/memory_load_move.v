@@ -70,8 +70,12 @@ generate
         else if(DATA_WIDTH == 32) begin : gen_32bit_use_sign
             assign use_sign = (!is_word) & is_sign;
         end
-        else begin : gen_error_messge
-            $error("data width error");
+        else begin : gen_use_sign_error_messge
+            `ifdef MODELSIM_SIM
+                static_assert(0, "Error: gen_use_sign_error_messge");
+            `else
+                $error("addr width error");
+            `endif
         end
     end
 endgenerate
@@ -92,8 +96,12 @@ generate
                 | ({DATA_WIDTH{is_word  }} & data_word  )
                 ;
     end
-    else begin : gen_error_messge
-        $error("data width error");
+    else begin : gen_data_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_data_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
 endgenerate
 

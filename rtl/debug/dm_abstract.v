@@ -202,8 +202,12 @@ generate
         assign mst_rdata_data    = (&mst_araddr[5:4]) ? 32'h0 : dm_abstract_data[(mst_araddr[5:2] + 4'h4)];
         assign mst_rdata_progbuf = dm_abstract_progbuf[mst_araddr[5:2]];
     end
-    else begin : gen_error_messge
-        $error("data width error");
+    else begin : gen_axi_data_progbuf_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_axi_data_progbuf_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
 endgenerate
 
@@ -216,8 +220,12 @@ generate
         assign dm_abstract_commad_legal         = (cmd_type == 8'h0) & (aarsize == 3'h2) & (regno < 16'h1040);
         assign dm_abstract_commad_write_legal   = (cmd_type_w == 8'h0) & (aarsize_w == 3'h2) & (regno_w < 16'h1040);
     end
-    else begin : gen_error_messge
-        $error("data width error");
+    else begin : gen_legal_abstract_commad_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_legal_abstract_commad_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
 endgenerate
 
@@ -464,8 +472,12 @@ generate for(data_index = 4 ; data_index < (DATA_COUNT + 4); data_index = data_i
                                                         & (mst_awaddr_reg[5:2] == (data_index - 4'h4));
         assign dm_abstract_data_axi_w[data_index]   = ((dm_abstract_data[data_index] & (~mst_wmask)) | (mst_wdata & mst_wmask));
     end
-    else begin : gen_error_messge
-        $error("data width error");
+    else begin : gen_axi_data_axi_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_axi_data_axi_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
     assign dm_abstract_data_w[data_index]       = (dm_abstract_data_dtm_wen[data_index]) ? dm_reg_data : dm_abstract_data_axi_w[data_index];
     assign dm_abstract_data_dtm_visit[data_index]  = (dm_reg_addr == {{(ABITS - 5){1'b0}}, data_index[4:0]}) & (dm_reg_wen | dm_reg_ren);
@@ -500,8 +512,12 @@ generate for(pbuf_index = 0 ; pbuf_index < PROGBUF_COUNT; pbuf_index = pbuf_inde
                                                         & (mst_awaddr_reg[5:2] == pbuf_index);
         assign dm_abstract_progbuf_axi_w[pbuf_index]   = ((dm_abstract_progbuf[pbuf_index] & (~mst_wmask)) | (mst_wdata & mst_wmask));
     end
-    else begin : gen_error_messge
-        $error("data width error");
+    else begin : gen_axi_progbuf_axi_error_messge
+        `ifdef MODELSIM_SIM
+            static_assert(0, "Error: gen_axi_progbuf_axi_error_messge");
+        `else
+            $error("addr width error");
+        `endif
     end
     assign dm_abstract_progbuf_w[pbuf_index]       = (dm_abstract_progbuf_dtm_wen[pbuf_index]) ? dm_reg_data : dm_abstract_progbuf_axi_w[pbuf_index];
     assign dm_abstract_progbuf_dtm_visit[pbuf_index]  = (dm_reg_addr == {{(ABITS - 6){1'b0}}, 2'h2, pbuf_index[3:0]}) & (dm_reg_wen | dm_reg_ren);
