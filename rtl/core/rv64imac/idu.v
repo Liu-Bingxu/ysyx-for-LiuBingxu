@@ -717,9 +717,9 @@ assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch
                                 ebreak | fence | fence_i | sfence_vma)) | 
                                 (csr_valid & ((csr_addr[9:8] > current_priv_status) | (csr_wen & (csr_addr[11:10] == 2'h3)) | (!csr_addr_legal))) | 
                                 /*disable all access csr form U*/(csr_valid & (current_priv_status == `PRV_U)) | 
-                                /*disable access time form S*/   (csr_valid & (current_priv_status == `PRV_S) & (csr_addr == 12'hC01)) | 
+                                /*disable access tlb form U*/    (sfence_vma & (current_priv_status == `PRV_U)) | 
+                                /*disable access tlb form S*/    (sfence_vma & (current_priv_status == `PRV_S) & TVM) | 
                                 /*disable wfi time form S&U*/    (wfi & (current_priv_status < `PRV_M) & TW) | 
-                                //! todo need to add the sfence.vma and need to trap the sfence.vma
                                 /*disable access satp form S*/   (csr_valid & (current_priv_status == `PRV_S) & (csr_addr == 12'h180) & TVM) | 
                                 /*disable dret on no debug*/     (dret & (!debug_mode)) |
                                 /*disable sret form S*/          (sret & (current_priv_status == `PRV_S) & TSR) | 
