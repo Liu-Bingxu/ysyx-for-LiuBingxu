@@ -16,6 +16,12 @@ reg [DATA_WIDTH - 1 : 0] fifo_sram[0 : DATA_DEPTH-1];
 assign rdata    = fifo_sram[rdata_poi];
 assign data_cnt = data_cnt_reg;
 
+always @(posedge clk) begin
+    if(Wready)begin
+        fifo_sram[wdata_poi]    <= wdata;
+    end
+end
+
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
         wdata_poi       <= {(ADDR_WIDTH){1'b0}};
@@ -30,12 +36,10 @@ always @(posedge clk or negedge rst_n) begin
         else begin
             case ({Wready,Rready})
                 2'b11:begin
-                    fifo_sram[wdata_poi]    <= wdata;
                     wdata_poi               <= wdata_poi+1'b1;
                     rdata_poi               <= rdata_poi+1'b1;
                 end
                 2'b10:begin
-                    fifo_sram[wdata_poi]    <= wdata;
                     wdata_poi               <= wdata_poi+1'b1;
                     data_cnt_reg            <= data_cnt_reg + 1'b1;
                 end

@@ -30,6 +30,12 @@ reg [DATA_LEN-1:0] fifo_sram[0:Word_Depth-1];
 assign rdata=fifo_sram[rdata_poi[AddR_Width-1:0]];
 assign empty = wdata_poi==rdata_poi;
 
+always @(posedge clk) begin
+    if(Wready)begin
+        fifo_sram[wdata_poi[AddR_Width-1:0]]<=wdata;
+    end
+end
+
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
         wdata_poi<={(AddR_Width+1){1'b0}};
@@ -42,12 +48,10 @@ always @(posedge clk or negedge rst_n) begin
         else begin
             case ({Wready,Rready})
                 2'b11:begin
-                    fifo_sram[wdata_poi[AddR_Width-1:0]]<=wdata;
                     wdata_poi<=wdata_poi+1'b1;
                     rdata_poi<=rdata_poi+1'b1;
                 end
                 2'b10:begin
-                    fifo_sram[wdata_poi[AddR_Width-1:0]]<=wdata;
                     wdata_poi<=wdata_poi+1'b1;
                 end
                 2'b01:begin
