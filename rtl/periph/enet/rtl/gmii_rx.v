@@ -68,8 +68,8 @@ reg  [15:0]     rx_status_cnt;
 reg  [15:0]     rx_data_out_cnt;
 
 reg  [3:0]      rx_data_cnt;
-reg  [0:0]      rx_data_finish_flag;
-reg  [3:0]      rx_data_add_cnt;
+wire [0:0]      rx_data_finish_flag;
+wire [3:0]      rx_data_add_cnt;
 
 wire            rx_unicast_check_success;
 wire            rx_multicast_check_success;
@@ -137,12 +137,12 @@ assign crc_check = (crc_out_next == 32'h0) ? 1'b1 : 1'b0;
 
 assign rx_unicast_check_success = (!gmii_rx_Da[0][0]) & 
                     (({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {palr, paur}) |
-                    ({iaur, ialr}[crc_out_next[5:0]]));
+                    (iaur[crc_out_next[4:0]] & crc_out_next[5]) | (ialr[crc_out_next[4:0]] & (!crc_out_next[5])));
 
 assign rx_multicast_check_success = gmii_rx_Da[0][0] & 
                     ((({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {48{1'b1}}) & (!bc_rej)) |
                     ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {pause_DA}) |
-                    ({gaur, galr}[crc_out_next[5:0]]));
+                    (gaur[crc_out_next[4:0]] & crc_out_next[5]) | (galr[crc_out_next[4:0]] & (!crc_out_next[5])));
 
 assign gmii_rxd_use = (mii_select) ? gmii_rxd_r[0] : gmii_rxd;
 
