@@ -16,7 +16,7 @@ module enet_rgmii_to_gmii_dummy#(
     input              rgmii_rxc   , //RGMII接收时钟
     input              rgmii_rx_ctl, //RGMII接收数据控制信号
     input       [3:0]  rgmii_rxd   , //RGMII接收数据
-    input              rgmii_txc   , //RGMII发送时钟    
+    output             rgmii_txc   , //RGMII发送时钟    
     output             rgmii_tx_ctl, //RGMII发送数据控制信号
     output      [3:0]  rgmii_txd     //RGMII发送数据          
 );
@@ -27,6 +27,7 @@ assign gmii_rx_er   = 1'b0;
 assign gmii_rxd     = 8'b0; 
 assign gmii_tx_clk  = 1'b0; 
 
+assign rgmii_txc    = 1'b0;
 assign rgmii_tx_ctl = 1'b0;
 assign rgmii_txd    = 4'b0;
 

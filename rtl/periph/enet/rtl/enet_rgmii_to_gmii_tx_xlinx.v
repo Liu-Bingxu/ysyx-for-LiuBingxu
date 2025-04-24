@@ -22,13 +22,13 @@
 
 module enet_rgmii_to_gmii_tx_xlinx(
     //GMII发送端口
-    output             gmii_tx_clk , //GMII发送时钟    
+    input              gmii_tx_clk , //GMII发送时钟    
     input              gmii_tx_en  , //GMII输出数据有效信号
     input              gmii_tx_er  , //GMII发送数据错误信号
     input       [7:0]  gmii_txd    , //GMII输出数据        
     
     //RGMII发送端口
-    input              rgmii_txc   , //RGMII发送数据时钟    
+    output             rgmii_txc   , //RGMII发送数据时钟    
     output             rgmii_tx_ctl, //RGMII输出数据有效信号
     output      [3:0]  rgmii_txd     //RGMII输出数据     
     );
@@ -37,7 +37,7 @@ module enet_rgmii_to_gmii_tx_xlinx(
 //**                    main code
 //*****************************************************
 
-assign gmii_tx_clk = rgmii_txc;
+assign rgmii_txc = gmii_tx_clk;
 
 //输出双沿采样寄存器 (rgmii_tx_ctl)
 ODDR #(

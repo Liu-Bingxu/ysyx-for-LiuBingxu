@@ -26,7 +26,7 @@ module enet_core#(
     input                               enet_rst_n,
     output                              rst_n,
 
-    input                               enet_gtx_clk,
+    output                              enet_gtx_clk,
     input                               enet_grx_clk,
     output                              enet_rgmii_tx_ctl,
     output [3:0]                        enet_rgmii_txd,
