@@ -571,35 +571,15 @@ enet_chclk u_enet_chclk(
     .rgmii_rx_er  	(rgmii_rx_er        ),
 
     .tx_clk       	(tx_clk             ),
+    .tx_rst_n   	(tx_rst_n           ),
     .rx_clk       	(rx_clk             ),
+    .rx_rst_n       (rx_rst_n           ),
     .txd          	(enet_txd           ),
     .rxd          	(rxd                ),
     .tx_en        	(enet_tx_en         ),
     .tx_er        	(enet_tx_er         ),
     .rx_dv        	(rx_dv              ),
     .rx_er        	(rx_er              )
-);
-
-general_sync #(
-    .DATA_LEN 	(1   ),
-    .CHAIN_LV 	(2   ),
-    .RST_DATA 	(0   ))
-u_tx_clk_async_rst_sync(
-    .clk      	(tx_clk     ),
-    .rst_n    	(rst_n      ),
-    .data_in  	(1'b1       ),
-    .data_out 	(tx_rst_n   )
-);
-
-general_sync #(
-    .DATA_LEN 	(1   ),
-    .CHAIN_LV 	(2   ),
-    .RST_DATA 	(0   ))
-u_rx_clk_async_rst_sync(
-    .clk      	(rx_clk     ),
-    .rst_n    	(rst_n      ),
-    .data_in  	(1'b1       ),
-    .data_out 	(rx_rst_n   )
 );
 
 enet_intr_coalesce u_tx_enet_intr_coalesce(

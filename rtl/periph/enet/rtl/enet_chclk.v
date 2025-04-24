@@ -41,7 +41,9 @@ module enet_chclk (
     input                           rgmii_rx_er,
 
     output                          tx_clk,
+    output                          tx_rst_n,
     output                          rx_clk,
+    output                          rx_rst_n,
     output [7:0]                    txd,
     output [7:0]                    rxd,
     output                          tx_en,
@@ -67,6 +69,13 @@ wire                gmii_tx_clk_sel;
 wire                gmii_rx_clk_sel;
 wire                rgmii_tx_clk_sel;
 wire                rgmii_rx_clk_sel;
+
+wire [7:0]          txd_o;
+wire [7:0]          rxd_o;
+wire                tx_en_o;
+wire                tx_er_o;
+wire                rx_dv_o;
+wire                rx_er_o;
 
 enet_chclk_path u_enet_chclk_path_mii_tx(
     .rst_n   	(rst_n          ),
@@ -136,45 +145,130 @@ assign gmii_rx_sel  = (!mii_select) & (!rmii_select) & (!mii_rx_clk_sel)  & (!rm
 assign rgmii_tx_sel = (!mii_select) &   rmii_select  & (!mii_tx_clk_sel)  & (!rmii_tx_clk_sel) & (!gmii_tx_clk_sel);
 assign rgmii_rx_sel = (!mii_select) &   rmii_select  & (!mii_rx_clk_sel)  & (!rmii_rx_clk_sel) & (!gmii_rx_clk_sel);
 
-assign tx_clk = (mii_tx_clk_sel   & mii_tx_clk   ) |
-                (rmii_tx_clk_sel  & rmii_tx_clk  ) |
-                (gmii_tx_clk_sel  & gmii_tx_clk  ) |
-                (rgmii_tx_clk_sel & rgmii_tx_clk );
+assign tx_clk  =    (mii_tx_clk_sel   & mii_tx_clk   ) |
+                    (rmii_tx_clk_sel  & rmii_tx_clk  ) |
+                    (gmii_tx_clk_sel  & gmii_tx_clk  ) |
+                    (rgmii_tx_clk_sel & rgmii_tx_clk );
 
-assign txd    = ({8{mii_tx_clk_sel  }} & mii_txd   ) |
-                ({8{rmii_tx_clk_sel }} & rmii_txd  ) |
-                ({8{gmii_tx_clk_sel }} & gmii_txd  ) |
-                ({8{rgmii_tx_clk_sel}} & rgmii_txd );
+assign txd_o   =    ({8{mii_tx_clk_sel  }} & mii_txd   ) |
+                    ({8{rmii_tx_clk_sel }} & rmii_txd  ) |
+                    ({8{gmii_tx_clk_sel }} & gmii_txd  ) |
+                    ({8{rgmii_tx_clk_sel}} & rgmii_txd );
 
-assign tx_en  = (mii_tx_clk_sel   & mii_tx_en   ) |
-                (rmii_tx_clk_sel  & rmii_tx_en  ) |
-                (gmii_tx_clk_sel  & gmii_tx_en  ) |
-                (rgmii_tx_clk_sel & rgmii_tx_en );
+assign tx_en_o =    (mii_tx_clk_sel   & mii_tx_en   ) |
+                    (rmii_tx_clk_sel  & rmii_tx_en  ) |
+                    (gmii_tx_clk_sel  & gmii_tx_en  ) |
+                    (rgmii_tx_clk_sel & rgmii_tx_en );
 
-assign tx_er  = (mii_tx_clk_sel   & mii_tx_er   ) |
-                (rmii_tx_clk_sel  & rmii_tx_er  ) |
-                (gmii_tx_clk_sel  & gmii_tx_er  ) |
-                (rgmii_tx_clk_sel & rgmii_tx_er );
+assign tx_er_o =    (mii_tx_clk_sel   & mii_tx_er   ) |
+                    (rmii_tx_clk_sel  & rmii_tx_er  ) |
+                    (gmii_tx_clk_sel  & gmii_tx_er  ) |
+                    (rgmii_tx_clk_sel & rgmii_tx_er );
 
-assign rx_clk = (mii_rx_clk_sel   & mii_rx_clk   ) |
-                (rmii_rx_clk_sel  & rmii_rx_clk  ) |
-                (gmii_rx_clk_sel  & gmii_rx_clk  ) |
-                (rgmii_rx_clk_sel & rgmii_rx_clk );
+assign rx_clk  =    (mii_rx_clk_sel   & mii_rx_clk   ) |
+                    (rmii_rx_clk_sel  & rmii_rx_clk  ) |
+                    (gmii_rx_clk_sel  & gmii_rx_clk  ) |
+                    (rgmii_rx_clk_sel & rgmii_rx_clk );
 
-assign rxd    = ({8{mii_rx_clk_sel  }} & mii_rxd   ) |
-                ({8{rmii_rx_clk_sel }} & rmii_rxd  ) |
-                ({8{gmii_rx_clk_sel }} & gmii_rxd  ) |
-                ({8{rgmii_rx_clk_sel}} & rgmii_rxd );
+assign rxd_o   =    ({8{mii_rx_clk_sel  }} & mii_rxd   ) |
+                    ({8{rmii_rx_clk_sel }} & rmii_rxd  ) |
+                    ({8{gmii_rx_clk_sel }} & gmii_rxd  ) |
+                    ({8{rgmii_rx_clk_sel}} & rgmii_rxd );
 
-assign rx_dv  = (mii_rx_clk_sel   & mii_rx_dv   ) |
-                (rmii_rx_clk_sel  & rmii_rx_dv  ) |
-                (gmii_rx_clk_sel  & gmii_rx_dv  ) |
-                (rgmii_rx_clk_sel & rgmii_rx_dv );
+assign rx_dv_o =    (mii_rx_clk_sel   & mii_rx_dv   ) |
+                    (rmii_rx_clk_sel  & rmii_rx_dv  ) |
+                    (gmii_rx_clk_sel  & gmii_rx_dv  ) |
+                    (rgmii_rx_clk_sel & rgmii_rx_dv );
 
-assign rx_er  = (mii_rx_clk_sel   & mii_rx_er   ) |
-                (rmii_rx_clk_sel  & rmii_rx_er  ) |
-                (gmii_rx_clk_sel  & gmii_rx_er  ) |
-                (rgmii_rx_clk_sel & rgmii_rx_er );
+assign rx_er_o =    (mii_rx_clk_sel   & mii_rx_er   ) |
+                    (rmii_rx_clk_sel  & rmii_rx_er  ) |
+                    (gmii_rx_clk_sel  & gmii_rx_er  ) |
+                    (rgmii_rx_clk_sel & rgmii_rx_er );
 
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_tx_clk_async_rst_sync(
+    .clk      	(tx_clk     ),
+    .rst_n    	(rst_n      ),
+    .data_in  	(1'b1       ),
+    .data_out 	(tx_rst_n   )
+);
+
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_rx_clk_async_rst_sync(
+    .clk      	(rx_clk     ),
+    .rst_n    	(rst_n      ),
+    .data_in  	(1'b1       ),
+    .data_out 	(rx_rst_n   )
+);
+
+general_sync #(
+    .DATA_LEN 	(8   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_txd(
+    .clk      	(tx_clk     ),
+    .rst_n    	(tx_rst_n   ),
+    .data_in  	(txd_o      ),
+    .data_out 	(txd        )
+);
+
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_tx_en(
+    .clk      	(tx_clk     ),
+    .rst_n    	(tx_rst_n   ),
+    .data_in  	(tx_en_o    ),
+    .data_out 	(tx_en      )
+);
+
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_tx_er(
+    .clk      	(tx_clk     ),
+    .rst_n    	(tx_rst_n   ),
+    .data_in  	(tx_er_o    ),
+    .data_out 	(tx_er      )
+);
+
+general_sync #(
+    .DATA_LEN 	(8   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_rxd(
+    .clk      	(rx_clk     ),
+    .rst_n    	(rx_rst_n   ),
+    .data_in  	(rxd_o      ),
+    .data_out 	(rxd        )
+);
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_rx_dv(
+    .clk      	(rx_clk     ),
+    .rst_n    	(rx_rst_n   ),
+    .data_in  	(rx_dv_o    ),
+    .data_out 	(rx_dv      )
+);
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_rx_er(
+    .clk      	(rx_clk   ),
+    .rst_n    	(rx_rst_n ),
+    .data_in  	(rx_er_o  ),
+    .data_out 	(rx_er    )
+);
 
 endmodule //enet_chclk
