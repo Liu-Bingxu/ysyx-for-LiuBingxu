@@ -28,6 +28,10 @@ module enet_core#(
 
     input                               enet_gtx_clk,
     input                               enet_grx_clk,
+    output                              enet_rgmii_tx_ctl,
+    output [3:0]                        enet_rgmii_txd,
+    input                               enet_rgmii_rx_ctl,   
+    input  [3:0]                        enet_rgmii_rxd,
     input                               enet_tx_clk,
     input                               enet_rx_clk,
     input                               enet_ref_clk,
@@ -231,8 +235,6 @@ wire        rgmii_rx_dv;
 wire        rgmii_rx_er;
 wire [7:0]  rgmii_rxd;
 wire        rgmii_tx_clk;
-wire        rgmii_tx_ctl;
-wire [3:0]  rgmii_txd;
 
 // output declaration of module enet_chclk
 wire [7:0]  rxd;
@@ -509,21 +511,21 @@ enet_rgmii_to_gmii #(
     .TARGET        	(TARGET         ),
     .IDELAY_VALUE 	(IDELAY_VALUE   ))
 u_enet_rgmii_to_gmii_xlinx(
-    .idelay_clk   	(clk_200m       ),
-    .gmii_rx_clk  	(rgmii_rx_clk   ),
-    .gmii_rx_dv   	(rgmii_rx_dv    ),
-    .gmii_rx_er   	(rgmii_rx_er    ),
-    .gmii_rxd     	(rgmii_rxd      ),
-    .gmii_tx_clk  	(rgmii_tx_clk   ),
-    .gmii_tx_en   	(gmii_tx_en     ),
-    .gmii_tx_er   	(gmii_tx_er     ),
-    .gmii_txd     	(gmii_txd       ),
-    .rgmii_rxc    	(enet_grx_clk   ),
-    .rgmii_rx_ctl 	(enet_rx_dv     ),
-    .rgmii_rxd    	(enet_rxd[3:0]  ),
-    .rgmii_txc    	(enet_gtx_clk   ),
-    .rgmii_tx_ctl 	(rgmii_tx_ctl   ),
-    .rgmii_txd    	(rgmii_txd      )
+    .idelay_clk   	(clk_200m               ),
+    .gmii_rx_clk  	(rgmii_rx_clk           ),
+    .gmii_rx_dv   	(rgmii_rx_dv            ),
+    .gmii_rx_er   	(rgmii_rx_er            ),
+    .gmii_rxd     	(rgmii_rxd              ),
+    .gmii_tx_clk  	(rgmii_tx_clk           ),
+    .gmii_tx_en   	(gmii_tx_en             ),
+    .gmii_tx_er   	(gmii_tx_er             ),
+    .gmii_txd     	(gmii_txd               ),
+    .rgmii_rxc    	(enet_grx_clk           ),
+    .rgmii_rx_ctl 	(enet_rgmii_rx_ctl      ),
+    .rgmii_rxd    	(enet_rgmii_rxd         ),
+    .rgmii_txc    	(enet_gtx_clk           ),
+    .rgmii_tx_ctl 	(enet_rgmii_tx_ctl      ),
+    .rgmii_txd    	(enet_rgmii_txd         )
 );
 
 
@@ -561,9 +563,9 @@ enet_chclk u_enet_chclk(
 
     .rgmii_tx_clk 	(rgmii_tx_clk       ),
     .rgmii_rx_clk 	(rgmii_rx_clk       ),
-    .rgmii_txd    	({4'h0, rgmii_txd}  ),
+    .rgmii_txd    	({8'h0}             ),
     .rgmii_rxd    	(rgmii_rxd          ),
-    .rgmii_tx_en  	(rgmii_tx_ctl       ),
+    .rgmii_tx_en  	(1'b0               ),
     .rgmii_tx_er  	(1'b0               ),
     .rgmii_rx_dv  	(rgmii_rx_dv        ),
     .rgmii_rx_er  	(rgmii_rx_er        ),
