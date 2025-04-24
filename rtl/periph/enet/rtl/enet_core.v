@@ -86,6 +86,8 @@ module enet_core#(
     output [AXI_REG_DATA_W    -1:0]     mst_rdata,
     output                              mst_rlast,
 
+    output                              tx_clk,
+    output                              tx_rst_n,
     output                              slv_tx_awvalid,
     input                               slv_tx_awready,
     output [AXI_MAC_ADDR_W    -1:0]     slv_tx_awaddr,
@@ -126,6 +128,8 @@ module enet_core#(
     input  [AXI_MAC_DATA_W    -1:0]     slv_tx_rdata,
     input                               slv_tx_rlast,
 
+    output                              rx_clk,
+    output                              rx_rst_n,
     output                              slv_rx_awvalid,
     input                               slv_rx_awready,
     output [AXI_MAC_ADDR_W    -1:0]     slv_rx_awaddr,
@@ -231,14 +235,9 @@ wire        rgmii_tx_ctl;
 wire [3:0]  rgmii_txd;
 
 // output declaration of module enet_chclk
-wire        tx_clk;
-wire        rx_clk;
 wire [7:0]  rxd;
 wire        rx_dv;
 wire        rx_er;
-
-wire        tx_rst_n;
-wire        rx_rst_n;
 
 // output declaration of module tx_enet_intr_coalesce
 wire [31:0] txic;
@@ -749,13 +748,13 @@ async_fifo_my #(
     .ADDR_LEN     	(3       ),
     .READ_THROUGH 	("TRUE"  ))
 u_Tx_in(
-    .clk_w    	(clk             ),
-    .rstn_w   	(rst_n           ),
+    .clk_w    	(tx_clk          ),
+    .rstn_w   	(tx_rst_n        ),
     .full     	(Tx_in_full      ),
     .wen      	(Tx_in_wen       ),
     .data_in  	(Tx_in_data_in   ),
-    .clk_r    	(tx_clk          ),
-    .rstn_r   	(tx_rst_n        ),
+    .clk_r    	(clk             ),
+    .rstn_r   	(rst_n           ),
     .empty    	(Tx_in_empty     ),
     .ren      	(Tx_in_ren       ),
     .data_out 	(Tx_in_data_out  )
@@ -783,13 +782,13 @@ async_fifo_my #(
     .ADDR_LEN     	(3       ),
     .READ_THROUGH 	("TRUE"  ))
 u_Rx_in(
-    .clk_w    	(clk             ),
-    .rstn_w   	(rst_n           ),
+    .clk_w    	(rx_clk          ),
+    .rstn_w   	(rx_rst_n        ),
     .full     	(Rx_in_full      ),
     .wen      	(Rx_in_wen       ),
     .data_in  	(Rx_in_data_in   ),
-    .clk_r    	(rx_clk          ),
-    .rstn_r   	(rx_rst_n        ),
+    .clk_r    	(clk             ),
+    .rstn_r   	(rst_n           ),
     .empty    	(Rx_in_empty     ),
     .ren      	(Rx_in_ren       ),
     .data_out 	(Rx_in_data_out  )
