@@ -392,12 +392,12 @@ always @(posedge tx_clk or negedge rst_n) begin
             end
             DMA_REPORT_S_EIR: begin
                 if(eir_vld & eir_rdy)begin
-                    dma_send_status <= DMA_REPORT_IDLE;
+                    dma_report_status <= DMA_REPORT_IDLE;
                 end
             end
             DMA_REPORT_ERROR_REPORT: begin
                 if(eir_vld & eir_rdy)begin
-                    dma_send_status <= DMA_SEND_ERROR;
+                    dma_report_status <= DMA_REPORT_ERROR;
                 end
             end
             DMA_REPORT_ERROR: begin
