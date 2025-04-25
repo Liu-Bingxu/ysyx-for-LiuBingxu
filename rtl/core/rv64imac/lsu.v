@@ -602,27 +602,30 @@ assign gpr_data                 = (EX_LS_reg_operand & {64{(!(EX_LS_reg_load_val
 //read addr channel
 assign lsu_arvalid          = (!EX_LS_reg_atomic_valid) ? read_arvalid_reg : atomic_arvalid_reg;
 assign lsu_arlock           = EX_LS_reg_atomic_valid;
-assign lsu_arsize           = (load_byte_sign) ? 3'h0 : (
-                                (load_half_sign) ? 3'h1 : (
-                                    (load_word_sign) ? 3'h2 : (
-                                        (load_double_sign) ? 3'h3 : 3'h0)));
+assign lsu_arsize           = 3'h0 |
+                            ({3{load_byte_sign  }} & 3'h0 ) | 
+                            ({3{load_half_sign  }} & 3'h1 ) |
+                            ({3{load_word_sign  }} & 3'h2 ) |
+                            ({3{load_double_sign}} & 3'h3 ) ;
 assign lsu_araddr           = EX_LS_reg_operand;
 //read data channel
 assign lsu_rready           = 1'b1;
 //write addr channel
 assign lsu_awvalid          = (!EX_LS_reg_atomic_valid) ? write_awvalid_reg : atomic_awvalid_reg;
 assign lsu_awlock           = EX_LS_reg_atomic_valid;
-assign lsu_awsize           = (store_byte_sign) ? 3'h0 : (
-                                (store_half_sign) ? 3'h1 : (
-                                    (store_word_sign) ? 3'h2 : (
-                                        (store_double_sign) ? 3'h3 : 3'h0)));
+assign lsu_awsize           = 3'h0 |
+                            ({3{store_byte_sign  }} & 3'h0 ) | 
+                            ({3{store_half_sign  }} & 3'h1 ) |
+                            ({3{store_word_sign  }} & 3'h2 ) |
+                            ({3{store_double_sign}} & 3'h3 ) ;
 assign lsu_awaddr           = EX_LS_reg_operand;
 //write data channel
 assign lsu_wvalid           = (!EX_LS_reg_atomic_valid) ? write_wvalid_reg : atomic_wvalid_reg;
-assign lsu_wstrb           = (store_byte_sign) ? byte_wstrb : (
-                                (store_half_sign) ? half_wstrb : (
-                                    (store_word_sign) ? word_wstrb : (
-                                        (store_double_sign) ? double_wstrb : 8'h0)));
+assign lsu_wstrb            = 8'h0 |
+                            ({8{store_byte_sign  }} & byte_wstrb   ) | 
+                            ({8{store_half_sign  }} & half_wstrb   ) |
+                            ({8{store_word_sign  }} & word_wstrb   ) |
+                            ({8{store_double_sign}} & double_wstrb ) ;
 assign lsu_wdata            = store_data;
 //write resp channel
 assign lsu_bready           = 1'b1;

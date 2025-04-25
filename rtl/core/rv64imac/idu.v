@@ -700,14 +700,14 @@ assign trap_tval        = (((IF_ID_reg_rresp != 2'h0) | (ebreak)) ? IF_ID_reg_PC
                             ) 
                         ));
 //operand
-assign operand1         = (lui) ? 0 : ((auipc | jal | jalr) ? IF_ID_reg_PC : (csrrci | csrrwi | csrrsi) ? imm : 64'h0);
-assign operand2         = (jal | jalr) ? ((IF_ID_reg_inst_compress_flag) ? 64'h2 : 64'h4) : (
-                            (csrrw | csrrwi) ? 64'h0 : (
-                                (csrrc | csrrci | csrrs | csrrsi) ? WB_ID_csr_rdata : (
-                                    (I_flag | U_flag | S_flag) ? imm : 64'h0
-                                )
-                            )
-                        );
+assign operand1         = 64'h0 | 
+                        ({64{(auipc  | jal    | jalr  )}} & IF_ID_reg_PC ) |
+                        ({64{(csrrci | csrrwi | csrrsi)}} & imm          );
+assign operand2         = 64'h0 | 
+                        ({64{(( IF_ID_reg_inst_compress_flag) & (jal | jalr))}} & 64'h2             ) |
+                        ({64{((!IF_ID_reg_inst_compress_flag) & (jal | jalr))}} & 64'h4             ) |
+                        ({64{(csrrc | csrrci | csrrs | csrrsi)}}                & WB_ID_csr_rdata   ) |
+                        ({64{((I_flag | U_flag | S_flag) & (!jalr))}}           & imm               );
 // assign operand3         = (jalr) ? src1 : IF_ID_reg_PC;
 assign operand4         = imm;
 //illegal instruction judge

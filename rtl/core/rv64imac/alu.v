@@ -221,19 +221,16 @@ assign branch_flag  = (res_ne & ID_EX_reg_branch_ne) | (res_eq & ID_EX_reg_branc
                     (res_lt & ID_EX_reg_branch_lt & ID_EX_reg_branch_signed) | 
                     (res_geu & ID_EX_reg_branch_ge & (!ID_EX_reg_branch_signed)) | 
                     (res_ltu & ID_EX_reg_branch_lt & (!ID_EX_reg_branch_signed));
-assign res          = (ID_EX_reg_logic_valid) ? logic_res : (
-                        (ID_EX_reg_set_valid) ? set_res : (
-                            (ID_EX_reg_csr_valid) ? csr_res : (
-                                (ID_EX_reg_div_valid) ? div_res : (
-                                    (ID_EX_reg_mul_valid) ? mul_res : (
-                                        (ID_EX_reg_shift_valid) ? shift_res : (
-                                            (ID_EX_reg_atomic_valid) ? ID_EX_reg_operand1 : sum_res
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    );
+wire sum_valid      = (!(ID_EX_reg_logic_valid | ID_EX_reg_set_valid | ID_EX_reg_csr_valid | ID_EX_reg_div_valid | ID_EX_reg_mul_valid | ID_EX_reg_shift_valid | ID_EX_reg_atomic_valid));
+assign res          =   64'h0 |
+                        ({64{ID_EX_reg_logic_valid  }} & logic_res          ) |
+                        ({64{ID_EX_reg_set_valid    }} & set_res            ) |
+                        ({64{ID_EX_reg_csr_valid    }} & csr_res            ) |
+                        ({64{ID_EX_reg_div_valid    }} & div_res            ) |
+                        ({64{ID_EX_reg_mul_valid    }} & mul_res            ) |
+                        ({64{ID_EX_reg_shift_valid  }} & shift_res          ) |
+                        ({64{ID_EX_reg_atomic_valid }} & ID_EX_reg_operand1 ) |
+                        ({64{sum_valid              }} & sum_res            );
 
 //*************************************************************************
 

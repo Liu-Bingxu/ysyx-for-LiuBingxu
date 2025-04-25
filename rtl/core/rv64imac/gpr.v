@@ -40,7 +40,7 @@ always @(posedge clk) begin
     end
 end
 
-assign WB_EX_src1 = (rs1 == 5'h0) ? 64'h0 : riscv_reg[rs1];
-assign WB_EX_src2 = (rs2 == 5'h0) ? 64'h0 : riscv_reg[rs2];
+assign WB_EX_src1 = ({64{(rs1 != 5'h0)}} & riscv_reg[rs1]);
+assign WB_EX_src2 = ({64{(rs2 != 5'h0)}} & riscv_reg[rs2]);
 
 endmodule //gpr
