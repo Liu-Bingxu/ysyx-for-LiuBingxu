@@ -659,7 +659,7 @@ always @(posedge tx_clk or negedge rst_n) begin
                     end
                     tx_data_cnt             <= 3'h0;
                     tx_clk_cnt              <= 16'h0;
-                    tx_status               <= TX_IDLE;
+                    tx_status               <= TX_WAIT_IPG;
                 end
                 else if(|frame_data_cnt)begin
                     if(tx_data_cnt == 3'h0)begin
