@@ -40,8 +40,10 @@ module idu(
     input                   EX_ID_flush_flag,
     output [4 :0]           ID_EX_reg_rs1,
     output [4 :0]           ID_EX_reg_rs2,
-    // input  [63:0]           WB_ID_src1,
-    // input  [63:0]           WB_ID_src2,
+    output [4 :0]           rs1,
+    output [4 :0]           rs2,
+    input  [63:0]           WB_ID_src1,
+    input  [63:0]           WB_ID_src2,
     output [63:0]           ID_EX_reg_PC,
     output [63:0]           ID_EX_reg_next_PC,
     output [31:0]           ID_EX_reg_inst,
@@ -68,7 +70,7 @@ module idu(
     output                  ID_EX_reg_store_half,
     output                  ID_EX_reg_store_word,
     output                  ID_EX_reg_store_double,
-    // output [63:0]           ID_EX_reg_store_data,
+    output [63:0]           ID_EX_reg_store_data,
     //branch:
     output                  ID_EX_reg_branch_valid,
     output                  ID_EX_reg_branch_ne,
@@ -144,18 +146,18 @@ module idu(
     input                   TW,
     input                   TVM,
     input                   LS_WB_reg_ls_valid,
-    input                   LS_WB_reg_csr_wen
-    // input  [4:0]            LS_WB_reg_rd,
-    // input                   LS_WB_reg_dest_wen,
-    // input  [63:0]           LS_WB_reg_data
+    input                   LS_WB_reg_csr_wen,
+    input  [4:0]            LS_WB_reg_rd,
+    input                   LS_WB_reg_dest_wen,
+    input  [63:0]           LS_WB_reg_data
 );
 //common
 wire [63:0]             next_PC;
 wire                    rs1_valid;
 wire                    rs2_valid;
 wire [4 :0]             rd;
-wire [4 :0]             rs1;
-wire [4 :0]             rs2;
+// wire [4 :0]             rs1;
+// wire [4 :0]             rs2;
 wire                    dest_wen;
 //control_sign:
 wire                    alu_sub;
@@ -237,7 +239,7 @@ wire [63:0]             trap_tval;
 //operand
 wire [63:0]             operand1;
 wire [63:0]             operand2;
-// wire [63:0]             operand3;
+wire [63:0]             operand3;
 wire [63:0]             operand4;
 
 wire [63:0]             imm;
@@ -287,8 +289,8 @@ wire wfi;
 wire        illegal_instruction;
 
 // wire        Data_Conflict;
-// reg [63:0]  src1;
-// reg [63:0]  src2;
+reg [63:0]  src1;
+reg [63:0]  src2;
 
 assign rs1              = IF_ID_reg_inst[19:15];
 assign rs2              = IF_ID_reg_inst[24:20];
@@ -474,6 +476,22 @@ assign wfi          =   (IF_ID_reg_inst ==  32'h10500073) ? 1'b1 : 1'b0;
 //         src2 = WB_ID_src2;
 //     end
 // end
+always @(*) begin
+    if((rs1 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs1 != 5'h0) & rs1_valid & LS_WB_reg_dest_wen)begin
+        src1 = LS_WB_reg_data;
+    end
+    else begin
+        src1 = WB_ID_src1;
+    end
+end
+always @(*) begin
+    if((rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & rs2_valid & LS_WB_reg_dest_wen)begin
+        src2 = LS_WB_reg_data;
+    end
+    else begin
+        src2 = WB_ID_src2;
+    end
+end
 //!output sign decode
 //common
 assign next_PC          = (IF_ID_reg_inst_compress_flag) ? (IF_ID_reg_PC + 2) : (IF_ID_reg_PC + 4);
@@ -701,14 +719,16 @@ assign trap_tval        = (((IF_ID_reg_rresp != 2'h0) | (ebreak)) ? IF_ID_reg_PC
                         ));
 //operand
 assign operand1         = 64'h0 | 
-                        ({64{(auipc  | jal    | jalr  )}} & IF_ID_reg_PC ) |
-                        ({64{(csrrci | csrrwi | csrrsi)}} & imm          );
+                        ({64{(auipc  | jal    | jalr                )}} & IF_ID_reg_PC  ) |
+                        ({64{((rs1 != 5'h0) & rs1_valid & (!jalr)   )}} & src1          ) |
+                        ({64{(csrrci | csrrwi | csrrsi              )}} & imm           );
 assign operand2         = 64'h0 | 
                         ({64{(( IF_ID_reg_inst_compress_flag) & (jal | jalr))}} & 64'h2             ) |
                         ({64{((!IF_ID_reg_inst_compress_flag) & (jal | jalr))}} & 64'h4             ) |
+                        ({64{((rs2 != 5'h0) & rs2_valid & (!S_flag)         )}} & src2              ) |
                         ({64{(csrrc | csrrci | csrrs | csrrsi)}}                & WB_ID_csr_rdata   ) |
                         ({64{((I_flag | U_flag | S_flag) & (!jalr))}}           & imm               );
-// assign operand3         = (jalr) ? src1 : IF_ID_reg_PC;
+assign operand3         = (jalr) ? src1 : IF_ID_reg_PC;
 assign operand4         = imm;
 //illegal instruction judge
 assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch_valid | shift_valid | 
@@ -774,7 +794,7 @@ FF_D_without_asyn_rst #(1)  u_store_byte    (clk,ID_IF_inst_ready,store_byte,ID_
 FF_D_without_asyn_rst #(1)  u_store_half    (clk,ID_IF_inst_ready,store_half,ID_EX_reg_store_half);
 FF_D_without_asyn_rst #(1)  u_store_word    (clk,ID_IF_inst_ready,store_word,ID_EX_reg_store_word);
 FF_D_without_asyn_rst #(1)  u_store_double  (clk,ID_IF_inst_ready,store_double,ID_EX_reg_store_double);
-// FF_D_without_asyn_rst #(64) u_store_data    (clk,ID_IF_inst_ready,src2,ID_EX_reg_store_data);
+FF_D_without_asyn_rst #(64) u_store_data    (clk,ID_IF_inst_ready,src2,ID_EX_reg_store_data);
 //branch:
 FF_D_without_asyn_rst #(1)  u_branch_valid  (clk,ID_IF_inst_ready,branch_valid,ID_EX_reg_branch_valid);
 FF_D_without_asyn_rst #(1)  u_branch_ne     (clk,ID_IF_inst_ready,branch_ne,ID_EX_reg_branch_ne);
@@ -833,8 +853,8 @@ FF_D_without_asyn_rst #(64) u_trap_tval     (clk,ID_IF_inst_ready,trap_tval,ID_E
 //operand
 FF_D_without_asyn_rst #(64) u_operand1      (clk,ID_IF_inst_ready,operand1,ID_EX_reg_operand1);
 FF_D_without_asyn_rst #(64) u_operand2      (clk,ID_IF_inst_ready,operand2,ID_EX_reg_operand2);
-// FF_D_without_asyn_rst #(63) u_operand3      (clk,ID_IF_inst_ready,operand3,ID_EX_reg_operand3);
-assign ID_EX_reg_operand3 = ID_EX_reg_PC;
+FF_D_without_asyn_rst #(64) u_operand3      (clk,ID_IF_inst_ready,operand3,ID_EX_reg_operand3);
+// assign ID_EX_reg_operand3 = ID_EX_reg_PC;
 FF_D_without_asyn_rst #(64) u_operand4      (clk,ID_IF_inst_ready,operand4,ID_EX_reg_operand4);
 //**********************************************************************************************
 

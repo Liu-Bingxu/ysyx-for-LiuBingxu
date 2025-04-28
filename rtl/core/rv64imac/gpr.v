@@ -21,8 +21,8 @@ module gpr (
 //interface with exu
     input  [4 :0]           rs1,
     input  [4 :0]           rs2,
-    output [63:0]           WB_EX_src1,
-    output [63:0]           WB_EX_src2,
+    output [63:0]           WB_ID_src1,
+    output [63:0]           WB_ID_src2,
 //interface with lsu 
     //gpr
     input                   LS_WB_reg_ls_valid,
@@ -40,7 +40,7 @@ always @(posedge clk) begin
     end
 end
 
-assign WB_EX_src1 = ({64{(rs1 != 5'h0)}} & riscv_reg[rs1]);
-assign WB_EX_src2 = ({64{(rs2 != 5'h0)}} & riscv_reg[rs2]);
+assign WB_ID_src1 = ({64{(rs1 != 5'h0)}} & riscv_reg[rs1]);
+assign WB_ID_src2 = ({64{(rs2 != 5'h0)}} & riscv_reg[rs2]);
 
 endmodule //gpr

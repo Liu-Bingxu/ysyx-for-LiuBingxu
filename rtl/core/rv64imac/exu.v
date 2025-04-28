@@ -26,10 +26,10 @@ module exu (
     input                   ID_EX_reg_decode_valid,
     input  [4 :0]           ID_EX_reg_rs1,
     input  [4 :0]           ID_EX_reg_rs2,
-    output [4 :0]           rs1,
-    output [4 :0]           rs2,
-    input  [63:0]           WB_EX_src1,
-    input  [63:0]           WB_EX_src2,
+    // output [4 :0]           rs1,
+    // output [4 :0]           rs2,
+    // input  [63:0]           WB_EX_src1,
+    // input  [63:0]           WB_EX_src2,
     input  [63:0]           ID_EX_reg_PC,
     input  [63:0]           ID_EX_reg_next_PC,
     input  [31:0]           ID_EX_reg_inst,
@@ -56,7 +56,7 @@ module exu (
     input                   ID_EX_reg_store_half,
     input                   ID_EX_reg_store_word,
     input                   ID_EX_reg_store_double,
-    // input  [63:0]           ID_EX_reg_store_data,
+    input  [63:0]           ID_EX_reg_store_data,
     //branch:
     input                   ID_EX_reg_branch_valid,
     input                   ID_EX_reg_branch_ne,
@@ -178,13 +178,20 @@ module exu (
     output [63:0]           EX_IF_jump_addr
 );
 
+wire [4 :0]             rs1;
+wire [4 :0]             rs2;
+
 wire        Data_Conflict;
+reg         src1_valid;
 reg [63:0]  src1;
+reg         src2_valid;
 reg [63:0]  src2;
 
-wire [63:0]             operand1;
-wire [63:0]             operand2;
-wire [63:0]             operand3;
+reg  [63:0]             store_data;
+
+reg  [63:0]             operand1;
+reg  [63:0]             operand2;
+reg  [63:0]             operand3;
 wire [63:0]             operand4;
 
 // outports wire
@@ -204,32 +211,67 @@ assign rs2 = ID_EX_reg_rs2;
 assign Data_Conflict = ((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen) |
                         ((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & (EX_LS_reg_load_valid | EX_LS_reg_atomic_valid) & EX_LS_reg_dest_wen);
 always @(*) begin
-    if((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & EX_LS_reg_dest_wen)begin
-        src1 = EX_LS_reg_operand;
+    if((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & EX_LS_reg_dest_wen & (!ID_EX_reg_jump_jalr))begin
+        operand1 = EX_LS_reg_operand;
     end
-    else if((rs1 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs1 != 5'h0) & LS_WB_reg_dest_wen)begin
-        src1 = LS_WB_reg_data;
+    else if((rs1 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs1 != 5'h0) & LS_WB_reg_dest_wen & (!ID_EX_reg_jump_jalr))begin
+        operand1 = LS_WB_reg_data;
+    end
+    else if(src1_valid & (!ID_EX_reg_jump_jalr))begin
+        operand1 = src1;
     end
     else begin
-        src1 = WB_EX_src1;
+        operand1 = ID_EX_reg_operand1;
     end
 end
 always @(*) begin
-    if((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & EX_LS_reg_dest_wen)begin
-        src2 = EX_LS_reg_operand;
+    if((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & EX_LS_reg_dest_wen & (!ID_EX_reg_store_valid))begin
+        operand2 = EX_LS_reg_operand;
     end
-    else if((rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & LS_WB_reg_dest_wen)begin
-        src2 = LS_WB_reg_data;
+    else if((rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & LS_WB_reg_dest_wen & (!ID_EX_reg_store_valid))begin
+        operand2 = LS_WB_reg_data;
+    end
+    else if(src2_valid & (!ID_EX_reg_store_valid))begin
+        operand2 = src2;
     end
     else begin
-        src2 = WB_EX_src2;
+        operand2 = ID_EX_reg_operand2;
+    end
+end
+always @(*) begin
+    if((rs1 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs1 != 5'h0) & EX_LS_reg_dest_wen & ID_EX_reg_jump_jalr)begin
+        operand3 = EX_LS_reg_operand;
+    end
+    else if((rs1 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs1 != 5'h0) & LS_WB_reg_dest_wen & ID_EX_reg_jump_jalr)begin
+        operand3 = LS_WB_reg_data;
+    end
+    else if(src1_valid & ID_EX_reg_jump_jalr)begin
+        operand3 = src1;
+    end
+    else begin
+        operand3 = ID_EX_reg_operand3;
     end
 end
 
-assign operand1 = ((rs1 != 5'h0) & (!ID_EX_reg_jump_jalr)) ? src1 : ID_EX_reg_operand1;
-assign operand2 = ((rs2 != 5'h0) & (!ID_EX_reg_store_valid)) ? src2 : ID_EX_reg_operand2;
-assign operand3 = (ID_EX_reg_jump_jalr) ? src1 : ID_EX_reg_operand3;
+// assign operand1 = ((rs1 != 5'h0) & (!ID_EX_reg_jump_jalr)) ? src1 : ID_EX_reg_operand1;
+// assign operand2 = ((rs2 != 5'h0) & (!ID_EX_reg_store_valid)) ? src2 : ID_EX_reg_operand2;
+// assign operand3 = (ID_EX_reg_jump_jalr) ? src1 : ID_EX_reg_operand3;
 assign operand4 = ID_EX_reg_operand4;
+
+always @(*) begin
+    if((rs2 == EX_LS_reg_rd) & EX_LS_reg_execute_valid & (rs2 != 5'h0) & EX_LS_reg_dest_wen)begin
+        store_data = EX_LS_reg_operand;
+    end
+    else if((rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & LS_WB_reg_dest_wen)begin
+        store_data = LS_WB_reg_data;
+    end
+    else if(src2_valid & ID_EX_reg_store_valid)begin
+        store_data = src2;
+    end
+    else begin
+        store_data = ID_EX_reg_store_data;
+    end
+end
 
 alu u_alu(
     .clk                     	( clk                      ),
@@ -301,6 +343,46 @@ always @(posedge clk or negedge rst_n) begin
         jump_cnt <= 1'b1;
     end
 end
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        src1_valid <= 1'b0;
+    end
+    else if(LS_EX_flush_flag)begin
+        src1_valid <= 1'b0;
+    end
+    else if(ID_EX_reg_decode_valid & EX_ID_decode_ready)begin
+        src1_valid <= 1'b0;
+    end
+    else if(ID_EX_reg_decode_valid & (rs1 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs1 != 5'h0) & LS_WB_reg_dest_wen)begin
+        src1_valid <= 1'b1;
+    end
+end
+always @(posedge clk) begin
+    if(ID_EX_reg_decode_valid & (rs1 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs1 != 5'h0) & LS_WB_reg_dest_wen)begin
+        src1 <= LS_WB_reg_data;
+    end
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        src2_valid <= 1'b0;
+    end
+    else if(LS_EX_flush_flag)begin
+        src2_valid <= 1'b0;
+    end
+    else if(ID_EX_reg_decode_valid & EX_ID_decode_ready)begin
+        src2_valid <= 1'b0;
+    end
+    else if(ID_EX_reg_decode_valid & (rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & LS_WB_reg_dest_wen)begin
+        src2_valid <= 1'b1;
+    end
+end
+always @(posedge clk) begin
+    if(ID_EX_reg_decode_valid & (rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & LS_WB_reg_dest_wen)begin
+        src2 <= LS_WB_reg_data;
+    end
+end
 //**********************************************************************
 assign EX_ID_decode_ready = (ID_EX_reg_decode_valid & ((!EX_LS_reg_execute_valid) | LS_EX_execute_ready) & (!WB_EX_interrupt_flag) &
                             (!LS_EX_flush_flag) & ((!((ID_EX_reg_mul_valid | ID_EX_reg_div_valid) & (!o_valid))) | ID_EX_reg_trap_valid) &
@@ -341,7 +423,7 @@ FF_D_without_asyn_rst #(1)  u_store_byte    (clk,EX_ID_decode_ready,ID_EX_reg_st
 FF_D_without_asyn_rst #(1)  u_store_half    (clk,EX_ID_decode_ready,ID_EX_reg_store_half,   EX_LS_reg_store_half);
 FF_D_without_asyn_rst #(1)  u_store_word    (clk,EX_ID_decode_ready,ID_EX_reg_store_word,   EX_LS_reg_store_word);
 FF_D_without_asyn_rst #(1)  u_store_double  (clk,EX_ID_decode_ready,ID_EX_reg_store_double, EX_LS_reg_store_double);
-FF_D_without_asyn_rst #(64) u_store_data    (clk,EX_ID_decode_ready,src2,                   EX_LS_reg_store_data);
+FF_D_without_asyn_rst #(64) u_store_data    (clk,EX_ID_decode_ready,store_data,             EX_LS_reg_store_data);
 //Zicsr:
 FF_D_without_asyn_rst #(1)  u_csr_wen       (clk,EX_ID_decode_ready,ID_EX_reg_csr_wen, EX_LS_reg_csr_wen);
 FF_D_without_asyn_rst #(1)  u_csr_ren       (clk,EX_ID_decode_ready,ID_EX_reg_csr_ren, EX_LS_reg_csr_ren);

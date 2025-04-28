@@ -49,8 +49,8 @@ module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
 //interface with exu
     input  [4 :0]           rs1,
     input  [4 :0]           rs2,
-    output [63:0]           WB_EX_src1,
-    output [63:0]           WB_EX_src2,
+    output [63:0]           WB_ID_src1,
+    output [63:0]           WB_ID_src2,
     input                   EX_LS_reg_execute_valid,
     output                  WB_EX_interrupt_flag,
 //interface with lsu 
@@ -93,8 +93,8 @@ gpr u_gpr(
     .clk                	( clk                 ),
     .rs1                	( rs1                 ),
     .rs2                	( rs2                 ),
-    .WB_EX_src1         	( WB_EX_src1          ),
-    .WB_EX_src2         	( WB_EX_src2          ),
+    .WB_ID_src1         	( WB_ID_src1          ),
+    .WB_ID_src2         	( WB_ID_src2          ),
     .LS_WB_reg_ls_valid     ( LS_WB_reg_ls_valid  ),
     .LS_WB_reg_trap_valid   ( LS_WB_reg_trap_valid),
     .LS_WB_reg_rd       	( LS_WB_reg_rd        ),

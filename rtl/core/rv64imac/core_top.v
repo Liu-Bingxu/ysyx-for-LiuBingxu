@@ -113,6 +113,7 @@ wire        	ID_EX_reg_store_byte;
 wire        	ID_EX_reg_store_half;
 wire        	ID_EX_reg_store_word;
 wire        	ID_EX_reg_store_double;
+wire [63:0] 	ID_EX_reg_store_data;
 wire        	ID_EX_reg_branch_valid;
 wire        	ID_EX_reg_branch_ne;
 wire        	ID_EX_reg_branch_eq;
@@ -239,8 +240,8 @@ wire            debug_mode;
 wire [1:0]  	current_priv_status;
 wire        	WB_IF_jump_flag;
 wire [63:0] 	WB_IF_jump_addr;
-wire [63:0] 	WB_EX_src1;
-wire [63:0] 	WB_EX_src2;
+wire [63:0] 	WB_ID_src1;
+wire [63:0] 	WB_ID_src2;
 wire [63:0] 	WB_ID_csr_rdata;
 wire        	TSR;
 wire        	TW;
@@ -290,6 +291,10 @@ idu u_idu(
     .EX_ID_flush_flag             	( EX_ID_flush_flag              ),
     .ID_EX_reg_rs1                  ( ID_EX_reg_rs1                 ),
     .ID_EX_reg_rs2                  ( ID_EX_reg_rs2                 ),
+    .rs1                            ( rs1                           ),
+    .rs2                            ( rs2                           ),
+    .WB_ID_src1                     ( WB_ID_src1                    ),
+    .WB_ID_src2                     ( WB_ID_src2                    ),
     .ID_EX_reg_PC                 	( ID_EX_reg_PC                  ),
     .ID_EX_reg_next_PC            	( ID_EX_reg_next_PC             ),
     .ID_EX_reg_inst               	( ID_EX_reg_inst                ),
@@ -312,6 +317,7 @@ idu u_idu(
     .ID_EX_reg_store_half         	( ID_EX_reg_store_half          ),
     .ID_EX_reg_store_word         	( ID_EX_reg_store_word          ),
     .ID_EX_reg_store_double       	( ID_EX_reg_store_double        ),
+    .ID_EX_reg_store_data           ( ID_EX_reg_store_data          ),
     .ID_EX_reg_branch_valid       	( ID_EX_reg_branch_valid        ),
     .ID_EX_reg_branch_ne          	( ID_EX_reg_branch_ne           ),
     .ID_EX_reg_branch_eq          	( ID_EX_reg_branch_eq           ),
@@ -371,7 +377,10 @@ idu u_idu(
     .TW                           	( TW                            ),
     .TVM                          	( TVM                           ),
     .LS_WB_reg_ls_valid           	( LS_WB_reg_ls_valid            ),
-    .LS_WB_reg_csr_wen            	( LS_WB_reg_csr_wen             )
+    .LS_WB_reg_csr_wen            	( LS_WB_reg_csr_wen             ),
+    .LS_WB_reg_rd                   ( LS_WB_reg_rd                  ),
+    .LS_WB_reg_dest_wen             ( LS_WB_reg_dest_wen            ),
+    .LS_WB_reg_data                 ( LS_WB_reg_data                )
 );
 
 exu u_exu(
@@ -380,12 +389,8 @@ exu u_exu(
     .EX_ID_flush_flag        	( EX_ID_flush_flag         ),
     .EX_ID_decode_ready      	( EX_ID_decode_ready       ),
     .ID_EX_reg_decode_valid  	( ID_EX_reg_decode_valid   ),
-    .rs1                        ( rs1                      ),
-    .rs2                        ( rs2                      ),
     .ID_EX_reg_rs1              ( ID_EX_reg_rs1            ),
     .ID_EX_reg_rs2              ( ID_EX_reg_rs2            ),
-    .WB_EX_src1                 ( WB_EX_src1               ),
-    .WB_EX_src2                 ( WB_EX_src2               ),
     .ID_EX_reg_PC            	( ID_EX_reg_PC             ),
     .ID_EX_reg_next_PC       	( ID_EX_reg_next_PC        ),
     .ID_EX_reg_inst          	( ID_EX_reg_inst           ),
@@ -408,6 +413,7 @@ exu u_exu(
     .ID_EX_reg_store_half    	( ID_EX_reg_store_half     ),
     .ID_EX_reg_store_word    	( ID_EX_reg_store_word     ),
     .ID_EX_reg_store_double  	( ID_EX_reg_store_double   ),
+    .ID_EX_reg_store_data       ( ID_EX_reg_store_data     ),
     .ID_EX_reg_branch_valid  	( ID_EX_reg_branch_valid   ),
     .ID_EX_reg_branch_ne     	( ID_EX_reg_branch_ne      ),
     .ID_EX_reg_branch_eq     	( ID_EX_reg_branch_eq      ),
@@ -622,8 +628,8 @@ wbu #(
     .WB_IF_jump_addr         	( WB_IF_jump_addr          ),
     .rs1                     	( rs1                      ),
     .rs2                     	( rs2                      ),
-    .WB_EX_src1              	( WB_EX_src1               ),
-    .WB_EX_src2              	( WB_EX_src2               ),
+    .WB_ID_src1              	( WB_ID_src1               ),
+    .WB_ID_src2              	( WB_ID_src2               ),
     .ID_WB_csr_addr          	( ID_WB_csr_addr           ),
     .WB_ID_csr_rdata         	( WB_ID_csr_rdata          ),
     .TSR                     	( TSR                      ),
