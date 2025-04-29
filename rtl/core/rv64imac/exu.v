@@ -385,9 +385,7 @@ always @(posedge clk) begin
 end
 //**********************************************************************
 assign EX_ID_decode_ready = (ID_EX_reg_decode_valid & ((!EX_LS_reg_execute_valid) | LS_EX_execute_ready) & (!WB_EX_interrupt_flag) &
-                            (!LS_EX_flush_flag) & ((!((ID_EX_reg_mul_valid | ID_EX_reg_div_valid) & (!o_valid))) | ID_EX_reg_trap_valid) &
-                            (!(EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid | EX_LS_reg_dret_valid))) & 
-                            ((!Data_Conflict) | ID_EX_reg_trap_valid));
+                            ((!(((ID_EX_reg_mul_valid | ID_EX_reg_div_valid) & (!o_valid)) | Data_Conflict)) | ID_EX_reg_trap_valid));
 assign EX_ID_flush_flag   = (LS_EX_flush_flag | (EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid | EX_LS_reg_dret_valid)));
 assign EX_IF_jump_flag    = (ID_EX_reg_decode_valid & (ID_EX_reg_jump_valid | (ID_EX_reg_branch_valid & branch_flag)) & (!jump_cnt) & (!Data_Conflict));
 assign EX_IF_jump_addr    = {jump_addr[63:1], 1'b0};
