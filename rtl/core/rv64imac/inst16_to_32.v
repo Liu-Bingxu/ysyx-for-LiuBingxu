@@ -95,11 +95,7 @@ always @(*) begin
                     output_inst_reg = {{{6{input_inst[12]}},input_inst[12],input_inst[6:2]},5'h0,3'h0,{input_inst[11:7]},7'h13};
                 end
                 3'h3:begin
-                    if(input_inst[11:7]==5'h0)begin
-                        //HINT for c.lui
-                        output_inst_reg = `NOP;
-                    end
-                    else if(input_inst[11:7]==5'h2)begin
+                    if(input_inst[11:7]==5'h2)begin
                         if({input_inst[12],input_inst[6:2]}==6'h0) begin
                             //RES for c.addi16sp
                             output_inst_reg = 32'h0;
@@ -109,15 +105,17 @@ always @(*) begin
                             output_inst_reg = {{{2{input_inst[12]}},input_inst[12],input_inst[4:3],input_inst[5],input_inst[2],input_inst[6],4'h0},5'h2,3'h0,5'h2,7'h13};
                         end
                     end
+                    else if({input_inst[12],input_inst[6:2]}==6'h0) begin
+                        //RES for c.lui
+                        output_inst_reg = 32'h0;
+                    end
+                    else if(input_inst[11:7]==5'h0)begin
+                        //HINT for c.lui
+                        output_inst_reg = `NOP;
+                    end
                     else begin
-                        if({input_inst[12],input_inst[6:2]}==6'h0) begin
-                            //RES for c.lui
-                            output_inst_reg = 32'h0;
-                        end
-                        else begin
-                            //c.lui -> lui rd, imm
-                            output_inst_reg = {{{14{input_inst[12]}},input_inst[12],input_inst[6:2]},{input_inst[11:7]},7'h37};
-                        end
+                        //c.lui -> lui rd, imm
+                        output_inst_reg = {{{14{input_inst[12]}},input_inst[12],input_inst[6:2]},{input_inst[11:7]},7'h37};
                     end
                 end
                 3'h4:begin
