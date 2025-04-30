@@ -134,8 +134,8 @@ module idu(
     output [63:0]           ID_EX_reg_operand3,   
     output [63:0]           ID_EX_reg_operand4,
 //interface with lsu
-    input                   EX_LS_reg_execute_valid,
-    input                   EX_LS_reg_csr_wen,
+    // input                   EX_LS_reg_execute_valid,
+    // input                   EX_LS_reg_csr_wen,
     // input                   EX_LS_reg_atomic_valid,
     // input                   EX_LS_reg_load_valid,
     // input  [4:0]            EX_LS_reg_rd,
@@ -147,6 +147,7 @@ module idu(
     input                   TVM,
     input                   LS_WB_reg_ls_valid,
     input                   LS_WB_reg_csr_wen,
+    input                   LS_WB_reg_csr_ren,
     input  [4:0]            LS_WB_reg_rd,
     input                   LS_WB_reg_dest_wen,
     input  [63:0]           LS_WB_reg_data
@@ -207,6 +208,7 @@ wire                    csr_addr_legal;
 wire                    csr_set;
 wire                    csr_clear;
 wire                    csr_swap;
+wire                    csr_wait;
 //mul:
 wire                    mul_valid;
 wire                    mul_high;
@@ -671,7 +673,23 @@ assign csr_addr_legal   = ( (csr_addr == `CSR_ADDR_MISA          ) |
                             ((csr_addr == `CSR_ADDR_DSCRATCH1    ) & debug_mode));
 assign csr_set          = (csrrs | csrrsi);
 assign csr_clear        = (csrrc | csrrci);
-assign csr_swap         = (csrrw | csrrwi);    
+assign csr_swap         = (csrrw | csrrwi);  
+wire csr_wait_set = IF_ID_reg_inst_valid & ID_IF_inst_ready & csr_valid;
+wire csr_wait_clr = LS_WB_reg_ls_valid & (LS_WB_reg_csr_wen | LS_WB_reg_csr_ren);
+wire csr_wait_wen = csr_wait_set | csr_wait_clr;
+wire csr_wait_nxt = csr_wait_set | (!csr_wait_clr);
+FF_D_with_syn_rst #(
+    .DATA_LEN 	( 1  ),
+    .RST_DATA 	( 0  )
+)u_csr_wait
+(
+    .clk      	( clk               ),
+    .rst_n    	( rst_n             ),
+    .syn_rst    ( EX_ID_flush_flag  ),
+    .wen        ( csr_wait_wen      ),
+    .data_in  	( csr_wait_nxt      ),
+    .data_out 	( csr_wait          )
+);
 //mul:
 assign mul_valid        = (mul | mulh | mulhsu | mulhu | mulw);
 assign mul_high         = (mulh | mulhsu | mulhu);
@@ -748,9 +766,8 @@ assign illegal_instruction = ((!(logic_valid | load_valid | store_valid | branch
                                 /*disable mret form U*/          (mret & (current_priv_status == `PRV_U)));
 //**********************************************************************************************
 //!output 
-assign ID_IF_inst_ready     = IF_ID_reg_inst_valid & (EX_ID_decode_ready | (!ID_EX_reg_decode_valid)) & (!EX_IF_jump_flag) & ((
-                            (!(EX_LS_reg_execute_valid & EX_LS_reg_csr_wen)) & (!(LS_WB_reg_ls_valid & LS_WB_reg_csr_wen)) &
-                            (!(ID_EX_reg_decode_valid & ID_EX_reg_csr_wen))) | trap_valid | mret_valid | sret_valid | dret_valid);
+assign ID_IF_inst_ready     = IF_ID_reg_inst_valid & (EX_ID_decode_ready | (!ID_EX_reg_decode_valid)) & (!EX_IF_jump_flag) & 
+                            ((!csr_wait) | trap_valid | mret_valid | sret_valid | dret_valid);
 assign ID_IF_flush_flag     = (EX_ID_flush_flag | (ID_EX_reg_decode_valid & (ID_EX_reg_trap_valid | ID_EX_reg_mret_valid | ID_EX_reg_sret_valid | ID_EX_reg_dret_valid)));
 //common
 FF_D_with_syn_rst #(
