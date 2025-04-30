@@ -38,8 +38,9 @@ reg [63:0]  divisor_reg;
 // reg         div_ready_reg;
 
 localparam IDLE = 2'h0;
-localparam DIV  = 2'h1;
-localparam OUT  = 2'h2;
+localparam LOAD = 2'h1;
+localparam DIV  = 2'h2;
+localparam OUT  = 2'h3;
 reg [1:0]   state;
 reg [6:0]   cnt;
 reg [63:0]  quotient_reg;
@@ -116,12 +117,19 @@ always @(posedge clk or negedge rst_n) begin
                         div_o_valid_reg <= 1'b1;
                     end
                     else begin
-                        state <= DIV;
-                        cnt <= 7'h0;
-                        div_shfit_rem <= (div_signed & dividend[63]) ? {64'h0, (~dividend + 1'b1)} : {64'h0, dividend};
-                        sub_num <= (div_signed & divisor[63]) ? (~divisor + 1'b1) : divisor;
+                        state <= LOAD;
+                        // state <= DIV;
+                        // cnt <= 7'h0;
+                        // div_shfit_rem <= (div_signed & dividend[63]) ? {64'h0, (~dividend + 1'b1)} : {64'h0, dividend};
+                        // sub_num <= (div_signed & divisor[63]) ? (~divisor + 1'b1) : divisor;
                     end
                 end
+            end
+            LOAD: begin
+                state <= DIV;
+                cnt <= 7'h0;
+                div_shfit_rem <= (div_signed_reg & dividend_reg[63]) ? {64'h0, (~dividend_reg + 1'b1)} : {64'h0, dividend_reg};
+                sub_num <= (div_signed_reg & divisor_reg[63]) ? (~divisor_reg + 1'b1) : divisor_reg;
             end
             DIV: begin
                 if(div_flush)begin
