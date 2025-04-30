@@ -285,7 +285,7 @@ always @(posedge clk or negedge rst_n) begin
     else begin
         case (read_state)
             READ_IDLE: begin
-                if(EX_LS_reg_execute_valid & (!trap_valid) & EX_LS_reg_load_valid)begin
+                if(EX_LS_reg_execute_valid & (!trap_valid) & (!LS_EX_flush_flag) & EX_LS_reg_load_valid)begin
                     read_state          <= READ_WAIT_ARREADY;
                     read_arvalid_reg    <= 1'b1;
                 end
@@ -341,7 +341,7 @@ always @(posedge clk or negedge rst_n) begin
     else begin
         case (write_state)
             WRITE_IDLE: begin
-                if(EX_LS_reg_execute_valid & (!trap_valid) & EX_LS_reg_store_valid)begin
+                if(EX_LS_reg_execute_valid & (!trap_valid) & (!LS_EX_flush_flag) & EX_LS_reg_store_valid)begin
                     write_state         <= WRITE_WAIT_AWREADY_WREADY;
                     write_awvalid_reg   <= 1'b1;
                     write_wvalid_reg    <= 1'b1;
@@ -423,12 +423,12 @@ always @(posedge clk or negedge rst_n) begin
     else begin
         case (atomic_state)
             ATOMIC_IDLE: begin
-                if(EX_LS_reg_execute_valid & (!trap_valid) & EX_LS_reg_atomic_valid & EX_LS_reg_atomic_sc)begin
+                if(EX_LS_reg_execute_valid & (!trap_valid) & (!LS_EX_flush_flag) & EX_LS_reg_atomic_valid & EX_LS_reg_atomic_sc)begin
                     atomic_state         <= WRITE_WAIT_AWREADY_WREADY;
                     atomic_awvalid_reg   <= 1'b1;
                     atomic_wvalid_reg    <= 1'b1;
                 end
-                if(EX_LS_reg_execute_valid & (!trap_valid) & EX_LS_reg_atomic_valid & (!EX_LS_reg_atomic_sc))begin
+                if(EX_LS_reg_execute_valid & (!trap_valid) & (!LS_EX_flush_flag) & EX_LS_reg_atomic_valid & (!EX_LS_reg_atomic_sc))begin
                     atomic_state         <= ATOMIC_WAIT_ARREADY;
                     atomic_arvalid_reg   <= 1'b1;
                 end
