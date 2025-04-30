@@ -643,7 +643,7 @@ FF_D_with_syn_rst #(
     .rst_n    	( rst_n                                     ),
     .syn_rst    ( WB_LS_flush_flag                          ),
     .wen        ( ((!LS_WB_reg_ls_valid) | WB_LS_ls_ready)  ),
-    .data_in  	( LS_EX_execute_ready                       ),
+    .data_in  	( LS_EX_execute_ready & (!LS_EX_flush_flag) ),
     .data_out 	( LS_WB_reg_ls_valid                        )
 );
 FF_D_without_asyn_rst #(32) u_inst          (clk,LS_EX_execute_ready,EX_LS_reg_inst,    LS_WB_reg_inst);

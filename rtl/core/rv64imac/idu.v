@@ -779,7 +779,7 @@ FF_D_with_syn_rst #(
     .rst_n    	( rst_n                                             ),
     .syn_rst    ( EX_ID_flush_flag                                  ),
     .wen        ( (EX_ID_decode_ready | (!ID_EX_reg_decode_valid))  ),
-    .data_in  	( ID_IF_inst_ready                                  ),
+    .data_in  	( ID_IF_inst_ready & (!ID_IF_flush_flag)            ),
     .data_out 	( ID_EX_reg_decode_valid                            )
 );
 FF_D_without_asyn_rst #(5)  u_rd            (clk,ID_IF_inst_ready,rd,ID_EX_reg_rd);

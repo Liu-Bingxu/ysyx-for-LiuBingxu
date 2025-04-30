@@ -400,7 +400,7 @@ FF_D_with_syn_rst #(
     .rst_n    	( rst_n                                             ),
     .syn_rst    ( LS_EX_flush_flag                                  ),
     .wen        ( ((!EX_LS_reg_execute_valid) | LS_EX_execute_ready)),
-    .data_in  	( EX_ID_decode_ready                                ),
+    .data_in  	( EX_ID_decode_ready & (!EX_ID_flush_flag)          ),
     .data_out 	( EX_LS_reg_execute_valid                           )
 );
 FF_D_without_asyn_rst #(5)  u_rd            (clk,EX_ID_decode_ready,ID_EX_reg_rd,       EX_LS_reg_rd);
