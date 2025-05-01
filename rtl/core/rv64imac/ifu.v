@@ -110,6 +110,26 @@ localparam STATUS2 = 2'h1;
 localparam STATUS3 = 2'h3;
 localparam STATUS4 = 2'h2;
 
+wire                  reg1_can_cover_flag;
+wire                  reg1_can_change_flag;
+wire                  IF_ID_reg_inst_valid_1;
+wire                  IF_ID_reg_inst_compress_flag_1;
+wire [1:0]            IF_ID_reg_rresp_1;
+wire [15:0]           IF_ID_reg_inst_compress_1;
+wire [31:0]           IF_ID_reg_inst_1;
+wire [63:0]           IF_ID_reg_PC_1;
+
+wire                  reg2_can_cover_flag;
+wire                  reg2_can_change_flag;
+wire                  IF_ID_reg_inst_valid_2;
+wire                  IF_ID_reg_inst_compress_flag_2;
+wire [1:0]            IF_ID_reg_rresp_2;
+wire [15:0]           IF_ID_reg_inst_compress_2;
+wire [31:0]           IF_ID_reg_inst_2;
+wire [63:0]           IF_ID_reg_PC_2;
+
+wire                  IF_ID_reg_sel_reg;
+
 //pc part
 reg [63:0]          pc;
 always @(posedge clk or negedge rst_n) begin
@@ -429,28 +449,71 @@ FF_D_without_asyn_rst #(
 FF_D_with_syn_rst #(
     .DATA_LEN 	( 1  ),
     .RST_DATA 	( 0  )
-)u_inst_valid
+)u_inst_valid_1
 (
     .clk      	( clk                   ),
     .rst_n    	( rst_n                 ),
     .syn_rst    ( flush_flag            ),
-    .wen        ( reg_can_cover_flag    ),
-    .data_in  	( reg_can_change_flag   ),
-    .data_out 	( IF_ID_reg_inst_valid  )
+    .wen        ( reg1_can_cover_flag   ),
+    .data_in  	( reg1_can_change_flag  ),
+    .data_out 	( IF_ID_reg_inst_valid_1)
 );
 
-FF_D_without_asyn_rst #(2)u_rresp(.clk(clk),.wen(reg_can_change_flag),.data_in(rresp_to_idu),.data_out(IF_ID_reg_rresp));
-FF_D_without_asyn_rst #(32)u_inst(.clk(clk),.wen(reg_can_change_flag),.data_in(inst_to_idu),.data_out(IF_ID_reg_inst));
-FF_D_without_asyn_rst #(16)u_inst_compress(.clk(clk),.wen(reg_can_change_flag),.data_in(inst_rdata_reg_get[15:0]),.data_out(IF_ID_reg_inst_compress));
-FF_D_without_asyn_rst #(64)u_PC(.clk(clk),.wen(reg_can_change_flag),.data_in(my_reg_PC_reg),.data_out(IF_ID_reg_PC));
-FF_D_without_asyn_rst #(1)u_inst_compress_flag(.clk(clk),.wen(reg_can_change_flag),.data_in(inst_compress_flag),.data_out(IF_ID_reg_inst_compress_flag));
+FF_D_without_asyn_rst #(2)u_rresp_1             (.clk(clk),.wen(reg1_can_change_flag),.data_in(rresp_to_idu),            .data_out(IF_ID_reg_rresp_1));
+FF_D_without_asyn_rst #(32)u_inst_1             (.clk(clk),.wen(reg1_can_change_flag),.data_in(inst_to_idu),             .data_out(IF_ID_reg_inst_1));
+FF_D_without_asyn_rst #(16)u_inst_compress_1    (.clk(clk),.wen(reg1_can_change_flag),.data_in(inst_rdata_reg_get[15:0]),.data_out(IF_ID_reg_inst_compress_1));
+FF_D_without_asyn_rst #(64)u_PC_1               (.clk(clk),.wen(reg1_can_change_flag),.data_in(my_reg_PC_reg),           .data_out(IF_ID_reg_PC_1));
+FF_D_without_asyn_rst #(1)u_inst_compress_flag_1(.clk(clk),.wen(reg1_can_change_flag),.data_in(inst_compress_flag),      .data_out(IF_ID_reg_inst_compress_flag_1));
+assign reg1_can_cover_flag  = ((!IF_ID_reg_inst_valid_1) | ((!IF_ID_reg_sel_reg) & ID_IF_inst_ready));
+assign reg1_can_change_flag = (reg_can_change_flag & (((!IF_ID_reg_sel_reg) & (!IF_ID_reg_inst_valid_1)) | (IF_ID_reg_sel_reg & IF_ID_reg_inst_valid_2)));
+
+FF_D_with_syn_rst #(
+    .DATA_LEN 	( 1  ),
+    .RST_DATA 	( 0  )
+)u_inst_valid_2
+(
+    .clk      	( clk                    ),
+    .rst_n    	( rst_n                  ),
+    .syn_rst    ( flush_flag             ),
+    .wen        ( reg2_can_cover_flag    ),
+    .data_in  	( reg2_can_change_flag   ),
+    .data_out 	( IF_ID_reg_inst_valid_2 )
+);
+
+FF_D_without_asyn_rst #(2)u_rresp_2             (.clk(clk),.wen(reg2_can_change_flag),.data_in(rresp_to_idu),.data_out(IF_ID_reg_rresp_2));
+FF_D_without_asyn_rst #(32)u_inst_2             (.clk(clk),.wen(reg2_can_change_flag),.data_in(inst_to_idu),.data_out(IF_ID_reg_inst_2));
+FF_D_without_asyn_rst #(16)u_inst_compress_2    (.clk(clk),.wen(reg2_can_change_flag),.data_in(inst_rdata_reg_get[15:0]),.data_out(IF_ID_reg_inst_compress_2));
+FF_D_without_asyn_rst #(64)u_PC_2               (.clk(clk),.wen(reg2_can_change_flag),.data_in(my_reg_PC_reg),.data_out(IF_ID_reg_PC_2));
+FF_D_without_asyn_rst #(1)u_inst_compress_flag_2(.clk(clk),.wen(reg2_can_change_flag),.data_in(inst_compress_flag),.data_out(IF_ID_reg_inst_compress_flag_2));
+assign reg2_can_cover_flag  = ((!IF_ID_reg_inst_valid_2) | (IF_ID_reg_sel_reg & ID_IF_inst_ready));
+assign reg2_can_change_flag = (reg_can_change_flag & (((!IF_ID_reg_sel_reg) & IF_ID_reg_inst_valid_1) | (IF_ID_reg_sel_reg & (!IF_ID_reg_inst_valid_2))));
+
+FF_D_with_syn_rst #(
+    .DATA_LEN 	( 1  ),
+    .RST_DATA 	( 0  )
+)u_IF_ID_reg_sel_reg
+(
+    .clk      	( clk                                       ),
+    .rst_n    	( rst_n                                     ),
+    .syn_rst    ( flush_flag                                ),
+    .wen        ( IF_ID_reg_inst_valid & ID_IF_inst_ready   ),
+    .data_in  	( !IF_ID_reg_sel_reg                        ),
+    .data_out 	( IF_ID_reg_sel_reg                         )
+);
+
+assign IF_ID_reg_inst_valid                 =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_inst_valid_1 : IF_ID_reg_inst_valid_2;
+assign IF_ID_reg_inst_compress_flag         =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_inst_compress_flag_1 : IF_ID_reg_inst_compress_flag_2;
+assign IF_ID_reg_rresp                      =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_rresp_1 : IF_ID_reg_rresp_2;
+assign IF_ID_reg_inst_compress              =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_inst_compress_1 : IF_ID_reg_inst_compress_2;
+assign IF_ID_reg_inst                       =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_inst_1 : IF_ID_reg_inst_2;
+assign IF_ID_reg_PC                         =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_PC_1 : IF_ID_reg_PC_2;
 
 assign status1_can_conver_flag              =   (status == STATUS1) & (reg_can_cover_flag) & (!inst_empty);
 assign status2_can_conver_flag              =   (status == STATUS2) & (reg_can_cover_flag) & (!inst_empty);
 assign status3_can_conver_flag              =   (status == STATUS3) & (reg_can_cover_flag) & (!inst_empty);
 assign status4_can_conver_flag              =   (status == STATUS4) & (reg_can_cover_flag) & (!inst_empty) & (inst_my_reg_valid);
 assign status4_after_jump_flag              =   (status == STATUS4) & (reg_can_cover_flag) & (!inst_empty) & (!inst_my_reg_valid);
-assign reg_can_cover_flag                   =   ((!IF_ID_reg_inst_valid) | (ID_IF_inst_ready));
+assign reg_can_cover_flag                   =   (!(IF_ID_reg_inst_valid_1 & IF_ID_reg_inst_valid_2));
 assign reg_can_change_flag                  =   status1_can_conver_flag | status2_can_conver_flag | status3_can_conver_flag | status4_can_conver_flag;
 assign flush_flag                           =   ID_IF_flush_flag | jump_flag;
 
