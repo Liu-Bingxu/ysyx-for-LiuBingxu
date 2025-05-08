@@ -27,7 +27,7 @@ module enet_core#(
     output                              rst_n,
 
     output                              enet_gtx_clk,
-    input                               enet_grx_clk,
+    // input                               enet_grx_clk,
     output                              enet_rgmii_tx_ctl,
     output [3:0]                        enet_rgmii_txd,
     input                               enet_rgmii_rx_ctl,   
@@ -520,7 +520,7 @@ u_enet_rgmii_to_gmii_xlinx(
     .gmii_tx_en   	(gmii_tx_en             ),
     .gmii_tx_er   	(gmii_tx_er             ),
     .gmii_txd     	(gmii_txd               ),
-    .rgmii_rxc    	(enet_grx_clk           ),
+    .rgmii_rxc    	(enet_rx_clk            ),
     .rgmii_rx_ctl 	(enet_rgmii_rx_ctl      ),
     .rgmii_rxd    	(enet_rgmii_rxd         ),
     .rgmii_txc    	(enet_gtx_clk           ),
@@ -553,7 +553,7 @@ enet_chclk u_enet_chclk(
     .rmii_rx_er   	(rmii_rx_er         ),
 
     .gmii_tx_clk  	(enet_gtx_clk       ),
-    .gmii_rx_clk  	(enet_grx_clk       ),
+    .gmii_rx_clk  	(enet_rx_clk        ),
     .gmii_txd     	(gmii_txd           ),
     .gmii_rxd     	(enet_rxd           ),
     .gmii_tx_en   	(gmii_tx_en         ),
