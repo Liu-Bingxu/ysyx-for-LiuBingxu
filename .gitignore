@@ -2,4 +2,5 @@ prj/
 user/
 .vscode/
 .*
+!*.gitignore
 sim/
