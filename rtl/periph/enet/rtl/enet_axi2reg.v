@@ -361,7 +361,7 @@ always @(posedge clk or negedge rst_n) begin
                     axi_state           <= AXI_WIRTE_BACK;
                     mst_wready_reg      <= 1'b0;
                     mst_bvalid_reg      <= 1'b1;
-                    if(eir_wen | eimr_wen | write_success)begin
+                    if(eir_wen | eimr_wen | mmfr_wen | mscr_wen | txic_wen | rxic_wen | write_success)begin
                         mst_resp_reg    <= 1'b0;
                     end
                     else begin
