@@ -21,7 +21,7 @@ always @(posedge clk or negedge enet_rst_n) begin
         rst_n_r[0] <= 1'b0;
         rst_n_r[1] <= 1'b0;
     end 
-    else if(ecr_wen & write_success & (!reg_wdata[0]))begin
+    else if(ecr_wen & (!reg_wdata[0]))begin
         rst_n_r[0] <= 1'b0;
         rst_n_r[1] <= 1'b0;
     end 
