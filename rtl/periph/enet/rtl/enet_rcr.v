@@ -121,8 +121,8 @@ u_prom(
 );
 
 FF_D_with_wen #(
-    .DATA_LEN 	(14  ),
-    .RST_DATA 	(0   ))
+    .DATA_LEN 	(14         ),
+    .RST_DATA 	(14'hEE     ))
 u_max_fl(
     .clk      	(rx_clk             ),
     .rst_n    	(rst_n              ),

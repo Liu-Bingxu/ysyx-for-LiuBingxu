@@ -101,8 +101,8 @@ u_tfc_pause(
 );
 
 FF_D_with_wen #(
-    .DATA_LEN 	(14  ),
-    .RST_DATA 	(0   ))
+    .DATA_LEN 	(14         ),
+    .RST_DATA 	(14'h5EE    ))
 u_max_fl(
     .clk      	(tx_clk             ),
     .rst_n    	(rst_n              ),

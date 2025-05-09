@@ -1,4 +1,5 @@
 module enet_chclk (
+    input                           clk,
     input                           rst_n,
 
     input                           mii_select,
@@ -40,6 +41,9 @@ module enet_chclk (
     input                           rgmii_rx_dv,
     input                           rgmii_rx_er,
 
+    output                          txclk_lock,
+    output                          rxclk_lock,
+
     output                          tx_clk,
     output                          tx_rst_n,
     output                          rx_clk,
@@ -69,6 +73,15 @@ wire                gmii_tx_clk_sel;
 wire                gmii_rx_clk_sel;
 wire                rgmii_tx_clk_sel;
 wire                rgmii_rx_clk_sel;
+
+wire                mii_tx_clk_sel_sync;
+wire                mii_rx_clk_sel_sync;
+wire                rmii_tx_clk_sel_sync;
+wire                rmii_rx_clk_sel_sync;
+wire                gmii_tx_clk_sel_sync;
+wire                gmii_rx_clk_sel_sync;
+wire                rgmii_tx_clk_sel_sync;
+wire                rgmii_rx_clk_sel_sync;
 
 wire [7:0]          txd_o;
 wire [7:0]          rxd_o;
@@ -144,6 +157,97 @@ assign gmii_rx_sel  = (!mii_select) & (!rmii_select) & (!mii_rx_clk_sel)  & (!rm
 
 assign rgmii_tx_sel = (!mii_select) &   rmii_select  & (!mii_tx_clk_sel)  & (!rmii_tx_clk_sel) & (!gmii_tx_clk_sel);
 assign rgmii_rx_sel = (!mii_select) &   rmii_select  & (!mii_rx_clk_sel)  & (!rmii_rx_clk_sel) & (!gmii_rx_clk_sel);
+
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_sel_sync(
+    .clk      	(clk                ),
+    .rst_n    	(rst_n              ),
+    .data_in  	(mii_tx_clk_sel     ),
+    .data_out 	(mii_tx_clk_sel_sync)
+);
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_sel_sync(
+    .clk      	(clk                ),
+    .rst_n    	(rst_n              ),
+    .data_in  	(mii_rx_clk_sel     ),
+    .data_out 	(mii_rx_clk_sel_sync)
+);
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_sel_sync(
+    .clk      	(clk                    ),
+    .rst_n    	(rst_n                  ),
+    .data_in  	(rmii_tx_clk_sel        ),
+    .data_out 	(rmii_tx_clk_sel_sync   )
+);
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_sel_sync(
+    .clk      	(clk                    ),
+    .rst_n    	(rst_n                  ),
+    .data_in  	(rmii_rx_clk_sel        ),
+    .data_out 	(rmii_rx_clk_sel_sync   )
+);
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_sel_sync(
+    .clk      	(clk                    ),
+    .rst_n    	(rst_n                  ),
+    .data_in  	(gmii_tx_clk_sel        ),
+    .data_out 	(gmii_tx_clk_sel_sync   )
+);
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_sel_sync(
+    .clk      	(clk                    ),
+    .rst_n    	(rst_n                  ),
+    .data_in  	(gmii_rx_clk_sel        ),
+    .data_out 	(gmii_rx_clk_sel_sync   )
+);
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_sel_sync(
+    .clk      	(clk                    ),
+    .rst_n    	(rst_n                  ),
+    .data_in  	(rgmii_tx_clk_sel       ),
+    .data_out 	(rgmii_tx_clk_sel_sync  )
+);
+general_sync #(
+    .DATA_LEN 	(1   ),
+    .CHAIN_LV 	(2   ),
+    .RST_DATA 	(0   ))
+u_sel_sync(
+    .clk      	(clk                    ),
+    .rst_n    	(rst_n                  ),
+    .data_in  	(rgmii_rx_clk_sel       ),
+    .data_out 	(rgmii_rx_clk_sel_sync  )
+);
+
+assign txclk_lock = (  mii_select  & (!rmii_select) &   mii_tx_clk_sel_sync) | 
+                    (  mii_select  &   rmii_select  &  rmii_tx_clk_sel_sync) | 
+                    ((!mii_select) & (!rmii_select) &  gmii_tx_clk_sel_sync) | 
+                    ((!mii_select) &   rmii_select  & rgmii_tx_clk_sel_sync);
+
+assign rxclk_lock = (  mii_select  & (!rmii_select) &   mii_rx_clk_sel_sync) | 
+                    (  mii_select  &   rmii_select  &  rmii_rx_clk_sel_sync) | 
+                    ((!mii_select) & (!rmii_select) &  gmii_rx_clk_sel_sync) | 
+                    ((!mii_select) &   rmii_select  & rgmii_rx_clk_sel_sync);
 
 assign tx_clk  =    (mii_tx_clk_sel   & mii_tx_clk   ) |
                     (rmii_tx_clk_sel  & rmii_tx_clk  ) |

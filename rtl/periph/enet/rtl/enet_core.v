@@ -237,6 +237,8 @@ wire [7:0]  rgmii_rxd;
 wire        rgmii_tx_clk;
 
 // output declaration of module enet_chclk
+wire        txclk_lock;
+wire        rxclk_lock;
 wire [7:0]  rxd;
 wire        rx_dv;
 wire        rx_er;
@@ -479,8 +481,18 @@ enet_ecr u_enet_ecr(
     .enet_rst_n    	(enet_rst_n     ),
     .rst_n         	(rst_n          ),
     .ecr_wen       	(ecr_wen        ),
-    .write_success 	(write_success  ),
+    // .write_success 	(write_success  ),
     .reg_wdata     	(reg_wdata      ),
+    .txclk_lock     (txclk_lock     ),
+    .rxclk_lock     (rxclk_lock     ),
+    .Tx_in_full     (Tx_in_full     ),
+    .Tx_in_empty    (Tx_in_empty    ),
+    .Tx_out_full    (Tx_out_full    ),
+    .Tx_out_empty   (Tx_out_empty   ),
+    .Rx_in_full     (Rx_in_full     ),
+    .Rx_in_empty    (Rx_in_empty    ),
+    .Rx_out_full    (Rx_out_full    ),
+    .Rx_out_empty   (Rx_out_empty   ),
     .ecr           	(ecr            ),
     .ether_en       (ether_en       ),
     .mii_select    	(mii_select     ),
@@ -530,6 +542,7 @@ u_enet_rgmii_to_gmii_xlinx(
 
 
 enet_chclk u_enet_chclk(
+    .clk            (clk                ),
     .rst_n        	(rst_n              ),
     .mii_select   	(mii_select         ),
     .rmii_select  	(rmii_select        ),
@@ -569,6 +582,9 @@ enet_chclk u_enet_chclk(
     .rgmii_tx_er  	(1'b0               ),
     .rgmii_rx_dv  	(rgmii_rx_dv        ),
     .rgmii_rx_er  	(rgmii_rx_er        ),
+
+    .txclk_lock     (txclk_lock         ),
+    .rxclk_lock     (rxclk_lock         ),
 
     .tx_clk       	(tx_clk             ),
     .tx_rst_n   	(tx_rst_n           ),
