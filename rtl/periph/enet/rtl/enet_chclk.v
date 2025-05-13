@@ -162,7 +162,7 @@ general_sync #(
     .DATA_LEN 	(1   ),
     .CHAIN_LV 	(2   ),
     .RST_DATA 	(0   ))
-u_sel_sync(
+u_mii_tx_clk_sel_sync(
     .clk      	(clk                ),
     .rst_n    	(rst_n              ),
     .data_in  	(mii_tx_clk_sel     ),
@@ -172,7 +172,7 @@ general_sync #(
     .DATA_LEN 	(1   ),
     .CHAIN_LV 	(2   ),
     .RST_DATA 	(0   ))
-u_sel_sync(
+u_mii_rx_clk_sel_sync(
     .clk      	(clk                ),
     .rst_n    	(rst_n              ),
     .data_in  	(mii_rx_clk_sel     ),
@@ -182,7 +182,7 @@ general_sync #(
     .DATA_LEN 	(1   ),
     .CHAIN_LV 	(2   ),
     .RST_DATA 	(0   ))
-u_sel_sync(
+u_rmii_tx_clk_sel_sync(
     .clk      	(clk                    ),
     .rst_n    	(rst_n                  ),
     .data_in  	(rmii_tx_clk_sel        ),
@@ -192,7 +192,7 @@ general_sync #(
     .DATA_LEN 	(1   ),
     .CHAIN_LV 	(2   ),
     .RST_DATA 	(0   ))
-u_sel_sync(
+u_rmii_rx_clk_sel_sync(
     .clk      	(clk                    ),
     .rst_n    	(rst_n                  ),
     .data_in  	(rmii_rx_clk_sel        ),
@@ -202,7 +202,7 @@ general_sync #(
     .DATA_LEN 	(1   ),
     .CHAIN_LV 	(2   ),
     .RST_DATA 	(0   ))
-u_sel_sync(
+u_gmii_tx_clk_sel_sync(
     .clk      	(clk                    ),
     .rst_n    	(rst_n                  ),
     .data_in  	(gmii_tx_clk_sel        ),
@@ -212,7 +212,7 @@ general_sync #(
     .DATA_LEN 	(1   ),
     .CHAIN_LV 	(2   ),
     .RST_DATA 	(0   ))
-u_sel_sync(
+u_gmii_rx_clk_sel_sync(
     .clk      	(clk                    ),
     .rst_n    	(rst_n                  ),
     .data_in  	(gmii_rx_clk_sel        ),
@@ -222,7 +222,7 @@ general_sync #(
     .DATA_LEN 	(1   ),
     .CHAIN_LV 	(2   ),
     .RST_DATA 	(0   ))
-u_sel_sync(
+u_rgmii_tx_clk_sel_sync(
     .clk      	(clk                    ),
     .rst_n    	(rst_n                  ),
     .data_in  	(rgmii_tx_clk_sel       ),
@@ -232,7 +232,7 @@ general_sync #(
     .DATA_LEN 	(1   ),
     .CHAIN_LV 	(2   ),
     .RST_DATA 	(0   ))
-u_sel_sync(
+u_rgmii_rx_clk_sel_sync(
     .clk      	(clk                    ),
     .rst_n    	(rst_n                  ),
     .data_in  	(rgmii_rx_clk_sel       ),
