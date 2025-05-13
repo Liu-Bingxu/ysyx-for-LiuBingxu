@@ -126,6 +126,7 @@ assign write_success =  tdar_wen_s | rdar_wen_s | ecr_wen_s | tcr_wen_s | rcr_we
 
 reg  Tx_wen_r;
 reg  Tx_wait;
+reg  [44:0] Tx_out_data_in_reg;
 wire Tx_send =  tdar_wen_s | ecr_wen_s | tcr_wen_s | 
                 palr_wen_u | paur_wen_u | opd_wen_u |
                 tdsr_wen_u | tfwr_wen_u | tsem_wen_u | 
@@ -137,8 +138,10 @@ always @(posedge clk or negedge rst_n) begin
     end
     else if(Tx_wait)begin
         if(read_done)begin
-            Tx_wen_r <= 1'b0;
             Tx_wait  <= 1'b0;
+        end
+        if(!Tx_out_full)begin
+            Tx_wen_r <= 1'b0;
         end
     end
     else if(Tx_send)begin
@@ -151,14 +154,18 @@ always @(posedge clk or negedge rst_n) begin
     end
     else if(Tx_wen_r)begin
         Tx_wen_r <= 1'b0;
-        Tx_wait  <= 1'b0;
+    end
+end
+always @(posedge clk) begin
+    if(Tx_send | tcr_ren | tdar_ren)begin
+        Tx_out_data_in_reg  <= {reg_wdata, reg_addr, (tcr_ren | tdar_ren)};
     end
 end
 assign Tx_out_wen = Tx_wen_r;
 
 wire tdar_wen_u         = (!Tx_in_empty) & (Tx_in_data_out[11:0] == 12'h14);
 wire tcr_wen_u          = (!Tx_in_empty) & (Tx_in_data_out[11:0] == 12'hC4);
-assign Tx_out_data_in   = {reg_wdata, reg_addr, (tcr_ren | tdar_ren)};
+assign Tx_out_data_in   = Tx_out_data_in_reg;
 assign Tx_in_ren        = 1'b1;
 FF_D_with_wen #(
     .DATA_LEN 	(1  ),
@@ -184,6 +191,7 @@ u_tcr(
 
 reg  Rx_wen_r;
 reg  Rx_wait;
+reg  [44:0] Rx_out_data_in_reg;
 wire Rx_send =  rdar_wen_s | ecr_wen_s | rcr_wen_s | 
                 palr_wen_u | paur_wen_u | ialr_wen_u | iaur_wen_u |
                 galr_wen_u | gaur_wen_u | rdsr_wen_u | rsfl_wen_u |
@@ -195,8 +203,10 @@ always @(posedge clk or negedge rst_n) begin
     end
     else if(Rx_wait)begin
         if(read_done)begin
-            Rx_wen_r <= 1'b0;
             Rx_wait  <= 1'b0;
+        end
+        if(!Rx_out_full)begin
+            Rx_wen_r <= 1'b0;
         end
     end
     else if(Rx_send)begin
@@ -209,13 +219,17 @@ always @(posedge clk or negedge rst_n) begin
     end
     else if(Rx_wen_r)begin
         Rx_wen_r <= 1'b0;
-        Rx_wait  <= 1'b0;
+    end
+end
+always @(posedge clk) begin
+    if(Rx_send | rcr_ren | rdar_ren)begin
+        Rx_out_data_in_reg <= {reg_wdata, reg_addr, (rcr_ren | rdar_ren)};
     end
 end
 assign Rx_out_wen       = Rx_wen_r;
 wire rdar_wen_u         = (!Rx_in_empty) & (Rx_in_data_out[11:0] == 12'h10);
 wire rcr_wen_u          = (!Rx_in_empty) & (Rx_in_data_out[11:0] == 12'h84);
-assign Rx_out_data_in   = {reg_wdata, reg_addr, (rcr_ren | rdar_ren)};
+assign Rx_out_data_in   = Rx_out_data_in_reg;
 assign Rx_in_ren        = 1'b1;
 FF_D_with_wen #(
     .DATA_LEN 	(1  ),
