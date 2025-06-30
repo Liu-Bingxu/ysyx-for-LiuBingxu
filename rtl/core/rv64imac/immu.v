@@ -258,7 +258,7 @@ assign sflush_vma_ready = 1'b1;
 assign immu_miss_valid  = immu_miss_valid_reg;
 assign vaddr_i          = vaddr;
 assign pte_ready        = 1'b1;
-assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | ((stage_status == WAIT_RESP) & (pte_valid) & (pte_ready)) | (vaddr[63:39] != {25{vaddr[38]}})) & (paddr_ready | (!paddr_valid)));
+assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | ((stage_status == WAIT_RESP) & (pte_valid) & (pte_ready)) | (vaddr[63:39] != {25{vaddr[38]}})) & mmu_fifo_valid & (paddr_ready | (!paddr_valid)));
 FF_D_with_syn_rst #(
     .DATA_LEN 	(1  ),
     .RST_DATA 	(0  ))
