@@ -1,28 +1,23 @@
 `include "./define.v"
-module immu#(parameter IMMU_WAY = 2, IMMU_GROUP = 1)(
+module immu(
     input                   clk,
     input                   rst_n,
 //interface with wbu 
     input  [1:0]            current_priv_status,
     input  [3:0]            satp_mode,
     input  [15:0]           satp_asid,
-    input  [43:0]           satp_ppn,
 //all flush flag 
     input                   flush_flag,
     input                   sflush_vma_valid,
     output                  sflush_vma_ready,
-//interface with dcache
-    //read addr channel
-    input                   immu_arready,
-    output                  immu_arvalid,
-    output                  immu_arlock,
-    output [2:0]            immu_arsize,
-    output [63:0]           immu_araddr,
-    //read data channel
-    output                  immu_rready,
-    input                   immu_rvalid,
-    input  [1:0]            immu_rresp,
-    input  [63:0]           immu_rdata,
+//interface with l2tlb
+    output                  immu_miss_valid,
+    input                   immu_miss_ready,
+    output [63:0]           vaddr_i,
+    input                   pte_valid,
+    output                  pte_ready,
+    input  [127:0]          pte,
+    input                   pte_error,
 //interface with fifo
     input                   mmu_fifo_valid,
     output                  mmu_fifo_ready,
@@ -34,472 +29,253 @@ module immu#(parameter IMMU_WAY = 2, IMMU_GROUP = 1)(
     output                  paddr_error
 );
 
-localparam IMMU_TAG_SIZE    = 21 - $clog2(IMMU_GROUP);
-localparam IMMU_GROUP_LEN   = $clog2(IMMU_GROUP);
-localparam IMMU_WAY_LEN     = $clog2(IMMU_WAY);
-localparam IMMU_TLB_FILL    = 42 - $clog2(IMMU_GROUP);
-
 //sram interface
-wire [63:0]             tlb_page_valid[0:IMMU_GROUP-1][0:IMMU_WAY-1];
-wire [63:0]             tlb_page_valid_way[0:IMMU_WAY-1];
-wire [127:0]            sram_rdata[0:IMMU_GROUP-1][0:IMMU_WAY-1];
-wire                    sram_cen[0:IMMU_GROUP-1];
-wire                    sram_wen[0:IMMU_GROUP-1][0:IMMU_WAY-1];
-wire [5:0]              sram_addr;
-reg  [127:0]            sram_wdata;
-wire [127:0]            tlb_page;
-wire [2:0]              tlb_page_size[0:IMMU_WAY-1];
-wire [15:0]             tlb_page_asid[0:IMMU_WAY-1];
-wire [43:0]             tlb_page_ppn               ;
-wire [1:0]              tlb_page_attr[0:IMMU_WAY-1];
-wire [IMMU_TAG_SIZE-1:0]tlb_page_tag [0:IMMU_WAY-1];
-wire [127:0]            tlb_rdata[0:IMMU_WAY-1];
-wire [IMMU_WAY-1:0]     tlb_hit_way_sel;
-wire                    tlb_hit_flag;
-wire [IMMU_WAY-1:0]     tlb_error_way_sel;
-wire                    tlb_error_flag;
-wire                    tlb_search_super_page_flag;
-wire                    tlb_search_super_page_2M_flag;
-reg                     tlb_search_super_page_2M_flag_reg;
-wire                    tlb_search_super_page_1G_flag;
-reg                     tlb_search_super_page_1G_flag_reg;
-wire                    tlb_write_super_page_flag;
-reg                     tlb_write_super_page_2M_flag;
-reg                     tlb_write_super_page_1G_flag;
-// reg                     tlb_page_cen;
-reg                     tlb_page_wen;
-wire [IMMU_WAY_LEN-1:0] rand_way;
+wire [31:0]             tlb_4K_valid;
+wire [127:0]            tlb_4K[0:31];
+wire [31:0]             tlb_4K_wen;
+wire [7:0]              tlb_sp_valid;
+wire [127:0]            tlb_sp[0:7];
+wire [7:0]              tlb_sp_wen;
+wire [47:0]             tlb_hit;
+
+wire [127:0]            tlb_sel;
+
+wire                    page_wen;
+wire                    page_4K_wen;
+wire                    page_sp_wen;
 
 //stage
-localparam IDLE         = 3'h0;
-localparam SEARCH_2M    = 3'h1;
-localparam SEARCH_1G    = 3'h3;
-localparam WAIT_ARREADY = 3'h2;
-localparam WAIT_RVALID  = 3'h6;
-localparam OUT          = 3'h4;
-reg  [2:0]              stage_status;
-reg  [2:0]              tlb_size_reg;
-wire                    stage_valid;
-wire [63:0]             stage_vaddr;
-wire [20:0]             stage_vaddr_2M_tag;
-wire [20:0]             stage_vaddr_1G_tag;
+localparam IDLE         = 2'h0;
+localparam SUBMIT_REQ   = 2'h1;
+localparam WAIT_RESP    = 2'h3;
+reg  [1:0]              stage_status;
+reg                     immu_miss_valid_reg;
 //跳过mmu阶段
 wire                    stage_jump_mmu;
 
-//axi interface
-reg                     immu_arvalid_reg;
-wire [63:0]             immu_araddr_wire;
-reg  [43:0]             immu_araddr_ppn;
-reg  [8:0]              immu_araddr_offset;
-wire [43:0]             immu_rdata_page_ppn;
-// wire                    immu_rdata_page_D;
-wire                    immu_rdata_page_A;
-wire                    immu_rdata_page_G;
-wire                    immu_rdata_page_U;
-wire                    immu_rdata_page_X;
-wire                    immu_rdata_page_W;
-wire                    immu_rdata_page_R;
-wire                    immu_rdata_page_V;
-
-//out fifo
-wire                    fifo_wen;
-wire                    fifo_ren;
-wire [64:0]             fifo_wdata;
-wire                	fifo_empty;
-wire [64:0] 	        fifo_rdata;
-wire [63:0]             fifo_paddr;
-wire                    fifo_error;
-reg                     fifo_error_reg;
-
-//icache interface
-// wire                    stage_ready;
-reg  					mmu_fifo_ready_reg;
-reg [2:0]				fifo_cnt;
-
 //**********************************************************************************************
 //?tlb
-genvar tlb_group_index;
-genvar tlb_way_index;
+genvar tlb_normal_page_index;
 generate
-    for(tlb_group_index = 0; tlb_group_index < IMMU_GROUP; tlb_group_index = tlb_group_index + 1)begin: tlb_group_sram
-        for(tlb_way_index = 0; tlb_way_index < IMMU_WAY; tlb_way_index = tlb_way_index + 1)begin: tlb_way_sram
-            S011HD1P_X32Y2D128_BW u_S011HD1P_X32Y2D128_BW(
-                .Q    	( sram_rdata[tlb_group_index][tlb_way_index]    ),
-                .CLK  	( clk                                           ),
-                .CEN  	( sram_cen[tlb_group_index]                     ),
-                .WEN  	( sram_wen[tlb_group_index][tlb_way_index]      ),
-                .BWEN 	( 128'h0                                        ),
-                .A    	( sram_addr                                     ),
-                .D    	( sram_wdata                                    )
-            );
-            FF_D_with_addr #(
-                .ADDR_LEN   ( 6 ),
-                .RST_DATA   ( 0 )
-            )u_tlb_valid(
-                .clk        ( clk                                               ),
-                .rst_n      ( rst_n                                             ),
-                .syn_rst    ( sflush_vma_valid                                  ),
-                .wen        ( !sram_wen[tlb_group_index][tlb_way_index]         ),
-                .addr       ( sram_addr                                         ),
-                .data_in    ( 1'b1                                              ),
-                .data_out   ( tlb_page_valid[tlb_group_index][tlb_way_index]    )
-            );
-            if(IMMU_GROUP == 1)begin
-                assign sram_wen[tlb_group_index][tlb_way_index] = (!tlb_page_wen) | (!(tlb_way_index == rand_way));
-                if(tlb_group_index == 0)begin
-                    assign tlb_rdata[tlb_way_index]             = sram_rdata[tlb_group_index][tlb_way_index];
-                    assign tlb_page_valid_way[tlb_way_index]    = tlb_page_valid[tlb_group_index][tlb_way_index];
-                end 
-            end
-            else if(IMMU_GROUP >= 8192)begin
-                assign sram_wen[tlb_group_index][tlb_way_index] = (tlb_write_super_page_1G_flag) ? ((!tlb_page_wen) | (!(tlb_way_index == rand_way)) | (!(tlb_group_index == {stage_vaddr[17 + IMMU_GROUP_LEN:30], 12'h0}))) : 
-                                                    ((tlb_write_super_page_2M_flag) ? ((!tlb_page_wen) | (!(tlb_way_index == rand_way)) | (!(tlb_group_index == {stage_vaddr[17 + IMMU_GROUP_LEN:21], 3'h0}))) : 
-                                                    ((!tlb_page_wen) | (!(tlb_way_index == rand_way)) | (!(tlb_group_index == stage_vaddr[17 + IMMU_GROUP_LEN:18]))));
-                if(tlb_group_index == 0)begin
-                    assign tlb_rdata[tlb_way_index]             = (tlb_search_super_page_1G_flag_reg) ? sram_rdata[{stage_vaddr[17 + IMMU_GROUP_LEN:30], 12'h0}][tlb_way_index] : 
-                                                    ((tlb_search_super_page_2M_flag_reg) ? sram_rdata[{stage_vaddr[17 + IMMU_GROUP_LEN:21], 3'h0}][tlb_way_index] : 
-                                                    sram_rdata[stage_vaddr[17 + IMMU_GROUP_LEN:18]][tlb_way_index]);
-                    assign tlb_page_valid_way[tlb_way_index]    = (tlb_search_super_page_1G_flag_reg) ? tlb_page_valid[{stage_vaddr[17 + IMMU_GROUP_LEN:30], 12'h0}][tlb_way_index] : 
-                                                    ((tlb_search_super_page_2M_flag_reg) ? tlb_page_valid[{stage_vaddr[17 + IMMU_GROUP_LEN:21], 3'h0}][tlb_way_index] : 
-                                                    tlb_page_valid[stage_vaddr[17 + IMMU_GROUP_LEN:18]][tlb_way_index]);
-                end 
-            end
-            else if(IMMU_GROUP >= 16)begin
-                assign sram_wen[tlb_group_index][tlb_way_index] = (tlb_write_super_page_1G_flag) ? ((!tlb_page_wen) | (!(tlb_way_index == rand_way)) | (!(tlb_group_index == 0))) : 
-                                                    ((tlb_write_super_page_2M_flag) ? ((!tlb_page_wen) | (!(tlb_way_index == rand_way)) | (!(tlb_group_index == {stage_vaddr[17 + IMMU_GROUP_LEN:21], 3'h0}))) : 
-                                                    ((!tlb_page_wen) | (!(tlb_way_index == rand_way)) | (!(tlb_group_index == stage_vaddr[17 + IMMU_GROUP_LEN:18]))));
-                if(tlb_group_index == 0)begin
-                    assign tlb_rdata[tlb_way_index]             = (tlb_search_super_page_1G_flag_reg) ? sram_rdata[0][tlb_way_index] : 
-                                                    ((tlb_search_super_page_2M_flag_reg) ? sram_rdata[{stage_vaddr[17 + IMMU_GROUP_LEN:21], 3'h0}][tlb_way_index] : 
-                                                    sram_rdata[stage_vaddr[17 + IMMU_GROUP_LEN:18]][tlb_way_index]);
-                    assign tlb_page_valid_way[tlb_way_index]    = (tlb_search_super_page_1G_flag_reg) ? tlb_page_valid[0][tlb_way_index] : 
-                                                    ((tlb_search_super_page_2M_flag_reg) ? tlb_page_valid[{stage_vaddr[17 + IMMU_GROUP_LEN:21], 3'h0}][tlb_way_index] : 
-                                                    tlb_page_valid[stage_vaddr[17 + IMMU_GROUP_LEN:18]][tlb_way_index]);
-                end 
-            end
-            else begin
-                assign sram_wen[tlb_group_index][tlb_way_index] = (tlb_write_super_page_flag) ? ((!tlb_page_wen) | (!(tlb_way_index == rand_way)) | (!(tlb_group_index == 0))) : 
-                                                    ((!tlb_page_wen) | (!(tlb_way_index == rand_way)) | (!(tlb_group_index == stage_vaddr[17 + IMMU_GROUP_LEN:18])));
-                if(tlb_group_index == 0)begin
-                    assign tlb_rdata[tlb_way_index]             = (tlb_search_super_page_1G_flag_reg | tlb_search_super_page_2M_flag_reg) ? sram_rdata[0][tlb_way_index] : 
-                                                    sram_rdata[stage_vaddr[17 + IMMU_GROUP_LEN:18]][tlb_way_index];
-                    assign tlb_page_valid_way[tlb_way_index]    = (tlb_search_super_page_1G_flag_reg | tlb_search_super_page_2M_flag_reg) ? tlb_page_valid[0][tlb_way_index] : 
-                                                    tlb_page_valid[stage_vaddr[17 + IMMU_GROUP_LEN:18]][tlb_way_index];
-                end 
-            end
-            if(tlb_group_index == 0)begin
-                assign tlb_page_size[tlb_way_index]                 = tlb_rdata[tlb_way_index][127:125];
-                assign tlb_page_asid[tlb_way_index]                 = tlb_rdata[tlb_way_index][124:109];
-                assign tlb_page_ppn                                 = tlb_page[108:65];
-                assign tlb_page_attr[tlb_way_index]                 = tlb_rdata[tlb_way_index][64:63];
-                assign tlb_page_tag [tlb_way_index]                 = tlb_rdata[tlb_way_index][62:63 - IMMU_TAG_SIZE];
-                assign tlb_hit_way_sel[tlb_way_index]               = (!(tlb_search_super_page_1G_flag_reg & (tlb_page_size[tlb_way_index] < 3'h2))) & 
-                                                                        (!(tlb_search_super_page_2M_flag_reg & (tlb_page_size[tlb_way_index] < 3'h1))) & 
-                                                                        ((tlb_search_super_page_1G_flag_reg | tlb_search_super_page_2M_flag_reg) ? tlb_page_valid_way[tlb_way_index][0] : tlb_page_valid_way[tlb_way_index][stage_vaddr[17:12]]) & 
-                                                                        ((tlb_page_asid[tlb_way_index] == satp_asid) | tlb_page_attr[tlb_way_index][1]) & (
-                                                                            (tlb_search_super_page_1G_flag_reg & (tlb_page_tag [tlb_way_index] == stage_vaddr_1G_tag[20:21-IMMU_TAG_SIZE])) | 
-                                                                            (tlb_search_super_page_2M_flag_reg & (tlb_page_tag [tlb_way_index] == stage_vaddr_2M_tag[20:21-IMMU_TAG_SIZE])) | 
-                                                                            (tlb_page_tag [tlb_way_index] == stage_vaddr[38:39-IMMU_TAG_SIZE])
-                                                                        );
-                assign tlb_error_way_sel[tlb_way_index]             = tlb_hit_way_sel[tlb_way_index] & (current_priv_status[0] == tlb_page_attr[tlb_way_index][0]);
-            end
-        end
-        if(IMMU_GROUP == 1)begin
-            assign sram_cen[tlb_group_index]                     = (!tlb_search_super_page_flag) & (!tlb_page_wen) & (!mmu_fifo_valid);
-        end
-        else begin
-            assign sram_cen[tlb_group_index]                     = (!tlb_search_super_page_flag) & (!tlb_page_wen) & ((!mmu_fifo_valid) | (!(tlb_group_index == vaddr[17 + IMMU_GROUP_LEN:18])));
-        end
+    for(tlb_normal_page_index = 0; tlb_normal_page_index < 32; tlb_normal_page_index = tlb_normal_page_index + 1)begin: tlb_normal_page
+        FF_D_without_asyn_rst #(
+            .DATA_LEN 	(128  ))
+        u_normal_page(
+            .clk      	(clk                                ),
+            .wen      	(tlb_4K_wen[tlb_normal_page_index]  ),
+            .data_in  	(pte                                ),
+            .data_out 	(tlb_4K[tlb_normal_page_index]      )
+        );
+        FF_D_with_syn_rst #(
+            .DATA_LEN 	(1  ),
+            .RST_DATA 	(0  ))
+        u_normal_page_valid(
+            .clk      	(clk                                  ),
+            .rst_n    	(rst_n                                ),
+            .syn_rst  	(sflush_vma_valid                     ),
+            .wen      	(tlb_4K_wen[tlb_normal_page_index]    ),
+            .data_in  	(1'b1                                 ),
+            .data_out 	(tlb_4K_valid[tlb_normal_page_index]  )
+        );
     end
 endgenerate
-rand_lfsr_8_bit #(
-    .USING_LEN(IMMU_WAY_LEN)
-)u_rand_lfsr_8_bit_get_rand_way_num(
-    .clk   	( clk           ),
-    .rst_n 	( rst_n         ),
-    .out   	( rand_way      )
+genvar tlb_sp_index;
+generate
+    for(tlb_sp_index = 0; tlb_sp_index < 8; tlb_sp_index = tlb_sp_index + 1)begin: tlb_super_page
+        FF_D_without_asyn_rst #(
+            .DATA_LEN 	(128  ))
+        u_super_page(
+            .clk      	(clk                       ),
+            .wen      	(tlb_sp_wen[tlb_sp_index]  ),
+            .data_in  	(pte                       ),
+            .data_out 	(tlb_sp[tlb_sp_index]      )
+        );
+        FF_D_with_syn_rst #(
+            .DATA_LEN 	(1  ),
+            .RST_DATA 	(0  ))
+        u_super_page_valid(
+            .clk      	(clk                         ),
+            .rst_n    	(rst_n                       ),
+            .syn_rst  	(sflush_vma_valid            ),
+            .wen      	(tlb_sp_wen[tlb_sp_index]    ),
+            .data_in  	(1'b1                        ),
+            .data_out 	(tlb_sp_valid[tlb_sp_index]  )
+        );
+    end
+endgenerate
+assign stage_jump_mmu       =   (current_priv_status == `PRV_M) | (satp_mode == 4'h0);
+assign tlb_hit[0]           =   (tlb_4K_valid[0]  & (tlb_4K[0][57:31]  == vaddr[38:12]) & ((tlb_4K[0 ][127:112] == satp_asid) | tlb_4K[0 ][63]));
+assign tlb_hit[1]           =   (tlb_4K_valid[1]  & (tlb_4K[1][57:31]  == vaddr[38:12]) & ((tlb_4K[1 ][127:112] == satp_asid) | tlb_4K[1 ][63]));
+assign tlb_hit[2]           =   (tlb_4K_valid[2]  & (tlb_4K[2][57:31]  == vaddr[38:12]) & ((tlb_4K[2 ][127:112] == satp_asid) | tlb_4K[2 ][63]));
+assign tlb_hit[3]           =   (tlb_4K_valid[3]  & (tlb_4K[3][57:31]  == vaddr[38:12]) & ((tlb_4K[3 ][127:112] == satp_asid) | tlb_4K[3 ][63]));
+assign tlb_hit[4]           =   (tlb_4K_valid[4]  & (tlb_4K[4][57:31]  == vaddr[38:12]) & ((tlb_4K[4 ][127:112] == satp_asid) | tlb_4K[4 ][63]));
+assign tlb_hit[5]           =   (tlb_4K_valid[5]  & (tlb_4K[5][57:31]  == vaddr[38:12]) & ((tlb_4K[5 ][127:112] == satp_asid) | tlb_4K[5 ][63]));
+assign tlb_hit[6]           =   (tlb_4K_valid[6]  & (tlb_4K[6][57:31]  == vaddr[38:12]) & ((tlb_4K[6 ][127:112] == satp_asid) | tlb_4K[6 ][63]));
+assign tlb_hit[7]           =   (tlb_4K_valid[7]  & (tlb_4K[7][57:31]  == vaddr[38:12]) & ((tlb_4K[7 ][127:112] == satp_asid) | tlb_4K[7 ][63]));
+assign tlb_hit[8]           =   (tlb_4K_valid[8]  & (tlb_4K[8][57:31]  == vaddr[38:12]) & ((tlb_4K[8 ][127:112] == satp_asid) | tlb_4K[8 ][63]));
+assign tlb_hit[9]           =   (tlb_4K_valid[9]  & (tlb_4K[9][57:31]  == vaddr[38:12]) & ((tlb_4K[9 ][127:112] == satp_asid) | tlb_4K[9 ][63]));
+assign tlb_hit[10]          =   (tlb_4K_valid[10] & (tlb_4K[10][57:31] == vaddr[38:12]) & ((tlb_4K[10][127:112] == satp_asid) | tlb_4K[10][63]));
+assign tlb_hit[11]          =   (tlb_4K_valid[11] & (tlb_4K[11][57:31] == vaddr[38:12]) & ((tlb_4K[11][127:112] == satp_asid) | tlb_4K[11][63]));
+assign tlb_hit[12]          =   (tlb_4K_valid[12] & (tlb_4K[12][57:31] == vaddr[38:12]) & ((tlb_4K[12][127:112] == satp_asid) | tlb_4K[12][63]));
+assign tlb_hit[13]          =   (tlb_4K_valid[13] & (tlb_4K[13][57:31] == vaddr[38:12]) & ((tlb_4K[13][127:112] == satp_asid) | tlb_4K[13][63]));
+assign tlb_hit[14]          =   (tlb_4K_valid[14] & (tlb_4K[14][57:31] == vaddr[38:12]) & ((tlb_4K[14][127:112] == satp_asid) | tlb_4K[14][63]));
+assign tlb_hit[15]          =   (tlb_4K_valid[15] & (tlb_4K[15][57:31] == vaddr[38:12]) & ((tlb_4K[15][127:112] == satp_asid) | tlb_4K[15][63]));
+assign tlb_hit[16]          =   (tlb_4K_valid[16] & (tlb_4K[16][57:31] == vaddr[38:12]) & ((tlb_4K[16][127:112] == satp_asid) | tlb_4K[16][63]));
+assign tlb_hit[17]          =   (tlb_4K_valid[17] & (tlb_4K[17][57:31] == vaddr[38:12]) & ((tlb_4K[17][127:112] == satp_asid) | tlb_4K[17][63]));
+assign tlb_hit[18]          =   (tlb_4K_valid[18] & (tlb_4K[18][57:31] == vaddr[38:12]) & ((tlb_4K[18][127:112] == satp_asid) | tlb_4K[18][63]));
+assign tlb_hit[19]          =   (tlb_4K_valid[19] & (tlb_4K[19][57:31] == vaddr[38:12]) & ((tlb_4K[19][127:112] == satp_asid) | tlb_4K[19][63]));
+assign tlb_hit[20]          =   (tlb_4K_valid[20] & (tlb_4K[20][57:31] == vaddr[38:12]) & ((tlb_4K[20][127:112] == satp_asid) | tlb_4K[20][63]));
+assign tlb_hit[21]          =   (tlb_4K_valid[21] & (tlb_4K[21][57:31] == vaddr[38:12]) & ((tlb_4K[21][127:112] == satp_asid) | tlb_4K[21][63]));
+assign tlb_hit[22]          =   (tlb_4K_valid[22] & (tlb_4K[22][57:31] == vaddr[38:12]) & ((tlb_4K[22][127:112] == satp_asid) | tlb_4K[22][63]));
+assign tlb_hit[23]          =   (tlb_4K_valid[23] & (tlb_4K[23][57:31] == vaddr[38:12]) & ((tlb_4K[23][127:112] == satp_asid) | tlb_4K[23][63]));
+assign tlb_hit[24]          =   (tlb_4K_valid[24] & (tlb_4K[24][57:31] == vaddr[38:12]) & ((tlb_4K[24][127:112] == satp_asid) | tlb_4K[24][63]));
+assign tlb_hit[25]          =   (tlb_4K_valid[25] & (tlb_4K[25][57:31] == vaddr[38:12]) & ((tlb_4K[25][127:112] == satp_asid) | tlb_4K[25][63]));
+assign tlb_hit[26]          =   (tlb_4K_valid[26] & (tlb_4K[26][57:31] == vaddr[38:12]) & ((tlb_4K[26][127:112] == satp_asid) | tlb_4K[26][63]));
+assign tlb_hit[27]          =   (tlb_4K_valid[27] & (tlb_4K[27][57:31] == vaddr[38:12]) & ((tlb_4K[27][127:112] == satp_asid) | tlb_4K[27][63]));
+assign tlb_hit[28]          =   (tlb_4K_valid[28] & (tlb_4K[28][57:31] == vaddr[38:12]) & ((tlb_4K[28][127:112] == satp_asid) | tlb_4K[28][63]));
+assign tlb_hit[29]          =   (tlb_4K_valid[29] & (tlb_4K[29][57:31] == vaddr[38:12]) & ((tlb_4K[29][127:112] == satp_asid) | tlb_4K[29][63]));
+assign tlb_hit[30]          =   (tlb_4K_valid[30] & (tlb_4K[30][57:31] == vaddr[38:12]) & ((tlb_4K[30][127:112] == satp_asid) | tlb_4K[30][63]));
+assign tlb_hit[31]          =   (tlb_4K_valid[31] & (tlb_4K[31][57:31] == vaddr[38:12]) & ((tlb_4K[31][127:112] == satp_asid) | tlb_4K[31][63]));
+assign tlb_hit[32]          =   (tlb_sp_valid[0]  & (tlb_sp[0][57:49]  == vaddr[38:30]) & ((tlb_sp[0 ][127:112] == satp_asid) | tlb_sp[0 ][63]) & (tlb_sp[0][2:0] == 3'h2));
+assign tlb_hit[33]          =   (tlb_sp_valid[1]  & (tlb_sp[1][57:49]  == vaddr[38:30]) & ((tlb_sp[1 ][127:112] == satp_asid) | tlb_sp[1 ][63]) & (tlb_sp[0][2:0] == 3'h2));
+assign tlb_hit[34]          =   (tlb_sp_valid[2]  & (tlb_sp[2][57:49]  == vaddr[38:30]) & ((tlb_sp[2 ][127:112] == satp_asid) | tlb_sp[2 ][63]) & (tlb_sp[0][2:0] == 3'h2));
+assign tlb_hit[35]          =   (tlb_sp_valid[3]  & (tlb_sp[3][57:49]  == vaddr[38:30]) & ((tlb_sp[3 ][127:112] == satp_asid) | tlb_sp[3 ][63]) & (tlb_sp[0][2:0] == 3'h2));
+assign tlb_hit[36]          =   (tlb_sp_valid[4]  & (tlb_sp[4][57:49]  == vaddr[38:30]) & ((tlb_sp[4 ][127:112] == satp_asid) | tlb_sp[4 ][63]) & (tlb_sp[0][2:0] == 3'h2));
+assign tlb_hit[37]          =   (tlb_sp_valid[5]  & (tlb_sp[5][57:49]  == vaddr[38:30]) & ((tlb_sp[5 ][127:112] == satp_asid) | tlb_sp[5 ][63]) & (tlb_sp[0][2:0] == 3'h2));
+assign tlb_hit[38]          =   (tlb_sp_valid[6]  & (tlb_sp[6][57:49]  == vaddr[38:30]) & ((tlb_sp[6 ][127:112] == satp_asid) | tlb_sp[6 ][63]) & (tlb_sp[0][2:0] == 3'h2));
+assign tlb_hit[39]          =   (tlb_sp_valid[7]  & (tlb_sp[7][57:49]  == vaddr[38:30]) & ((tlb_sp[7 ][127:112] == satp_asid) | tlb_sp[7 ][63]) & (tlb_sp[0][2:0] == 3'h2));
+assign tlb_hit[40]          =   (tlb_sp_valid[0]  & (tlb_sp[0][57:40]  == vaddr[38:21]) & ((tlb_sp[0 ][127:112] == satp_asid) | tlb_sp[0 ][63]) & (tlb_sp[0][2:0] == 3'h1));
+assign tlb_hit[41]          =   (tlb_sp_valid[1]  & (tlb_sp[1][57:40]  == vaddr[38:21]) & ((tlb_sp[1 ][127:112] == satp_asid) | tlb_sp[1 ][63]) & (tlb_sp[0][2:0] == 3'h1));
+assign tlb_hit[42]          =   (tlb_sp_valid[2]  & (tlb_sp[2][57:40]  == vaddr[38:21]) & ((tlb_sp[2 ][127:112] == satp_asid) | tlb_sp[2 ][63]) & (tlb_sp[0][2:0] == 3'h1));
+assign tlb_hit[43]          =   (tlb_sp_valid[3]  & (tlb_sp[3][57:40]  == vaddr[38:21]) & ((tlb_sp[3 ][127:112] == satp_asid) | tlb_sp[3 ][63]) & (tlb_sp[0][2:0] == 3'h1));
+assign tlb_hit[44]          =   (tlb_sp_valid[4]  & (tlb_sp[4][57:40]  == vaddr[38:21]) & ((tlb_sp[4 ][127:112] == satp_asid) | tlb_sp[4 ][63]) & (tlb_sp[0][2:0] == 3'h1));
+assign tlb_hit[45]          =   (tlb_sp_valid[5]  & (tlb_sp[5][57:40]  == vaddr[38:21]) & ((tlb_sp[5 ][127:112] == satp_asid) | tlb_sp[5 ][63]) & (tlb_sp[0][2:0] == 3'h1));
+assign tlb_hit[46]          =   (tlb_sp_valid[6]  & (tlb_sp[6][57:40]  == vaddr[38:21]) & ((tlb_sp[6 ][127:112] == satp_asid) | tlb_sp[6 ][63]) & (tlb_sp[0][2:0] == 3'h1));
+assign tlb_hit[47]          =   (tlb_sp_valid[7]  & (tlb_sp[7][57:40]  == vaddr[38:21]) & ((tlb_sp[7 ][127:112] == satp_asid) | tlb_sp[7 ][63]) & (tlb_sp[0][2:0] == 3'h1));
+
+assign tlb_sel              =   ({128{tlb_hit[0 ]}} & tlb_4K[0] ) | 
+                                ({128{tlb_hit[1 ]}} & tlb_4K[1] ) | 
+                                ({128{tlb_hit[2 ]}} & tlb_4K[2] ) | 
+                                ({128{tlb_hit[3 ]}} & tlb_4K[3] ) | 
+                                ({128{tlb_hit[4 ]}} & tlb_4K[4] ) | 
+                                ({128{tlb_hit[5 ]}} & tlb_4K[5] ) | 
+                                ({128{tlb_hit[6 ]}} & tlb_4K[6] ) | 
+                                ({128{tlb_hit[7 ]}} & tlb_4K[7] ) | 
+                                ({128{tlb_hit[8 ]}} & tlb_4K[8] ) | 
+                                ({128{tlb_hit[9 ]}} & tlb_4K[9] ) | 
+                                ({128{tlb_hit[10]}} & tlb_4K[10]) | 
+                                ({128{tlb_hit[11]}} & tlb_4K[11]) | 
+                                ({128{tlb_hit[12]}} & tlb_4K[12]) | 
+                                ({128{tlb_hit[13]}} & tlb_4K[13]) | 
+                                ({128{tlb_hit[14]}} & tlb_4K[14]) | 
+                                ({128{tlb_hit[15]}} & tlb_4K[15]) | 
+                                ({128{tlb_hit[16]}} & tlb_4K[16]) | 
+                                ({128{tlb_hit[17]}} & tlb_4K[17]) | 
+                                ({128{tlb_hit[18]}} & tlb_4K[18]) | 
+                                ({128{tlb_hit[19]}} & tlb_4K[19]) | 
+                                ({128{tlb_hit[20]}} & tlb_4K[20]) | 
+                                ({128{tlb_hit[21]}} & tlb_4K[21]) | 
+                                ({128{tlb_hit[22]}} & tlb_4K[22]) | 
+                                ({128{tlb_hit[23]}} & tlb_4K[23]) | 
+                                ({128{tlb_hit[24]}} & tlb_4K[24]) | 
+                                ({128{tlb_hit[25]}} & tlb_4K[25]) | 
+                                ({128{tlb_hit[26]}} & tlb_4K[26]) | 
+                                ({128{tlb_hit[27]}} & tlb_4K[27]) | 
+                                ({128{tlb_hit[28]}} & tlb_4K[28]) | 
+                                ({128{tlb_hit[29]}} & tlb_4K[29]) | 
+                                ({128{tlb_hit[30]}} & tlb_4K[30]) | 
+                                ({128{tlb_hit[31]}} & tlb_4K[31]) | 
+                                ({128{tlb_hit[32]}} & tlb_sp[0 ]) | 
+                                ({128{tlb_hit[33]}} & tlb_sp[1 ]) | 
+                                ({128{tlb_hit[34]}} & tlb_sp[2 ]) | 
+                                ({128{tlb_hit[35]}} & tlb_sp[3 ]) | 
+                                ({128{tlb_hit[36]}} & tlb_sp[4 ]) | 
+                                ({128{tlb_hit[37]}} & tlb_sp[5 ]) | 
+                                ({128{tlb_hit[38]}} & tlb_sp[6 ]) | 
+                                ({128{tlb_hit[39]}} & tlb_sp[7 ]) | 
+                                ({128{(stage_status == WAIT_RESP)}} & pte);
+
+assign page_4K_wen           = page_wen & (pte[2:0] == 3'h0);
+assign page_sp_wen           = page_wen & (pte[2:0] != 3'h0);
+plru_32 u_plru_4K(
+	.clk      	( clk                               ),
+	.rst_n    	( rst_n                             ),
+	.hit      	( mmu_fifo_valid & (|tlb_hit[31:0]) ),
+	.hit_sel  	( tlb_hit[31:0]                     ),
+	.plru_wen 	( page_4K_wen                       ),
+	.wen      	( tlb_4K_wen                        )
 );
-assign tlb_page                     = tlb_page_sel(tlb_hit_way_sel, tlb_rdata);
-assign sram_addr                    = (tlb_search_super_page_flag | tlb_write_super_page_flag) ? 6'h0 : ((tlb_page_wen) ? stage_vaddr[17:12] : vaddr[17:12]);
-assign tlb_hit_flag                 = (|tlb_hit_way_sel) & ((stage_status == IDLE) | (stage_status == SEARCH_2M) | (stage_status == SEARCH_1G));
-assign tlb_error_flag               = (|tlb_error_way_sel) & ((stage_status == IDLE) | (stage_status == SEARCH_2M) | (stage_status == SEARCH_1G));
-assign tlb_search_super_page_flag   = tlb_search_super_page_2M_flag | tlb_search_super_page_1G_flag;
-assign tlb_search_super_page_2M_flag= (!tlb_search_super_page_2M_flag_reg) & (!tlb_hit_flag) & stage_valid & (!stage_jump_mmu) & (!fifo_error);
-assign tlb_search_super_page_1G_flag= (!tlb_search_super_page_1G_flag_reg) & (!tlb_hit_flag) & stage_valid & (!stage_jump_mmu) & (!fifo_error) & tlb_search_super_page_2M_flag_reg;
-assign tlb_write_super_page_flag    = tlb_write_super_page_2M_flag | tlb_write_super_page_1G_flag;
-assign stage_jump_mmu               = (current_priv_status == `PRV_M) | (satp_mode == 4'h0);
-assign stage_vaddr_2M_tag           = {stage_vaddr[38:42-IMMU_TAG_SIZE], 3'h0};
-assign stage_vaddr_1G_tag           = {stage_vaddr[38:51-IMMU_TAG_SIZE], 12'h0};
+
+plru_8 u_plru_sp(
+	.clk      	( clk                                   ),
+	.rst_n    	( rst_n                                 ),
+	.hit      	( mmu_fifo_valid & (|tlb_hit[47:32])    ),
+	.hit_sel  	( tlb_hit[39:32] |   tlb_hit[47:40]     ),
+	.plru_wen 	( page_sp_wen                           ),
+	.wen      	( tlb_sp_wen                            )
+);
 //**********************************************************************************************
-FF_D_with_syn_rst #(
-    .DATA_LEN 	( 1  ),
-    .RST_DATA 	( 0  )
-)u_stage_valid
-(
-    .clk      	( clk                                                                                   ),
-    .rst_n    	( rst_n                                                                                 ),
-    .syn_rst    ( flush_flag                                                                            ),
-    .wen        ( (fifo_wen) | (mmu_fifo_valid & mmu_fifo_ready)                                        ),
-    .data_in  	( ((stage_status == OUT) ? (!tlb_page_wen) : 1'b1) & mmu_fifo_valid & mmu_fifo_ready    ),
-    .data_out 	( stage_valid                                                                           )
-);
-FF_D_without_asyn_rst #(64)  u_stage_vaddr            (clk,mmu_fifo_valid & mmu_fifo_ready,vaddr,stage_vaddr);
-ifu_fifo #(
-    .DATA_LEN   	( 65  ),
-    .AddR_Width 	( 2   )
-)out_fifo(
-    .clk    	( clk           ),
-    .rst_n  	( rst_n         ),
-    .Wready 	( fifo_wen      ),
-    .Rready 	( fifo_ren      ),
-    .flush  	( flush_flag    ),
-    .wdata  	( fifo_wdata    ),
-    .empty  	( fifo_empty    ),
-    .rdata  	( fifo_rdata    )
-);
-always @(posedge clk or negedge rst_n) begin
-	if(!rst_n)begin
-		mmu_fifo_ready_reg <= 1'b1;
-	end
-	else if(flush_flag)begin
-		mmu_fifo_ready_reg <= 1'b1;
-	end
-	else if(mmu_fifo_valid & mmu_fifo_ready & (fifo_cnt >= 3'h2))begin
-		mmu_fifo_ready_reg <= 1'b0;
-	end
-	else if(fifo_cnt <= 3'h2)begin
-		mmu_fifo_ready_reg <= 1'b1;
-	end
-end
-always @(posedge clk or negedge rst_n) begin
-	if(!rst_n)begin
-		fifo_cnt			<= 3'h0;
-	end
-	else if(flush_flag)begin
-		fifo_cnt			<= 3'h0;
-	end
-	else if(fifo_wen & fifo_ren)begin
-		fifo_cnt			<= fifo_cnt;
-	end
-	else if(fifo_wen)begin
-		fifo_cnt			<= fifo_cnt + 3'h1;
-	end
-	else if(fifo_ren)begin
-		fifo_cnt			<= fifo_cnt + 3'h7;
-	end
-end
 //!fsm
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
-        stage_status                        <= IDLE;
-        // tlb_size_reg                        <= 3'h2;
-        // sram_wdata                  <= 128'h0;
-        tlb_page_wen                        <= 1'b0;
-        // immu_araddr_ppn             <= 44'h0;
-        fifo_error_reg                      <= 1'b0;
-        immu_arvalid_reg                    <= 1'b0;
-        // immu_araddr_offset          <= 9'h0;
-        tlb_search_super_page_2M_flag_reg   <= 1'b0;
-        tlb_search_super_page_1G_flag_reg   <= 1'b0;
-        tlb_write_super_page_2M_flag        <= 1'b0;
-        tlb_write_super_page_1G_flag        <= 1'b0;
+        stage_status        <= IDLE;
+        immu_miss_valid_reg <= 1'b0;
     end
     else if(flush_flag)begin
-        stage_status                        <= IDLE;
-        // tlb_size_reg                        <= 3'h2;
-        // sram_wdata                  <= 128'h0;
-        tlb_page_wen                        <= 1'b0;
-        // immu_araddr_ppn             <= 44'h0;
-        fifo_error_reg                      <= 1'b0;
-        immu_arvalid_reg                    <= 1'b0;
-        // immu_araddr_offset          <= 9'h0;
-        tlb_search_super_page_2M_flag_reg   <= 1'b0;
-        tlb_search_super_page_1G_flag_reg   <= 1'b0;
-        tlb_write_super_page_2M_flag        <= 1'b0;
-        tlb_write_super_page_1G_flag        <= 1'b0;
+        stage_status        <= IDLE;
+        immu_miss_valid_reg <= 1'b0;
     end
     else begin
         case (stage_status)
             IDLE: begin
-                if(tlb_search_super_page_2M_flag)begin
-                    stage_status                        <= SEARCH_2M;
-                    tlb_search_super_page_2M_flag_reg   <= 1'b1;
+                if(mmu_fifo_valid & (!stage_jump_mmu) & (!(|tlb_hit)))begin
+                    stage_status        <= SUBMIT_REQ;
+                    immu_miss_valid_reg <= 1'b1;
                 end
             end
-            SEARCH_2M: begin
-                if(tlb_search_super_page_1G_flag)begin
-                    stage_status                        <= SEARCH_1G;
-                    tlb_search_super_page_1G_flag_reg   <= 1'b1;
-                end
-                else begin
-                    stage_status                        <= IDLE;
-                    tlb_search_super_page_2M_flag_reg   <= 1'b0;
+            SUBMIT_REQ: begin
+                if(immu_miss_valid & immu_miss_ready)begin
+                    stage_status        <= WAIT_RESP;
+                    immu_miss_valid_reg <= 1'b0;
                 end
             end
-            SEARCH_1G: begin
-                if(tlb_search_super_page_1G_flag)begin
-                    stage_status                        <= WAIT_ARREADY;
-                    immu_arvalid_reg                    <= 1'b1;
-                    tlb_size_reg                        <= 3'h2;
-                    immu_araddr_ppn                     <= satp_ppn;
-                    immu_araddr_offset                  <= stage_vaddr[38:30];
+            WAIT_RESP: begin
+                if(pte_valid & pte_ready & (paddr_ready | (!paddr_valid)))begin
+                    stage_status        <= IDLE;
                 end
-                else begin
-                    stage_status                        <= IDLE;
-                    tlb_search_super_page_2M_flag_reg   <= 1'b0;
-                    tlb_search_super_page_1G_flag_reg   <= 1'b0;
-                end
-            end
-            WAIT_ARREADY: begin
-                if(immu_arready)begin
-                    stage_status                        <= WAIT_RVALID;
-                    immu_arvalid_reg                    <= 1'b0;
-                end
-            end
-            WAIT_RVALID: begin
-                if(immu_rvalid)begin
-                    if(immu_rresp != 2'h0)begin
-                        stage_status                    <= OUT;
-                        fifo_error_reg                  <= 1'b1;
-                    end
-                    else if(immu_rdata[63:54] != 10'h0)begin
-                        stage_status                    <= OUT;
-                        fifo_error_reg                  <= 1'b1;
-                    end
-                    else if(!immu_rdata_page_V)begin
-                        stage_status                    <= OUT;
-                        fifo_error_reg                  <= 1'b1;
-                    end
-                    else if(!immu_rdata_page_A)begin
-                        stage_status                    <= OUT;
-                        fifo_error_reg                  <= 1'b1;
-                    end
-                    else if(immu_rdata_page_W & (!immu_rdata_page_R))begin
-                        stage_status                    <= OUT;
-                        fifo_error_reg                  <= 1'b1;
-                    end
-                    else if(!(immu_rdata_page_X | immu_rdata_page_W | immu_rdata_page_R))begin
-                        if(tlb_size_reg == 3'h0)begin
-                            stage_status                <= OUT;
-                            fifo_error_reg              <= 1'b1;
-                        end
-                        else begin
-                            stage_status                <= WAIT_ARREADY;
-                            immu_arvalid_reg            <= 1'b1;
-                            tlb_size_reg                <= tlb_size_reg + 3'h7;
-                            immu_araddr_ppn             <= immu_rdata_page_ppn;
-                            if(tlb_size_reg == 3'h2)begin
-                                immu_araddr_offset      <= stage_vaddr[29:21];
-                            end
-                            else if(tlb_size_reg == 3'h1)begin
-                                immu_araddr_offset      <= stage_vaddr[20:12];
-                            end
-                        end
-                    end
-                    else if(immu_rdata_page_X)begin
-                        if(current_priv_status[0] == immu_rdata_page_U)begin
-                            stage_status                <= OUT;
-                            fifo_error_reg              <= 1'b1;
-                        end
-                        else if((tlb_size_reg == 3'h2) & (immu_rdata_page_ppn[17:0] != 18'h0))begin
-                            stage_status                <= OUT;
-                            fifo_error_reg              <= 1'b1;
-                        end
-                        else if((tlb_size_reg == 3'h1) & (immu_rdata_page_ppn[8:0] != 9'h0))begin
-                            stage_status                <= OUT;
-                            fifo_error_reg              <= 1'b1;
-                        end
-                        else begin
-                            //?get tlb
-                            stage_status                        <= OUT;
-                            tlb_page_wen                        <= 1'b1;
-                            if(tlb_size_reg == 3'h2)begin
-                                tlb_write_super_page_1G_flag    <= 1'b1;
-                                sram_wdata                      <= {tlb_size_reg, satp_asid, immu_rdata_page_ppn, immu_rdata_page_G, immu_rdata_page_U, stage_vaddr_1G_tag[20:21-IMMU_TAG_SIZE], {IMMU_TLB_FILL{1'b0}}};
-                            end
-                            else if(tlb_size_reg == 3'h1)begin
-                                tlb_write_super_page_2M_flag    <= 1'b1;
-                                sram_wdata                      <= {tlb_size_reg, satp_asid, immu_rdata_page_ppn, immu_rdata_page_G, immu_rdata_page_U, stage_vaddr_2M_tag[20:21-IMMU_TAG_SIZE], {IMMU_TLB_FILL{1'b0}}};
-                            end
-                            else 
-                                sram_wdata                      <= {tlb_size_reg, satp_asid, immu_rdata_page_ppn, immu_rdata_page_G, immu_rdata_page_U, stage_vaddr[38:39-IMMU_TAG_SIZE], {IMMU_TLB_FILL{1'b0}}};
-                        end
-                    end
-                end
-            end
-            OUT: begin
-                stage_status                            <= IDLE;
-                tlb_page_wen                            <= 1'b0;
-                fifo_error_reg                          <= 1'b0;
-                tlb_search_super_page_2M_flag_reg       <= 1'b0;
-                tlb_search_super_page_1G_flag_reg       <= 1'b0;
-                tlb_write_super_page_1G_flag            <= 1'b0;
-                tlb_write_super_page_2M_flag            <= 1'b0;
             end
             default: begin
-                stage_status                        <= IDLE;
-                tlb_page_wen                        <= 1'b0;
-                fifo_error_reg                      <= 1'b0;
-                immu_arvalid_reg                    <= 1'b0;
-                tlb_search_super_page_2M_flag_reg   <= 1'b0;
-                tlb_search_super_page_1G_flag_reg   <= 1'b0;
-                tlb_write_super_page_2M_flag        <= 1'b0;
-                tlb_write_super_page_1G_flag        <= 1'b0;
+                stage_status        <= IDLE;
+                immu_miss_valid_reg <= 1'b0;
             end
         endcase
     end
 end
-assign immu_rdata_page_ppn      = immu_rdata[53:10];
-// assign immu_rdata_page_D        = immu_rdata[7];
-assign immu_rdata_page_A        = immu_rdata[6];
-assign immu_rdata_page_G        = immu_rdata[5];
-assign immu_rdata_page_U        = immu_rdata[4];
-assign immu_rdata_page_X        = immu_rdata[3];
-assign immu_rdata_page_W        = immu_rdata[2];
-assign immu_rdata_page_R        = immu_rdata[1];
-assign immu_rdata_page_V        = immu_rdata[0];
-assign fifo_wen                 = stage_valid & (tlb_hit_flag | fifo_error | (stage_status == OUT) | stage_jump_mmu);
-assign fifo_ren                 = paddr_valid & paddr_ready;
-assign fifo_wdata               = {fifo_error, fifo_paddr};
-assign fifo_error               = (!stage_jump_mmu) & (fifo_error_reg | ((stage_vaddr[63:38] != 26'h0) & (stage_vaddr[63:38]!= 26'h3ffffff)) | tlb_error_flag);
-assign fifo_paddr               = (stage_jump_mmu) ? stage_vaddr : (
-                                    ((stage_status == OUT) & (tlb_size_reg == 3'h2)) ? {8'h0, sram_wdata[108:83], stage_vaddr[29:0]} : (
-                                        ((stage_status == OUT) & (tlb_size_reg == 3'h1)) ? {8'h0, sram_wdata[108:74], stage_vaddr[20:0]} : (
-                                            ((stage_status == OUT) & (tlb_size_reg == 3'h0)) ? {8'h0, sram_wdata[108:65], stage_vaddr[11:0]} : (
-                                                (stage_status == SEARCH_1G) ? {8'h0, tlb_page_ppn[43:18], stage_vaddr[29:0]} : (
-                                                    (stage_status == SEARCH_2M) ? {8'h0, tlb_page_ppn[43:9], stage_vaddr[20:0]} : {8'h0, tlb_page_ppn, stage_vaddr[11:0]}
-                                                )
-                                            )
-                                        )
-                                    )
-                                );
-assign immu_araddr_wire         = {8'h0, immu_araddr_ppn, immu_araddr_offset, 3'h0};
+assign page_wen         = (stage_status == WAIT_RESP) & (pte_valid) & (pte_ready) & (paddr_ready | (!paddr_valid));
 //**********************************************************************************************
 //?output
 assign sflush_vma_ready = 1'b1;
-assign immu_arvalid     = immu_arvalid_reg;
-assign immu_arlock      = 1'b0;
-assign immu_arsize      = 3'h3;
-assign immu_araddr      = immu_araddr_wire;
-assign immu_rready      = 1'b1;
-assign mmu_fifo_ready   = mmu_fifo_ready_reg & (stage_jump_mmu | tlb_hit_flag | (!stage_valid));
-assign paddr_valid      = (!fifo_empty);
-assign paddr            = fifo_rdata[63:0];
-assign paddr_error      = fifo_rdata[64];
-//**********************************************************************************************
-//?function
-function [127:0] tlb_page_sel;
-    input [IMMU_WAY-1:0] sel;
-    input [127:0]        tlb_page_rdata[0:IMMU_WAY-1];
-    integer index;
-    begin
-        tlb_page_sel = 128'h0;
-        for (index = 0; index < IMMU_WAY; index = index + 1) begin
-            if(sel[index] == 1'b1)begin
-                tlb_page_sel = tlb_page_sel | tlb_page_rdata[index];
-            end
-        end
-    end
-endfunction
+assign immu_miss_valid  = immu_miss_valid_reg;
+assign vaddr_i          = vaddr;
+assign pte_ready        = 1'b1;
+assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | ((stage_status == WAIT_RESP) & (pte_valid) & (pte_ready))) & (paddr_ready | (!paddr_valid)));
+FF_D_with_syn_rst #(
+    .DATA_LEN 	(1  ),
+    .RST_DATA 	(0  ))
+u_paddr_valid(
+    .clk      	(clk                            ),
+    .rst_n    	(rst_n                          ),
+    .syn_rst  	(flush_flag                     ),
+    .wen      	(paddr_ready | (!paddr_valid)   ),
+    .data_in  	(mmu_fifo_ready                 ),
+    .data_out 	(paddr_valid                    )
+);
+assign paddr        =   ({64{tlb_sel[2:0] == 3'h0}} & {8'h0, tlb_sel[111:68], vaddr[11:0]}) | 
+                        ({64{tlb_sel[2:0] == 3'h1}} & {8'h0, tlb_sel[111:77], vaddr[20:0]}) | 
+                        ({64{tlb_sel[2:0] == 3'h2}} & {8'h0, tlb_sel[111:86], vaddr[29:0]});
+//! this page can not Excute
+//! Smode don't fetch the Umode page instrument
+//! Umode don't fetch the Smode page instrument
+assign paddr_error  =   (!tlb_sel[61]) | (current_priv_status[0] == tlb_sel[62]) | ((stage_status == WAIT_RESP) & pte_error);
 
 endmodule //immu
