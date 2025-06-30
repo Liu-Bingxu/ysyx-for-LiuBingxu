@@ -100,9 +100,9 @@ wire                    mmu_rdata_page_V;
 //+---------------------------------------------------------------+
 //|                      sram_rdata                               |
 //|_______________________________________________________________|
-//|127|...|112|111|...|68|67|...|58|57|...|x|x-1|...|3| 2 | 1 | 0 |
-//|   ASID    |    PPN   |  ATTR   |   TAG  |  UNUSED | page size |
-//+-----------|----------|---------|--------|---------|-----------|
+//|127|...|112|111|...|68|67|...|58|57|...|31|30|...|3| 2 | 1 | 0 |
+//|   ASID    |    PPN   |  ATTR   |   TAG   | UNUSED | page size |
+//+-----------|----------|---------|---------|--------|-----------|
 genvar tlb_group_index;
 genvar tlb_way_index;
 generate
@@ -330,7 +330,7 @@ always @(posedge clk or negedge rst_n) begin
                         stage_status <= OUT;
                         sram_1G_wen  <= 1'b0;
                         out_error    <= 1'b0;
-                        out_pte      <= {satp_asid, mmu_rdata_page_ppn, mmu_rdata[9:0], stage_vaddr[38:36], 52'h0, 3'h2};
+                        out_pte      <= {satp_asid, mmu_rdata_page_ppn, mmu_rdata[9:0], stage_vaddr[38:12], 28'h0, 3'h2};
                     end
                 end
             end
@@ -380,7 +380,7 @@ always @(posedge clk or negedge rst_n) begin
                         stage_status <= OUT;
                         sram_2M_wen  <= 1'b0;
                         out_error    <= 1'b0;
-                        out_pte      <= {satp_asid, mmu_rdata_page_ppn, mmu_rdata[9:0], stage_vaddr[38:27], 43'h0, 3'h1};
+                        out_pte      <= {satp_asid, mmu_rdata_page_ppn, mmu_rdata[9:0], stage_vaddr[38:12], 28'h0, 3'h1};
                     end
                 end
             end
@@ -423,7 +423,7 @@ always @(posedge clk or negedge rst_n) begin
                         stage_status <= OUT;
                         tlb_page_wen <= 1'b1;
                         out_error    <= 1'b0;
-                        out_pte      <= {satp_asid, mmu_rdata_page_ppn, mmu_rdata[9:0], stage_vaddr[38:39-MMU_TAG_SIZE], {(MMU_TAG_SIZE + 13){1'h0}}, 3'h0};
+                        out_pte      <= {satp_asid, mmu_rdata_page_ppn, mmu_rdata[9:0], stage_vaddr[38:12], 28'h0, 3'h0};
                     end
                 end
             end
