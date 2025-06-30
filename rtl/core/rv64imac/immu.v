@@ -228,7 +228,7 @@ always @(posedge clk or negedge rst_n) begin
     else begin
         case (stage_status)
             IDLE: begin
-                if(mmu_fifo_valid & (!stage_jump_mmu) & (!(|tlb_hit)))begin
+                if(mmu_fifo_valid & (!stage_jump_mmu) & (!(|tlb_hit)) & (vaddr[63:39] == {25{vaddr[38]}}))begin
                     stage_status        <= SUBMIT_REQ;
                     immu_miss_valid_reg <= 1'b1;
                 end
@@ -258,7 +258,7 @@ assign sflush_vma_ready = 1'b1;
 assign immu_miss_valid  = immu_miss_valid_reg;
 assign vaddr_i          = vaddr;
 assign pte_ready        = 1'b1;
-assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | ((stage_status == WAIT_RESP) & (pte_valid) & (pte_ready))) & (paddr_ready | (!paddr_valid)));
+assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | ((stage_status == WAIT_RESP) & (pte_valid) & (pte_ready)) | (vaddr[63:39] != {25{vaddr[38]}})) & (paddr_ready | (!paddr_valid)));
 FF_D_with_syn_rst #(
     .DATA_LEN 	(1  ),
     .RST_DATA 	(0  ))
@@ -276,6 +276,8 @@ assign paddr        =   ({64{tlb_sel[2:0] == 3'h0}} & {8'h0, tlb_sel[111:68], va
 //! this page can not Excute
 //! Smode don't fetch the Umode page instrument
 //! Umode don't fetch the Smode page instrument
-assign paddr_error  =   (!tlb_sel[61]) | (current_priv_status[0] == tlb_sel[62]) | ((stage_status == WAIT_RESP) & pte_error);
+//! l2tlb report error
+//! vaddr illegel
+assign paddr_error  =   ((vaddr[63:39] != {25{vaddr[38]}}) & (!stage_jump_mmu)) | (!tlb_sel[61]) | (current_priv_status[0] == tlb_sel[62]) | ((stage_status == WAIT_RESP) & pte_error);
 
 endmodule //immu
