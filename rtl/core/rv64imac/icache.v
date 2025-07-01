@@ -200,10 +200,11 @@ generate
             end
         end
         if(ICACHE_GROUP == 1)begin
-            assign sram_data_cen[icache_group_index]                            = (!icache_line_wen) & (rch_fifo_empty);
+            assign sram_data_cen[icache_group_index]                            =   (!icache_line_wen) & (rch_fifo_empty);
         end
         else begin
-            assign sram_data_cen[icache_group_index]                            = (((!icache_line_wen) & (rch_fifo_empty)) | (icache_group_index != rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]));
+            assign sram_data_cen[icache_group_index]                            =   (( rch_fifo_empty ) | (icache_group_index != rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]) | icache_line_wen) & 
+                                                                                    ((!icache_line_wen) | (icache_group_index != icache_line_waddr[9 + ICACHE_GROUP_LEN:10])) ;
         end
     end
 endgenerate
