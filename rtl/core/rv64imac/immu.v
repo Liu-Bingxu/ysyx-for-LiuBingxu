@@ -137,21 +137,21 @@ assign tlb_hit[29]          =   (tlb_4K_valid[29] & (tlb_4K[29][57:31] == vaddr[
 assign tlb_hit[30]          =   (tlb_4K_valid[30] & (tlb_4K[30][57:31] == vaddr[38:12]) & ((tlb_4K[30][127:112] == satp_asid) | tlb_4K[30][63]));
 assign tlb_hit[31]          =   (tlb_4K_valid[31] & (tlb_4K[31][57:31] == vaddr[38:12]) & ((tlb_4K[31][127:112] == satp_asid) | tlb_4K[31][63]));
 assign tlb_hit[32]          =   (tlb_sp_valid[0]  & (tlb_sp[0][57:49]  == vaddr[38:30]) & ((tlb_sp[0 ][127:112] == satp_asid) | tlb_sp[0 ][63]) & (tlb_sp[0][2:0] == 3'h2));
-assign tlb_hit[33]          =   (tlb_sp_valid[1]  & (tlb_sp[1][57:49]  == vaddr[38:30]) & ((tlb_sp[1 ][127:112] == satp_asid) | tlb_sp[1 ][63]) & (tlb_sp[0][2:0] == 3'h2));
-assign tlb_hit[34]          =   (tlb_sp_valid[2]  & (tlb_sp[2][57:49]  == vaddr[38:30]) & ((tlb_sp[2 ][127:112] == satp_asid) | tlb_sp[2 ][63]) & (tlb_sp[0][2:0] == 3'h2));
-assign tlb_hit[35]          =   (tlb_sp_valid[3]  & (tlb_sp[3][57:49]  == vaddr[38:30]) & ((tlb_sp[3 ][127:112] == satp_asid) | tlb_sp[3 ][63]) & (tlb_sp[0][2:0] == 3'h2));
-assign tlb_hit[36]          =   (tlb_sp_valid[4]  & (tlb_sp[4][57:49]  == vaddr[38:30]) & ((tlb_sp[4 ][127:112] == satp_asid) | tlb_sp[4 ][63]) & (tlb_sp[0][2:0] == 3'h2));
-assign tlb_hit[37]          =   (tlb_sp_valid[5]  & (tlb_sp[5][57:49]  == vaddr[38:30]) & ((tlb_sp[5 ][127:112] == satp_asid) | tlb_sp[5 ][63]) & (tlb_sp[0][2:0] == 3'h2));
-assign tlb_hit[38]          =   (tlb_sp_valid[6]  & (tlb_sp[6][57:49]  == vaddr[38:30]) & ((tlb_sp[6 ][127:112] == satp_asid) | tlb_sp[6 ][63]) & (tlb_sp[0][2:0] == 3'h2));
-assign tlb_hit[39]          =   (tlb_sp_valid[7]  & (tlb_sp[7][57:49]  == vaddr[38:30]) & ((tlb_sp[7 ][127:112] == satp_asid) | tlb_sp[7 ][63]) & (tlb_sp[0][2:0] == 3'h2));
+assign tlb_hit[33]          =   (tlb_sp_valid[1]  & (tlb_sp[1][57:49]  == vaddr[38:30]) & ((tlb_sp[1 ][127:112] == satp_asid) | tlb_sp[1 ][63]) & (tlb_sp[1][2:0] == 3'h2));
+assign tlb_hit[34]          =   (tlb_sp_valid[2]  & (tlb_sp[2][57:49]  == vaddr[38:30]) & ((tlb_sp[2 ][127:112] == satp_asid) | tlb_sp[2 ][63]) & (tlb_sp[2][2:0] == 3'h2));
+assign tlb_hit[35]          =   (tlb_sp_valid[3]  & (tlb_sp[3][57:49]  == vaddr[38:30]) & ((tlb_sp[3 ][127:112] == satp_asid) | tlb_sp[3 ][63]) & (tlb_sp[3][2:0] == 3'h2));
+assign tlb_hit[36]          =   (tlb_sp_valid[4]  & (tlb_sp[4][57:49]  == vaddr[38:30]) & ((tlb_sp[4 ][127:112] == satp_asid) | tlb_sp[4 ][63]) & (tlb_sp[4][2:0] == 3'h2));
+assign tlb_hit[37]          =   (tlb_sp_valid[5]  & (tlb_sp[5][57:49]  == vaddr[38:30]) & ((tlb_sp[5 ][127:112] == satp_asid) | tlb_sp[5 ][63]) & (tlb_sp[5][2:0] == 3'h2));
+assign tlb_hit[38]          =   (tlb_sp_valid[6]  & (tlb_sp[6][57:49]  == vaddr[38:30]) & ((tlb_sp[6 ][127:112] == satp_asid) | tlb_sp[6 ][63]) & (tlb_sp[6][2:0] == 3'h2));
+assign tlb_hit[39]          =   (tlb_sp_valid[7]  & (tlb_sp[7][57:49]  == vaddr[38:30]) & ((tlb_sp[7 ][127:112] == satp_asid) | tlb_sp[7 ][63]) & (tlb_sp[7][2:0] == 3'h2));
 assign tlb_hit[40]          =   (tlb_sp_valid[0]  & (tlb_sp[0][57:40]  == vaddr[38:21]) & ((tlb_sp[0 ][127:112] == satp_asid) | tlb_sp[0 ][63]) & (tlb_sp[0][2:0] == 3'h1));
-assign tlb_hit[41]          =   (tlb_sp_valid[1]  & (tlb_sp[1][57:40]  == vaddr[38:21]) & ((tlb_sp[1 ][127:112] == satp_asid) | tlb_sp[1 ][63]) & (tlb_sp[0][2:0] == 3'h1));
-assign tlb_hit[42]          =   (tlb_sp_valid[2]  & (tlb_sp[2][57:40]  == vaddr[38:21]) & ((tlb_sp[2 ][127:112] == satp_asid) | tlb_sp[2 ][63]) & (tlb_sp[0][2:0] == 3'h1));
-assign tlb_hit[43]          =   (tlb_sp_valid[3]  & (tlb_sp[3][57:40]  == vaddr[38:21]) & ((tlb_sp[3 ][127:112] == satp_asid) | tlb_sp[3 ][63]) & (tlb_sp[0][2:0] == 3'h1));
-assign tlb_hit[44]          =   (tlb_sp_valid[4]  & (tlb_sp[4][57:40]  == vaddr[38:21]) & ((tlb_sp[4 ][127:112] == satp_asid) | tlb_sp[4 ][63]) & (tlb_sp[0][2:0] == 3'h1));
-assign tlb_hit[45]          =   (tlb_sp_valid[5]  & (tlb_sp[5][57:40]  == vaddr[38:21]) & ((tlb_sp[5 ][127:112] == satp_asid) | tlb_sp[5 ][63]) & (tlb_sp[0][2:0] == 3'h1));
-assign tlb_hit[46]          =   (tlb_sp_valid[6]  & (tlb_sp[6][57:40]  == vaddr[38:21]) & ((tlb_sp[6 ][127:112] == satp_asid) | tlb_sp[6 ][63]) & (tlb_sp[0][2:0] == 3'h1));
-assign tlb_hit[47]          =   (tlb_sp_valid[7]  & (tlb_sp[7][57:40]  == vaddr[38:21]) & ((tlb_sp[7 ][127:112] == satp_asid) | tlb_sp[7 ][63]) & (tlb_sp[0][2:0] == 3'h1));
+assign tlb_hit[41]          =   (tlb_sp_valid[1]  & (tlb_sp[1][57:40]  == vaddr[38:21]) & ((tlb_sp[1 ][127:112] == satp_asid) | tlb_sp[1 ][63]) & (tlb_sp[1][2:0] == 3'h1));
+assign tlb_hit[42]          =   (tlb_sp_valid[2]  & (tlb_sp[2][57:40]  == vaddr[38:21]) & ((tlb_sp[2 ][127:112] == satp_asid) | tlb_sp[2 ][63]) & (tlb_sp[2][2:0] == 3'h1));
+assign tlb_hit[43]          =   (tlb_sp_valid[3]  & (tlb_sp[3][57:40]  == vaddr[38:21]) & ((tlb_sp[3 ][127:112] == satp_asid) | tlb_sp[3 ][63]) & (tlb_sp[3][2:0] == 3'h1));
+assign tlb_hit[44]          =   (tlb_sp_valid[4]  & (tlb_sp[4][57:40]  == vaddr[38:21]) & ((tlb_sp[4 ][127:112] == satp_asid) | tlb_sp[4 ][63]) & (tlb_sp[4][2:0] == 3'h1));
+assign tlb_hit[45]          =   (tlb_sp_valid[5]  & (tlb_sp[5][57:40]  == vaddr[38:21]) & ((tlb_sp[5 ][127:112] == satp_asid) | tlb_sp[5 ][63]) & (tlb_sp[5][2:0] == 3'h1));
+assign tlb_hit[46]          =   (tlb_sp_valid[6]  & (tlb_sp[6][57:40]  == vaddr[38:21]) & ((tlb_sp[6 ][127:112] == satp_asid) | tlb_sp[6 ][63]) & (tlb_sp[6][2:0] == 3'h1));
+assign tlb_hit[47]          =   (tlb_sp_valid[7]  & (tlb_sp[7][57:40]  == vaddr[38:21]) & ((tlb_sp[7 ][127:112] == satp_asid) | tlb_sp[7 ][63]) & (tlb_sp[7][2:0] == 3'h1));
 
 assign tlb_sel              =   ({128{tlb_hit[0 ]}} & tlb_4K[0] ) | 
                                 ({128{tlb_hit[1 ]}} & tlb_4K[1] ) | 
