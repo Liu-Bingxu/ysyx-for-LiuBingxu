@@ -270,14 +270,15 @@ u_paddr_valid(
     .data_in  	(mmu_fifo_ready                 ),
     .data_out 	(paddr_valid                    )
 );
-assign paddr        =   ({64{tlb_sel[2:0] == 3'h0}} & {8'h0, tlb_sel[111:68], vaddr[11:0]}) | 
+assign paddr        =   (stage_jump_mmu) ? vaddr : 
+                        (({64{tlb_sel[2:0] == 3'h0}} & {8'h0, tlb_sel[111:68], vaddr[11:0]}) | 
                         ({64{tlb_sel[2:0] == 3'h1}} & {8'h0, tlb_sel[111:77], vaddr[20:0]}) | 
-                        ({64{tlb_sel[2:0] == 3'h2}} & {8'h0, tlb_sel[111:86], vaddr[29:0]});
+                        ({64{tlb_sel[2:0] == 3'h2}} & {8'h0, tlb_sel[111:86], vaddr[29:0]}));
 //! this page can not Excute
 //! Smode don't fetch the Umode page instrument
 //! Umode don't fetch the Smode page instrument
 //! l2tlb report error
 //! vaddr illegel
-assign paddr_error  =   ((vaddr[63:39] != {25{vaddr[38]}}) & (!stage_jump_mmu)) | (!tlb_sel[61]) | (current_priv_status[0] == tlb_sel[62]) | ((stage_status == WAIT_RESP) & pte_error);
+assign paddr_error  =   ((vaddr[63:39] != {25{vaddr[38]}}) | (!tlb_sel[61]) | (current_priv_status[0] == tlb_sel[62]) | ((stage_status == WAIT_RESP) & pte_error)) & (!stage_jump_mmu);
 
 endmodule //immu
