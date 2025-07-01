@@ -1,11 +1,16 @@
-module icache#(parameter IMMU_WAY = 2, IMMU_GROUP = 1, ICACHE_WAY = 2, ICACHE_GROUP = 2)(
+module icache#(
+    parameter AXI_ID_SB = 3, 
+    parameter ICACHE_WAY = 2, 
+    parameter ICACHE_GROUP = 2,
+    parameter PMEM_START = 64'h8000_0000,
+    parameter PMEM_END = 64'hFFFF_FFFF
+)(
     input                   clk,
     input                   rst_n,
 //interface with wbu 
     input  [1:0]            current_priv_status,
     input  [3:0]            satp_mode,
     input  [15:0]           satp_asid,
-    input  [43:0]           satp_ppn,
 //all flush flag 
     input                   flush_flag,
     input                   flush_i_valid,
@@ -21,19 +26,15 @@ module icache#(parameter IMMU_WAY = 2, IMMU_GROUP = 1, ICACHE_WAY = 2, ICACHE_GR
     output                  ifu_rvalid,
     input                   ifu_rready,
     output [1:0]            ifu_rresp,
-    output [31:0]           ifu_rdata,
-//interface with dcache
-    //read addr channel
-    input                   immu_arready,
-    output                  immu_arvalid,
-    output                  immu_arlock,
-    output [2:0]            immu_arsize,
-    output [63:0]           immu_araddr,
-    //read data channel
-    output                  immu_rready,
-    input                   immu_rvalid,
-    input  [1:0]            immu_rresp,
-    input  [63:0]           immu_rdata,
+    output [63:0]           ifu_rdata,
+//interface with l2tlb
+    output                  immu_miss_valid,
+    input                   immu_miss_ready,
+    output [63:0]           vaddr_i,
+    input                   pte_valid,
+    output                  pte_ready,
+    input  [127:0]          pte,
+    input                   pte_error,
 //interface with axi
     //read addr channel
     input                   icache_arready,
@@ -61,8 +62,8 @@ localparam ICACHE_TAG_SIE   = 64 - 10 - ICACHE_GROUP_LEN;
 wire [63:0]                 icache_line_valid[0:ICACHE_GROUP-1][0:ICACHE_WAY-1];
 wire [127:0]                sram_tag_rdata[0:ICACHE_TAG_GROUP-1][0:ICACHE_WAY-1];
 wire [63:0]                 sram_tag[0:ICACHE_GROUP-1][0:ICACHE_WAY-1];
-wire                        sram_tag_cen[0:ICACHE_GROUP-1];
-wire                        sram_tag_wen[0:ICACHE_GROUP-1][0:ICACHE_WAY-1];
+wire                        sram_tag_cen[0:ICACHE_TAG_GROUP-1];
+wire                        sram_tag_wen[0:ICACHE_TAG_GROUP-1][0:ICACHE_WAY-1];
 wire [127:0]                sram_tag_bwen;
 wire [127:0]                sram_data_rdata[0:ICACHE_GROUP-1][0:ICACHE_WAY-1];
 wire                        sram_data_cen[0:ICACHE_GROUP-1];
@@ -90,28 +91,31 @@ reg  [2:0]                  out_fifo_cnt;
 
 //immu signs 
 wire                        paddr_valid;
-reg                         paddr_ready;
+wire                        paddr_ready;
 wire [63:0]                 paddr;
 wire                        paddr_error;
 
 //icache fsm sign
 localparam IDLE         = 3'b000;
-localparam GET_DATA     = 3'b001;
-localparam WAIT_IMMU    = 3'b011;
 localparam WAIT_ARREADY = 3'b010;
-localparam WAIT_RVALID  = 3'b110;
-localparam WRITE_CACHE  = 3'b111;
+localparam WAIT_RVALID0 = 3'b110;
+localparam WAIT_RVALID1 = 3'b111;
+localparam WRITE_CACHE  = 3'b101;
+localparam SEND_DATA    = 3'b100;
 reg  [2:0]                  icache_fsm;
-reg  [127:0]                sram_tag_wdata;
+reg  [1:0]                  icache_ifu_resp_reg;
+reg                         icache_arvalid_reg;
+wire [127:0]                sram_tag_wdata;
 reg  [127:0]                sram_data_wdata;
 reg                         icache_line_wen;
-reg  [63:0]                 icache_line_waddr;
-reg                         data_cnt;
+wire [63:0]                 icache_line_waddr;
 
-integer                     iter_index;
-reg  [127:0]                sram_data_way_reg[0:ICACHE_WAY-1];
-reg  [63:0]                 sram_tag_way_reg[0:ICACHE_WAY-1];
-reg  [63:0]                 icache_line_valid_way_reg[0:ICACHE_WAY-1];
+//first stage register
+reg                         first_stage_valid;
+wire                        first_stage_ready;
+wire [127:0]                sram_data_way_reg[0:ICACHE_WAY-1];
+wire [63:0]                 sram_tag_way_reg[0:ICACHE_WAY-1];
+wire [63:0]                 icache_line_valid_way_reg[0:ICACHE_WAY-1];
 
 wire [127:0]                sram_data_way[0:ICACHE_WAY-1];
 wire [63:0]                 sram_tag_way[0:ICACHE_WAY-1];
@@ -136,17 +140,17 @@ generate
                 .D    	( sram_data_wdata                                           )
             );
             if(ICACHE_GROUP == 1)begin
-                assign sram_data_wen[icache_group_index][icache_way_index]          = (!icache_line_wen) | (!(icache_way_index == rand_way));
+                assign sram_data_wen[icache_group_index][icache_way_index]          = (!icache_line_wen) | (icache_way_index != rand_way);
                 assign sram_data_way[icache_way_index]                              = sram_data_rdata[icache_group_index][icache_way_index];
                 assign sram_tag_way[icache_way_index]                               = sram_tag[icache_group_index][icache_way_index];
                 assign icache_line_valid_way[icache_way_index]                      = icache_line_valid[icache_group_index][icache_way_index];
             end
             else begin
-                assign sram_data_wen[icache_group_index][icache_way_index]          = (!icache_line_wen) | (!(icache_way_index == rand_way)) | 
-                                                                                        (!(icache_group_index == icache_line_waddr[9 + ICACHE_GROUP_LEN:10]));
-                assign sram_data_way[icache_way_index]                              = sram_data_rdata[icache_line_waddr[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
-                assign sram_tag_way[icache_way_index]                               = sram_tag[icache_line_waddr[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
-                assign icache_line_valid_way[icache_way_index]                      = icache_line_valid[icache_line_waddr[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
+                assign sram_data_wen[icache_group_index][icache_way_index]          = (!icache_line_wen) | (icache_way_index != rand_way) | 
+                                                                                        (icache_group_index != icache_line_waddr[9 + ICACHE_GROUP_LEN:10]);
+                assign sram_data_way[icache_way_index]                              = sram_data_rdata[rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
+                assign sram_tag_way[icache_way_index]                               = sram_tag[rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
+                assign icache_line_valid_way[icache_way_index]                      = icache_line_valid[rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
             end
             if(icache_group_index % 2 == 0)begin
                 S011HD1P_X32Y2D128_BW u_S011HD1P_X32Y2D128_BW_tag(
@@ -163,8 +167,8 @@ generate
                     assign sram_tag_wen[icache_group_index/2][icache_way_index]     = sram_data_wen[icache_group_index][icache_way_index];
                 end
                 else begin
-                    assign sram_tag_cen[icache_group_index/2]                       = sram_data_cen[icache_group_index]                     | sram_data_cen[icache_group_index+1];
-                    assign sram_tag_wen[icache_group_index/2][icache_way_index]     = sram_data_wen[icache_group_index][icache_way_index]   | sram_data_wen[icache_group_index+1][icache_way_index];
+                    assign sram_tag_cen[icache_group_index/2]                       = sram_data_cen[icache_group_index]                     & sram_data_cen[icache_group_index+1];
+                    assign sram_tag_wen[icache_group_index/2][icache_way_index]     = sram_data_wen[icache_group_index][icache_way_index]   & sram_data_wen[icache_group_index+1][icache_way_index];
                 end
             end
             if(icache_group_index % 2 == 0)begin
@@ -176,7 +180,7 @@ generate
             FF_D_with_addr #(
                 .ADDR_LEN   ( 6 ),
                 .RST_DATA   ( 0 )
-            )u_tlb_valid(
+            )u_icache_line_valid(
                 .clk        ( clk                                                       ),
                 .rst_n      ( rst_n                                                     ),
                 .syn_rst    ( flush_i_valid                                             ),
@@ -189,12 +193,17 @@ generate
                 assign sram_way_sel[icache_way_index]                           = (sram_tag_way_reg[icache_way_index][63:64-ICACHE_TAG_SIE] == paddr[63:64-ICACHE_TAG_SIE]) & 
                                                                                     icache_line_valid_way_reg[icache_way_index][icache_line_waddr[9:4]]; 
             end
+            if(icache_group_index == 0)begin
+                FF_D_without_asyn_rst #(128)  u_sram_data_way            (clk,rch_fifo_ren,sram_data_way[icache_way_index],sram_data_way_reg[icache_way_index]);
+                FF_D_without_asyn_rst #(64)   u_sram_tag_way             (clk,rch_fifo_ren,sram_tag_way[icache_way_index] ,sram_tag_way_reg[icache_way_index] );
+                FF_D_without_asyn_rst #(64)   u_icache_line_valid_way    (clk,rch_fifo_ren,icache_line_valid_way[icache_way_index],icache_line_valid_way_reg[icache_way_index]);
+            end
         end
         if(ICACHE_GROUP == 1)begin
             assign sram_data_cen[icache_group_index]                            = (!icache_line_wen) & (rch_fifo_empty);
         end
         else begin
-            assign sram_data_cen[icache_group_index]                            = (!icache_line_wen) & ((rch_fifo_empty) | (!(icache_group_index == rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10])));
+            assign sram_data_cen[icache_group_index]                            = (((!icache_line_wen) & (rch_fifo_empty)) | (icache_group_index != rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]));
         end
     end
 endgenerate
@@ -205,7 +214,9 @@ rand_lfsr_8_bit #(
     .rst_n 	( rst_n         ),
     .out   	( rand_way      )
 );
+FF_D_without_asyn_rst #(64)   u_icache_line_waddr           (clk,rch_fifo_ren,rch_fifo_rdata,icache_line_waddr);
 assign sram_addr                = (icache_line_wen) ? icache_line_waddr[9:4] : rch_fifo_rdata[9:4];
+assign sram_tag_wdata           = {icache_line_waddr, icache_line_waddr};
 if(ICACHE_GROUP == 1)begin
     assign sram_tag_bwen        = 128'h0;
 end
@@ -216,7 +227,7 @@ assign sram_data_sel            = icache_line_sel(sram_way_sel, sram_data_way_re
 //**********************************************************************************************
 ifu_fifo #(
     .DATA_LEN   	( 64  ),
-    .AddR_Width 	( 2   ))
+    .AddR_Width 	( 3   ))
 rch_fifo(
     .clk    	( clk               ),
     .rst_n  	( rst_n             ),
@@ -230,7 +241,7 @@ rch_fifo(
 
 ifu_fifo #(
     .DATA_LEN   	( 64  ),
-    .AddR_Width 	( 2   ))
+    .AddR_Width 	( 3   ))
 mmu_fifo(
     .clk    	( clk               ),
     .rst_n  	( rst_n             ),
@@ -244,7 +255,7 @@ mmu_fifo(
 
 ifu_fifo #(
     .DATA_LEN   	( 66  ),
-    .AddR_Width 	( 2   ))
+    .AddR_Width 	( 3   ))
 out_fifo(
     .clk    	( clk               ),
     .rst_n  	( rst_n             ),
@@ -255,6 +266,19 @@ out_fifo(
     .empty  	( out_fifo_empty    ),
     .rdata  	( out_fifo_rdata    )
 );
+
+FF_D_with_syn_rst #(
+    .DATA_LEN 	(1  ),
+    .RST_DATA 	(0  ))
+u_first_stage_valid(
+    .clk      	(clk                                        ),
+    .rst_n    	(rst_n                                      ),
+    .syn_rst  	(flush_flag                                 ),
+    .wen      	(first_stage_ready | (!first_stage_valid)   ),
+    .data_in  	(rch_fifo_ren                               ),
+    .data_out 	(first_stage_valid                          )
+);
+assign first_stage_ready = out_fifo_wen;
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
@@ -303,95 +327,136 @@ end
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
         icache_fsm          <= IDLE;
-        // sram_tag_wdata      <= 128'h0;
-        // sram_data_wdata     <= 128'h0;
+        icache_arvalid_reg  <= 1'b0;
         icache_line_wen     <= 1'b0;
-        rch_fifo_ren        <= 1'b0;
-        paddr_ready         <= 1'b0;
-        // icache_line_waddr   <= 64'h0;
-        // data_cnt            <= 1'b0;
+        icache_ifu_resp_reg <= 2'h0;
     end
     else if(flush_flag)begin
         icache_fsm          <= IDLE;
-        // sram_tag_wdata      <= 128'h0;
-        // sram_data_wdata     <= 128'h0;
+        icache_arvalid_reg  <= 1'b0;
         icache_line_wen     <= 1'b0;
-        rch_fifo_ren        <= 1'b0;
-        paddr_ready         <= 1'b0;
-        // icache_line_waddr   <= 64'h0;
-        // data_cnt            <= 1'b0;
+        icache_ifu_resp_reg <= 2'h0;
     end
     else begin
         case (icache_fsm)
             IDLE: begin
-                if((out_fifo_cnt <= 3'h3) & (!rch_fifo_empty))begin
-                    icache_fsm          <= GET_DATA;
-                    icache_line_waddr   <= rch_fifo_rdata;
-                    rch_fifo_ren        <= 1'b1;
-                end
-            end
-            GET_DATA: begin
-                icache_fsm                                  <= WAIT_IMMU;
-                rch_fifo_ren                                <= 1'b0;
-                for(iter_index = 0; iter_index < ICACHE_WAY; iter_index = iter_index + 1)begin
-                    sram_data_way_reg[iter_index]           <=  sram_data_way[iter_index];
-                    sram_tag_way_reg[iter_index]            <=  sram_tag_way[iter_index];
-                    icache_line_valid_way_reg[iter_index]   <=  icache_line_valid_way[iter_index];
-                end
-            end
-            WAIT_IMMU: begin
-                if(paddr_valid)begin
+                if(first_stage_valid & paddr_valid & (!(|sram_way_sel)) & (!paddr_error))begin
+                    icache_fsm          <= WAIT_ARREADY;
+                    icache_arvalid_reg  <= 1'b1;
                 end
             end
             WAIT_ARREADY: begin
+                if(icache_arvalid & icache_arready)begin
+                    icache_fsm          <= WAIT_RVALID0;
+                    icache_arvalid_reg  <= 1'b0;
+                end
             end
-            WAIT_RVALID: begin
+            WAIT_RVALID0: begin
+                if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & (icache_rresp != 2'h0))begin
+                    icache_fsm          <= SEND_DATA;
+                    icache_ifu_resp_reg <= 2'h3;
+                end
+                else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & icache_rlast)begin
+                    icache_fsm          <= SEND_DATA;
+                    icache_ifu_resp_reg <= 2'h3;
+                end
+                else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB))begin
+                    icache_fsm          <= WAIT_RVALID1;
+                end
+            end
+            WAIT_RVALID1: begin
+                if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & (icache_rresp != 2'h0))begin
+                    icache_fsm          <= SEND_DATA;
+                    icache_ifu_resp_reg <= 2'h3;
+                end
+                else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & (!icache_rlast))begin
+                    icache_fsm          <= SEND_DATA;
+                    icache_ifu_resp_reg <= 2'h3;
+                end
+                else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & ((icache_line_waddr > PMEM_END) | (icache_line_waddr < PMEM_START)))begin
+                    icache_fsm          <= SEND_DATA;
+                    icache_ifu_resp_reg <= 2'h0;
+                end
+                else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB))begin
+                    icache_fsm          <= WRITE_CACHE;
+                    icache_line_wen     <= 1'b1;
+                    icache_ifu_resp_reg <= 2'h0;
+                end
             end
             WRITE_CACHE: begin
+                icache_fsm          <= SEND_DATA;
+                icache_line_wen     <= 1'b0;
+            end
+            SEND_DATA: begin
+                if(out_fifo_wen)begin
+                    icache_fsm      <= IDLE;
+                end
             end
             default: begin
+                icache_fsm          <= IDLE;
+                icache_arvalid_reg  <= 1'b0;
+                icache_line_wen     <= 1'b0;
+                icache_ifu_resp_reg <= 2'h0;
             end
         endcase
     end
 end
+always @(posedge clk) begin
+    if((icache_fsm == WAIT_RVALID0) & icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & (icache_rresp == 2'h0) & (!icache_rlast))begin
+        sram_data_wdata[63:0]          <= icache_rdata;
+    end
+    if((icache_fsm == WAIT_RVALID1) & icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & (icache_rresp == 2'h0) & icache_rlast)begin
+        sram_data_wdata[127:64]        <= icache_rdata;
+    end
+end
 
-assign fifo_wen     = ifu_arvalid & ifu_arready;
-assign fifo_wdata   = ifu_araddr;
+assign rch_fifo_ren     = (!rch_fifo_empty) & (first_stage_ready | (!first_stage_valid));
+assign fifo_wen         = ifu_arvalid & ifu_arready;
+assign fifo_wdata       = ifu_araddr;
+assign out_fifo_ren     = ifu_rvalid & ifu_rready;
+assign out_fifo_wen     = ((first_stage_valid & paddr_valid & ((|sram_way_sel) | paddr_error)) | (icache_fsm == SEND_DATA)) & (out_fifo_cnt != 3'h7);
+assign out_fifo_wdata   = (icache_fsm == SEND_DATA) ? ((icache_line_waddr[3]) ? {icache_ifu_resp_reg, sram_data_wdata[127:64]} : {icache_ifu_resp_reg, sram_data_wdata[63:0]}) 
+                                                    : ((icache_line_waddr[3]) ? {paddr_error, 1'b0, sram_data_sel[127:64]} : {paddr_error, 1'b0, sram_data_sel[63:0]});
 
-immu #(
-    .IMMU_WAY       ( IMMU_WAY      ), 
-    .IMMU_GROUP     ( IMMU_GROUP    ))
-u_immu(
-    .clk                    ( clk                   ),
-    .rst_n                  ( rst_n                 ),
-    .current_priv_status    ( current_priv_status   ),
-    .satp_mode              ( satp_mode             ),
-    .satp_asid              ( satp_asid             ),
-    .satp_ppn               ( satp_ppn              ),
-    .flush_flag             ( flush_flag            ),
-    .sflush_vma_valid       ( sflush_vma_valid      ),
-    .sflush_vma_ready       ( sflush_vma_ready      ),
-    .immu_arready           ( immu_arready          ),
-    .immu_arvalid           ( immu_arvalid          ),
-    .immu_arlock            ( immu_arlock           ),
-    .immu_arsize            ( immu_arsize           ),
-    .immu_araddr            ( immu_araddr           ),
-    .immu_rready            ( immu_rready           ),
-    .immu_rvalid            ( immu_rvalid           ),
-    .immu_rresp             ( immu_rresp            ),
-    .immu_rdata             ( immu_rdata            ),
-    .mmu_fifo_valid         ( !mmu_fifo_empty       ),
-    .mmu_fifo_ready         ( mmu_fifo_ren          ),
-    .vaddr                  ( mmu_fifo_rdata        ),
-    .paddr_valid            ( paddr_valid           ),
-    .paddr_ready            ( paddr_ready           ),
-    .paddr                  ( paddr                 ),
-    .paddr_error            ( paddr_error           )
+immu u_immu(
+    .clk                 	(clk                  ),
+    .rst_n               	(rst_n                ),
+    .current_priv_status 	(current_priv_status  ),
+    .satp_mode           	(satp_mode            ),
+    .satp_asid           	(satp_asid            ),
+    .flush_flag          	(flush_flag           ),
+    .sflush_vma_valid    	(sflush_vma_valid     ),
+    .sflush_vma_ready    	(sflush_vma_ready     ),
+    .immu_miss_valid     	(immu_miss_valid      ),
+    .immu_miss_ready     	(immu_miss_ready      ),
+    .vaddr_i             	(vaddr_i              ),
+    .pte_valid           	(pte_valid            ),
+    .pte_ready           	(pte_ready            ),
+    .pte                 	(pte                  ),
+    .pte_error           	(pte_error            ),
+    .mmu_fifo_valid      	(!mmu_fifo_empty      ),
+    .mmu_fifo_ready      	(mmu_fifo_ren         ),
+    .vaddr               	(mmu_fifo_rdata       ),
+    .paddr_valid         	(paddr_valid          ),
+    .paddr_ready         	(paddr_ready          ),
+    .paddr               	(paddr                ),
+    .paddr_error         	(paddr_error          )
 );
-
+assign paddr_ready      = out_fifo_wen;
 //**********************************************************************************************
 //?out sign
 assign flush_i_ready    = 1'b1;
+assign ifu_arready      = (rch_fifo_cnt != 3'h7) & (mmu_fifo_cnt != 3'h7);
+assign ifu_rvalid       = (!out_fifo_empty);
+assign ifu_rresp        = out_fifo_rdata[65:64];
+assign ifu_rdata        = out_fifo_rdata[63:0];
+assign icache_arvalid   = icache_arvalid_reg;
+assign icache_araddr    = {paddr[63:4], 4'h0};
+assign icache_arid      = AXI_ID_SB;
+assign icache_arlen     = 8'h1;
+assign icache_arsize    = 3'h3;
+assign icache_arburst   = 2'h1;
+assign icache_rready    = 1'b1;
 //**********************************************************************************************
 //?function
 function [127:0] icache_line_sel;
