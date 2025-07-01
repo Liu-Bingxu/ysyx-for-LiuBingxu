@@ -15,7 +15,7 @@ module immu(
     input                   immu_miss_ready,
     output [63:0]           vaddr_i,
     input                   pte_valid,
-    output                  pte_ready,
+    output                  pte_ready_i,
     input  [127:0]          pte,
     input                   pte_error,
 //interface with fifo
@@ -240,7 +240,7 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             WAIT_RESP: begin
-                if(pte_valid & pte_ready & (paddr_ready | (!paddr_valid)))begin
+                if(pte_valid & pte_ready_i & (paddr_ready | (!paddr_valid)))begin
                     stage_status        <= IDLE;
                 end
             end
@@ -251,14 +251,14 @@ always @(posedge clk or negedge rst_n) begin
         endcase
     end
 end
-assign page_wen         = (stage_status == WAIT_RESP) & (pte_valid) & (pte_ready) & (paddr_ready | (!paddr_valid));
+assign page_wen         = (stage_status == WAIT_RESP) & (pte_valid) & (pte_ready_i) & (paddr_ready | (!paddr_valid));
 //**********************************************************************************************
 //?output
 assign sflush_vma_ready = 1'b1;
 assign immu_miss_valid  = immu_miss_valid_reg;
 assign vaddr_i          = vaddr;
-assign pte_ready        = 1'b1;
-assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | ((stage_status == WAIT_RESP) & (pte_valid) & (pte_ready)) | (vaddr[63:39] != {25{vaddr[38]}})) & mmu_fifo_valid & (paddr_ready | (!paddr_valid)));
+assign pte_ready_i      = (stage_status == WAIT_RESP);
+assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | ((stage_status == WAIT_RESP) & (pte_valid) & (pte_ready_i)) | (vaddr[63:39] != {25{vaddr[38]}})) & mmu_fifo_valid & (paddr_ready | (!paddr_valid)));
 FF_D_with_syn_rst #(
     .DATA_LEN 	(1  ),
     .RST_DATA 	(0  ))
