@@ -32,7 +32,7 @@ module icache#(
     input                   immu_miss_ready,
     output [63:0]           vaddr_i,
     input                   pte_valid,
-    output                  pte_ready,
+    output                  pte_ready_i,
     input  [127:0]          pte,
     input                   pte_error,
 //interface with axi
@@ -431,7 +431,7 @@ immu u_immu(
     .immu_miss_ready     	(immu_miss_ready      ),
     .vaddr_i             	(vaddr_i              ),
     .pte_valid           	(pte_valid            ),
-    .pte_ready           	(pte_ready            ),
+    .pte_ready_i         	(pte_ready_i          ),
     .pte                 	(pte                  ),
     .pte_error           	(pte_error            ),
     .mmu_fifo_valid      	(!mmu_fifo_empty      ),
