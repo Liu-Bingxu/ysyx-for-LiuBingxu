@@ -193,6 +193,14 @@ assign tlb_sel              =   ({128{tlb_hit[0 ]}} & tlb_4K[0] ) |
                                 ({128{tlb_hit[37]}} & tlb_sp[5 ]) | 
                                 ({128{tlb_hit[38]}} & tlb_sp[6 ]) | 
                                 ({128{tlb_hit[39]}} & tlb_sp[7 ]) | 
+                                ({128{tlb_hit[40]}} & tlb_sp[0 ]) | 
+                                ({128{tlb_hit[41]}} & tlb_sp[1 ]) | 
+                                ({128{tlb_hit[42]}} & tlb_sp[2 ]) | 
+                                ({128{tlb_hit[43]}} & tlb_sp[3 ]) | 
+                                ({128{tlb_hit[44]}} & tlb_sp[4 ]) | 
+                                ({128{tlb_hit[45]}} & tlb_sp[5 ]) | 
+                                ({128{tlb_hit[46]}} & tlb_sp[6 ]) | 
+                                ({128{tlb_hit[47]}} & tlb_sp[7 ]) | 
                                 ({128{(stage_status == WAIT_RESP)}} & pte);
 
 assign page_4K_wen           = page_wen & (pte[2:0] == 3'h0);
