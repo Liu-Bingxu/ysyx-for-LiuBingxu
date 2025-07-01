@@ -117,6 +117,18 @@ wire [127:0]                sram_data_way_reg[0:ICACHE_WAY-1];
 wire [63:0]                 sram_tag_way_reg[0:ICACHE_WAY-1];
 wire [63:0]                 icache_line_valid_way_reg[0:ICACHE_WAY-1];
 
+wire                        way_flag_set;
+wire                        way_flag_clr;
+wire                        way_flag_wen;
+wire                        way_flag_nxt;
+wire                        way_flag;
+wire [127:0]                sram_data_way_use[0:ICACHE_WAY-1];
+wire [63:0]                 sram_tag_way_use[0:ICACHE_WAY-1];
+wire [63:0]                 icache_line_valid_way_use[0:ICACHE_WAY-1];
+
+wire [127:0]                sram_data_way_reg[0:ICACHE_WAY-1];
+wire [63:0]                 sram_tag_way_reg[0:ICACHE_WAY-1];
+wire [63:0]                 icache_line_valid_way_reg[0:ICACHE_WAY-1];
 wire [127:0]                sram_data_way[0:ICACHE_WAY-1];
 wire [63:0]                 sram_tag_way[0:ICACHE_WAY-1];
 wire [63:0]                 icache_line_valid_way[0:ICACHE_WAY-1];
@@ -148,9 +160,9 @@ generate
             else begin
                 assign sram_data_wen[icache_group_index][icache_way_index]          = (!icache_line_wen) | (icache_way_index != rand_way) | 
                                                                                         (icache_group_index != icache_line_waddr[9 + ICACHE_GROUP_LEN:10]);
-                assign sram_data_way[icache_way_index]                              = sram_data_rdata[rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
-                assign sram_tag_way[icache_way_index]                               = sram_tag[rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
-                assign icache_line_valid_way[icache_way_index]                      = icache_line_valid[rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
+                assign sram_data_way[icache_way_index]                              = sram_data_rdata[icache_line_waddr[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
+                assign sram_tag_way[icache_way_index]                               = sram_tag[icache_line_waddr[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
+                assign icache_line_valid_way[icache_way_index]                      = icache_line_valid[icache_line_waddr[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
             end
             if(icache_group_index % 2 == 0)begin
                 S011HD1P_X32Y2D128_BW u_S011HD1P_X32Y2D128_BW_tag(
@@ -190,13 +202,16 @@ generate
                 .data_out   ( icache_line_valid[icache_group_index][icache_way_index]   )
             );
             if(icache_group_index == 0)begin
-                assign sram_way_sel[icache_way_index]                           = (sram_tag_way_reg[icache_way_index][63:64-ICACHE_TAG_SIE] == paddr[63:64-ICACHE_TAG_SIE]) & 
-                                                                                    icache_line_valid_way_reg[icache_way_index][icache_line_waddr[9:4]]; 
+                assign sram_way_sel[icache_way_index]                           = (sram_tag_way_use[icache_way_index][63:64-ICACHE_TAG_SIE] == paddr[63:64-ICACHE_TAG_SIE]) & 
+                                                                                    icache_line_valid_way_use[icache_way_index][icache_line_waddr[9:4]]; 
             end
             if(icache_group_index == 0)begin
-                FF_D_without_asyn_rst #(128)  u_sram_data_way            (clk,rch_fifo_ren,sram_data_way[icache_way_index],sram_data_way_reg[icache_way_index]);
-                FF_D_without_asyn_rst #(64)   u_sram_tag_way             (clk,rch_fifo_ren,sram_tag_way[icache_way_index] ,sram_tag_way_reg[icache_way_index] );
-                FF_D_without_asyn_rst #(64)   u_icache_line_valid_way    (clk,rch_fifo_ren,icache_line_valid_way[icache_way_index],icache_line_valid_way_reg[icache_way_index]);
+                FF_D_without_asyn_rst #(128)  u_sram_data_way            (clk,way_flag_set,sram_data_way[icache_way_index],sram_data_way_reg[icache_way_index]);
+                FF_D_without_asyn_rst #(64)   u_sram_tag_way             (clk,way_flag_set,sram_tag_way[icache_way_index] ,sram_tag_way_reg[icache_way_index] );
+                FF_D_without_asyn_rst #(64)   u_icache_line_valid_way    (clk,way_flag_set,icache_line_valid_way[icache_way_index],icache_line_valid_way_reg[icache_way_index]);
+                assign sram_data_way_use            = (way_flag) ? sram_data_way_reg : sram_data_way;
+                assign sram_tag_way_use             = (way_flag) ? sram_tag_way_reg : sram_tag_way;
+                assign icache_line_valid_way_use    = (way_flag) ? icache_line_valid_way_reg : icache_line_valid_way;
             end
         end
         if(ICACHE_GROUP == 1)begin
@@ -224,7 +239,21 @@ end
 else begin
     assign sram_tag_bwen        = (icache_line_waddr[10]) ? {{64{1'b0}}, {64{1'b1}}} : {{64{1'b1}}, {64{1'b0}}};
 end
-assign sram_data_sel            = icache_line_sel(sram_way_sel, sram_data_way_reg);
+assign way_flag_set = first_stage_valid & (!paddr_valid);
+assign way_flag_clr = first_stage_valid & paddr_valid;
+assign way_flag_wen = (way_flag_set | way_flag_clr);
+assign way_flag_nxt = (way_flag_set | (!way_flag_clr));
+FF_D_with_wen #(
+    .DATA_LEN 	(1  ),
+    .RST_DATA 	(0  ))
+u_way_flag(
+    .clk      	(clk            ),
+    .rst_n    	(rst_n          ),
+    .wen      	(way_flag_wen   ),
+    .data_in  	(way_flag_nxt   ),
+    .data_out 	(way_flag       )
+);
+assign sram_data_sel            = icache_line_sel(sram_way_sel, sram_data_way_use);
 //**********************************************************************************************
 ifu_fifo #(
     .DATA_LEN   	( 64  ),
