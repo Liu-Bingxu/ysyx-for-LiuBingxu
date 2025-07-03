@@ -99,6 +99,7 @@ wire                        paddr_error;
 localparam IDLE         = 3'b000;
 localparam WAIT_ARREADY = 3'b010;
 localparam WAIT_RVALID0 = 3'b110;
+localparam DATA0_ERROR  = 3'b001;
 localparam WAIT_RVALID1 = 3'b111;
 localparam WRITE_CACHE  = 3'b101;
 localparam SEND_DATA    = 3'b100;
@@ -380,7 +381,7 @@ always @(posedge clk or negedge rst_n) begin
             end
             WAIT_RVALID0: begin
                 if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & (icache_rresp != 2'h0))begin
-                    icache_fsm          <= SEND_DATA;
+                    icache_fsm          <= DATA0_ERROR;
                     icache_ifu_resp_reg <= 2'h3;
                 end
                 else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & icache_rlast)begin
@@ -389,6 +390,11 @@ always @(posedge clk or negedge rst_n) begin
                 end
                 else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB))begin
                     icache_fsm          <= WAIT_RVALID1;
+                end
+            end
+            DATA0_ERROR: begin
+                if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB))begin
+                    icache_fsm          <= SEND_DATA;
                 end
             end
             WAIT_RVALID1: begin
