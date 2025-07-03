@@ -48,8 +48,13 @@ wire                    page_sp_wen;
 localparam IDLE         = 2'h0;
 localparam SUBMIT_REQ   = 2'h1;
 localparam WAIT_RESP    = 2'h3;
+localparam SEND_ADDR    = 2'h2;
 reg  [1:0]              stage_status;
 reg                     immu_miss_valid_reg;
+reg  [127:0]            pte_reg;
+reg                     pte_error_reg;
+wire [63:0]             paddr_out;
+wire                    paddr_error_out;
 //跳过mmu阶段
 wire                    stage_jump_mmu;
 
@@ -201,7 +206,7 @@ assign tlb_sel              =   ({128{tlb_hit[0 ]}} & tlb_4K[0] ) |
                                 ({128{tlb_hit[45]}} & tlb_sp[5 ]) | 
                                 ({128{tlb_hit[46]}} & tlb_sp[6 ]) | 
                                 ({128{tlb_hit[47]}} & tlb_sp[7 ]) | 
-                                ({128{(stage_status == WAIT_RESP)}} & pte);
+                                ({128{(stage_status == SEND_ADDR)}} & pte_reg);
 
 assign page_4K_wen           = page_wen & (pte[2:0] == 3'h0);
 assign page_sp_wen           = page_wen & (pte[2:0] != 3'h0);
@@ -249,6 +254,11 @@ always @(posedge clk or negedge rst_n) begin
             end
             WAIT_RESP: begin
                 if(pte_valid & pte_ready_i)begin
+                    stage_status        <= SEND_ADDR;
+                end
+            end
+            SEND_ADDR: begin
+                if(paddr_valid & paddr_ready)begin
                     stage_status        <= IDLE;
                 end
             end
@@ -259,14 +269,16 @@ always @(posedge clk or negedge rst_n) begin
         endcase
     end
 end
+FF_D_without_asyn_rst #(128)  u_pte            (clk,pte_valid & pte_ready_i,pte,pte_reg);
+FF_D_without_asyn_rst #(1)    u_pte_error      (clk,pte_valid & pte_ready_i,pte_error,pte_error_reg);
 assign page_wen         = (stage_status == WAIT_RESP) & (pte_valid) & (pte_ready_i);
 //**********************************************************************************************
 //?output
 assign sflush_vma_ready = 1'b1;
 assign immu_miss_valid  = immu_miss_valid_reg;
 assign vaddr_i          = vaddr;
-assign pte_ready_i      = (stage_status == WAIT_RESP) & (paddr_ready | (!paddr_valid));
-assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | ((stage_status == WAIT_RESP) & (pte_valid) & (pte_ready_i)) | (vaddr[63:39] != {25{vaddr[38]}})) & mmu_fifo_valid & (paddr_ready | (!paddr_valid)));
+assign pte_ready_i      = 1'b1;
+assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | (stage_status == SEND_ADDR) | (vaddr[63:39] != {25{vaddr[38]}})) & mmu_fifo_valid & (paddr_ready | (!paddr_valid)));
 FF_D_with_syn_rst #(
     .DATA_LEN 	(1  ),
     .RST_DATA 	(0  ))
@@ -278,15 +290,20 @@ u_paddr_valid(
     .data_in  	(mmu_fifo_ready                 ),
     .data_out 	(paddr_valid                    )
 );
-assign paddr        =   (stage_jump_mmu) ? vaddr : 
-                        (({64{tlb_sel[2:0] == 3'h0}} & {8'h0, tlb_sel[111:68], vaddr[11:0]}) | 
-                        ({64{tlb_sel[2:0] == 3'h1}} & {8'h0, tlb_sel[111:77], vaddr[20:0]}) | 
-                        ({64{tlb_sel[2:0] == 3'h2}} & {8'h0, tlb_sel[111:86], vaddr[29:0]}));
+FF_D_without_asyn_rst #(64)   u_paddr            (clk,mmu_fifo_ready,paddr_out,paddr);
+FF_D_without_asyn_rst #(1)    u_paddr_error      (clk,mmu_fifo_ready,paddr_error_out,paddr_error);
+assign paddr_out        =   (stage_jump_mmu) ? vaddr : 
+                            (({64{tlb_sel[2:0] == 3'h0}} & {8'h0, tlb_sel[111:68], vaddr[11:0]}) | 
+                            ({64{tlb_sel[2:0] == 3'h1}} & {8'h0, tlb_sel[111:77], vaddr[20:0]}) | 
+                            ({64{tlb_sel[2:0] == 3'h2}} & {8'h0, tlb_sel[111:86], vaddr[29:0]}));
 //! this page can not Excute
 //! Smode don't fetch the Umode page instrument
 //! Umode don't fetch the Smode page instrument
 //! l2tlb report error
 //! vaddr illegel
-assign paddr_error  =   ((vaddr[63:39] != {25{vaddr[38]}}) | (!tlb_sel[61]) | (current_priv_status[0] == tlb_sel[62]) | ((stage_status == WAIT_RESP) & pte_error)) & (!stage_jump_mmu);
+assign paddr_error  =   ((vaddr[63:39] != {25{vaddr[38]}}) | 
+                        (!tlb_sel[61]) | 
+                        (current_priv_status[0] == tlb_sel[62]) | 
+                        ((stage_status == SEND_ADDR) & pte_error_reg)) & (!stage_jump_mmu);
 
 endmodule //immu
