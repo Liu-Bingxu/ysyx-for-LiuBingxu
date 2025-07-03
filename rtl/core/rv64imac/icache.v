@@ -126,9 +126,6 @@ wire [127:0]                sram_data_way_use[0:ICACHE_WAY-1];
 wire [63:0]                 sram_tag_way_use[0:ICACHE_WAY-1];
 wire [63:0]                 icache_line_valid_way_use[0:ICACHE_WAY-1];
 
-wire [127:0]                sram_data_way_reg[0:ICACHE_WAY-1];
-wire [63:0]                 sram_tag_way_reg[0:ICACHE_WAY-1];
-wire [63:0]                 icache_line_valid_way_reg[0:ICACHE_WAY-1];
 wire [127:0]                sram_data_way[0:ICACHE_WAY-1];
 wire [63:0]                 sram_tag_way[0:ICACHE_WAY-1];
 wire [63:0]                 icache_line_valid_way[0:ICACHE_WAY-1];
