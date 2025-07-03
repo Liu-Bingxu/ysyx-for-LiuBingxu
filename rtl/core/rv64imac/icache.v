@@ -393,7 +393,7 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             DATA0_ERROR: begin
-                if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB))begin
+                if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & icache_rlast)begin
                     icache_fsm          <= SEND_DATA;
                 end
             end
