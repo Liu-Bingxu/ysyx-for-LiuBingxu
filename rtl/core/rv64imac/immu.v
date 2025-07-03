@@ -301,9 +301,9 @@ assign paddr_out        =   (stage_jump_mmu) ? vaddr :
 //! Umode don't fetch the Smode page instrument
 //! l2tlb report error
 //! vaddr illegel
-assign paddr_error  =   ((vaddr[63:39] != {25{vaddr[38]}}) | 
-                        (!tlb_sel[61]) | 
-                        (current_priv_status[0] == tlb_sel[62]) | 
-                        ((stage_status == SEND_ADDR) & pte_error_reg)) & (!stage_jump_mmu);
+assign paddr_error_out  =   ((vaddr[63:39] != {25{vaddr[38]}}) | 
+                            (!tlb_sel[61]) | 
+                            (current_priv_status[0] == tlb_sel[62]) | 
+                            ((stage_status == SEND_ADDR) & pte_error_reg)) & (!stage_jump_mmu);
 
 endmodule //immu

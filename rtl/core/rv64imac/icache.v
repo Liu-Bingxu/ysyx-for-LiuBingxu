@@ -112,7 +112,7 @@ reg                         icache_line_wen;
 wire [63:0]                 icache_line_waddr;
 
 //first stage register
-reg                         first_stage_valid;
+wire                        first_stage_valid;
 wire                        first_stage_ready;
 wire [127:0]                sram_data_way_reg[0:ICACHE_WAY-1];
 wire [63:0]                 sram_tag_way_reg[0:ICACHE_WAY-1];
