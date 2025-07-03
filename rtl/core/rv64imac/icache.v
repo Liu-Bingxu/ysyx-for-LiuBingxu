@@ -56,7 +56,7 @@ module icache#(
 localparam ICACHE_TAG_GROUP = (ICACHE_GROUP % 2 == 0) ? ICACHE_GROUP / 2 : (ICACHE_GROUP / 2 + 1);
 localparam ICACHE_GROUP_LEN = $clog2(ICACHE_GROUP);
 localparam ICACHE_WAY_LEN   = $clog2(ICACHE_WAY);
-localparam ICACHE_TAG_SIE   = 64 - 10 - ICACHE_GROUP_LEN;
+localparam ICACHE_TAG_SIZE  = 64 - 10 - ICACHE_GROUP_LEN;
 
 //sram interface
 wire [63:0]                 icache_line_valid[0:ICACHE_GROUP-1][0:ICACHE_WAY-1];
@@ -199,7 +199,7 @@ generate
                 .data_out   ( icache_line_valid[icache_group_index][icache_way_index]   )
             );
             if(icache_group_index == 0)begin
-                assign sram_way_sel[icache_way_index]                           = (sram_tag_way_use[icache_way_index][63:64-ICACHE_TAG_SIE] == paddr[63:64-ICACHE_TAG_SIE]) & 
+                assign sram_way_sel[icache_way_index]                           = (sram_tag_way_use[icache_way_index][63:64-ICACHE_TAG_SIZE] == paddr[63:64-ICACHE_TAG_SIZE]) & 
                                                                                     icache_line_valid_way_use[icache_way_index][icache_line_waddr[9:4]]; 
             end
             if(icache_group_index == 0)begin
