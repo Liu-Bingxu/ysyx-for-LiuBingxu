@@ -206,9 +206,9 @@ generate
                 FF_D_without_asyn_rst #(128)  u_sram_data_way            (clk,way_flag_set,sram_data_way[icache_way_index],sram_data_way_reg[icache_way_index]);
                 FF_D_without_asyn_rst #(64)   u_sram_tag_way             (clk,way_flag_set,sram_tag_way[icache_way_index] ,sram_tag_way_reg[icache_way_index] );
                 FF_D_without_asyn_rst #(64)   u_icache_line_valid_way    (clk,way_flag_set,icache_line_valid_way[icache_way_index],icache_line_valid_way_reg[icache_way_index]);
-                assign sram_data_way_use            = (way_flag) ? sram_data_way_reg : sram_data_way;
-                assign sram_tag_way_use             = (way_flag) ? sram_tag_way_reg : sram_tag_way;
-                assign icache_line_valid_way_use    = (way_flag) ? icache_line_valid_way_reg : icache_line_valid_way;
+                assign sram_data_way_use[icache_way_index]            = (way_flag) ? sram_data_way_reg[icache_way_index] : sram_data_way[icache_way_index];
+                assign sram_tag_way_use[icache_way_index]             = (way_flag) ? sram_tag_way_reg[icache_way_index] : sram_tag_way[icache_way_index];
+                assign icache_line_valid_way_use[icache_way_index]    = (way_flag) ? icache_line_valid_way_reg[icache_way_index] : icache_line_valid_way[icache_way_index];
             end
         end
         if(ICACHE_GROUP == 1)begin
