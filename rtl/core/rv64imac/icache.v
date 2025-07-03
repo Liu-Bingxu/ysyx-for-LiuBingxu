@@ -230,7 +230,7 @@ rand_lfsr_8_bit #(
 );
 FF_D_without_asyn_rst #(64)   u_icache_line_waddr           (clk,rch_fifo_ren,rch_fifo_rdata,icache_line_waddr);
 assign sram_addr                = (icache_line_wen) ? icache_line_waddr[9:4] : rch_fifo_rdata[9:4];
-assign sram_tag_wdata           = {icache_line_waddr, icache_line_waddr};
+assign sram_tag_wdata           = {paddr, paddr};
 if(ICACHE_GROUP == 1)begin
     assign sram_tag_bwen        = 128'h0;
 end
@@ -406,7 +406,7 @@ always @(posedge clk or negedge rst_n) begin
                     icache_fsm          <= SEND_DATA;
                     icache_ifu_resp_reg <= 2'h3;
                 end
-                else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & ((icache_line_waddr > PMEM_END) | (icache_line_waddr < PMEM_START)))begin
+                else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & ((paddr > PMEM_END) | (paddr < PMEM_START)))begin
                     icache_fsm          <= SEND_DATA;
                     icache_ifu_resp_reg <= 2'h0;
                 end
