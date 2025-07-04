@@ -992,93 +992,93 @@ always @(posedge clk or negedge rst_n) begin
             end
             WAIT_R: begin
                 //? R handle error; cacheable; last mmu
-                if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp != 2'h0) & dcache_rlast & dcache_mmu_flag)begin
+                if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp != 2'h0) & dcache_rlast & dcache_mmu_flag)begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle error; cacheable; last mmu
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & dcache_rlast & (dcache_num != 1'b0) & dcache_mmu_flag)begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & dcache_rlast & (dcache_num != 1'b0) & dcache_mmu_flag)begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle error; cacheable; not last mmu
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp != 2'h0) & (!dcache_rlast) & dcache_mmu_flag)begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp != 2'h0) & (!dcache_rlast) & dcache_mmu_flag)begin
                     dcache_fsm          <= WAIT_ERROR;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle error; cacheable; not last mmu
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & (!dcache_rlast) & (dcache_num == 1'b0) & dcache_mmu_flag)begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & (!dcache_rlast) & (dcache_num == 1'b0) & dcache_mmu_flag)begin
                     dcache_fsm          <= WAIT_ERROR;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle not error; cacheable; not last mmu
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & (!dcache_rlast) & dcache_mmu_flag)begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & (!dcache_rlast) & dcache_mmu_flag)begin
                     dcache_fsm          <= WAIT_R;
                     dcache_num          <= 1'b0;
                 end
                 //? R handle not error; cacheable; last mmu
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & dcache_rlast & dcache_mmu_flag)begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & dcache_rlast & dcache_mmu_flag)begin
                     dcache_fsm          <= WRITE_CACHE;
                     dcache_line_wen     <= 1'b1;
                     dcache_resp_reg     <= 2'h0;
                 end
                 //? R handle error; lock
-                else if(dcache_rvalid & dcache_rready & dcache_lock_reg & (dcache_rresp != 2'h1))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_lock_reg & (dcache_rresp != 2'h1))begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle error; lock
-                else if(dcache_rvalid & dcache_rready & dcache_lock_reg & (dcache_rresp == 2'h1) & (!dcache_rlast))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_lock_reg & (dcache_rresp == 2'h1) & (!dcache_rlast))begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle not error; lock
-                else if(dcache_rvalid & dcache_rready & dcache_lock_reg & (dcache_rresp == 2'h1))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_lock_reg & (dcache_rresp == 2'h1))begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h1;
                 end
                 //? R handle error; not cacheable 
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp != 2'h0) & ((paddr > PMEM_END) | (paddr < PMEM_START)))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp != 2'h0) & ((paddr > PMEM_END) | (paddr < PMEM_START)))begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle error; not cacheable 
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp != 2'h0) & ((paddr > PMEM_END) | (paddr < PMEM_START)) & (!dcache_rlast))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp != 2'h0) & ((paddr > PMEM_END) | (paddr < PMEM_START)) & (!dcache_rlast))begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle not error; not cacheable 
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & ((paddr > PMEM_END) | (paddr < PMEM_START)))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & ((paddr > PMEM_END) | (paddr < PMEM_START)))begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h0;
                 end
                 //? R handle error; cacheable; last
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp != 2'h0) & dcache_rlast)begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp != 2'h0) & dcache_rlast)begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle error; cacheable; last
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & dcache_rlast & (dcache_num != 1'b0))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & dcache_rlast & (dcache_num != 1'b0))begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle error; cacheable; not last
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp != 2'h0) & (!dcache_rlast))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp != 2'h0) & (!dcache_rlast))begin
                     dcache_fsm          <= WAIT_ERROR;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle error; cacheable; not last
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & (!dcache_rlast) & (dcache_num == 1'b0))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & (!dcache_rlast) & (dcache_num == 1'b0))begin
                     dcache_fsm          <= WAIT_ERROR;
                     dcache_resp_reg     <= 2'h3;
                 end
                 //? R handle not error; cacheable; not last
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & (!dcache_rlast))begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & (!dcache_rlast))begin
                     dcache_fsm          <= WAIT_R;
                     dcache_num          <= 1'b0;
                 end
                 //? R handle not error; cacheable; last
-                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & dcache_rlast)begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & dcache_rlast)begin
                     dcache_fsm          <= WRITE_CACHE;
                     dcache_line_wen     <= 1'b1;
                     dcache_resp_reg     <= 2'h0;
