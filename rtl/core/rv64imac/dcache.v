@@ -130,6 +130,7 @@ wire [127:0]                sram_data_rdata[0:DCACHE_GROUP-1][0:DCACHE_WAY-1];
 wire                        sram_data_cen[0:DCACHE_GROUP-1];
 wire                        sram_data_wen[0:DCACHE_GROUP-1][0:DCACHE_WAY-1];
 wire [127:0]                sram_data_bwen;
+wire [127:0]                sram_data_bmask;
 wire [63:0]                 sram_wmask;
 wire [5:0]                  sram_addr;
 wire [DCACHE_WAY_LEN-1:0]   rand_way;
@@ -1144,8 +1145,11 @@ assign sram_wmask                           =  {{8{first_stage_wstrb_flag[7]}}, 
                                                 {8{first_stage_wstrb_flag[5]}}, {8{first_stage_wstrb_flag[4]}}, 
                                                 {8{first_stage_wstrb_flag[3]}}, {8{first_stage_wstrb_flag[2]}}, 
                                                 {8{first_stage_wstrb_flag[1]}}, {8{first_stage_wstrb_flag[0]}}};
-assign sram_data_bwen                       = (dcache_line_waddr[3]) ? {(~sram_wmask), {64{1'b1}}} : {{64{1'b1}}, (~sram_wmask)};
-assign sram_data_wdata                      = (dcache_mmu_flag | first_stage_read_flag | (!(|sram_way_sel))) ? axi_rdata : sram_data_sel[127:0];
+assign sram_data_bwen                       = (dcache_mmu_flag | first_stage_read_flag | (!(|sram_way_sel))) ? {128{1'b0}} : ((dcache_line_waddr[3]) ? {(~sram_wmask), {64{1'b1}}} : {{64{1'b1}}, (~sram_wmask)});
+assign sram_data_bmask                      = (dcache_line_waddr[3]) ? {(~sram_wmask), {64{1'b1}}} : {{64{1'b1}}, (~sram_wmask)};
+assign sram_data_wdata                      = (dcache_mmu_flag | first_stage_read_flag | (!(|sram_way_sel))) ? 
+                                                ((!(|sram_way_sel)) ? ((axi_rdata & sram_data_bmask) | ({first_stage_wdata_flag, first_stage_wdata_flag} & (~sram_data_bmask))) : axi_rdata) : 
+                                                {first_stage_wdata_flag, first_stage_wdata_flag};
 
 assign lsu_fifo_ren                         = (!lsu_fifo_empty) & (!dcache_line_wen) & (!(mmu_arvalid & mmu_arready)) & (first_stage_ready | (!first_stage_valid));
 assign fifo_wen                             = (lsu_arvalid & lsu_arready) | (lsu_awvalid & lsu_awready & lsu_wvalid & lsu_wready);
