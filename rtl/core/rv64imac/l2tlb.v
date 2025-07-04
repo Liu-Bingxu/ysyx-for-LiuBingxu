@@ -13,8 +13,6 @@ module l2tlb#(parameter MMU_WAY = 2, MMU_GROUP = 1)(
     //read addr channel
     input                   mmu_arready,
     output                  mmu_arvalid,
-    output                  mmu_arlock,
-    output [2:0]            mmu_arsize,
     output [63:0]           mmu_araddr,
     //read data channel
     output                  mmu_rready,
@@ -460,8 +458,6 @@ assign mmu_araddr_wire         = {8'h0, mmu_araddr_ppn, mmu_araddr_offset, 3'h0}
 //?output
 assign sflush_vma_ready = 1'b1;
 assign mmu_arvalid      = mmu_arvalid_reg;
-assign mmu_arlock       = 1'b0;
-assign mmu_arsize       = 3'h3;
 assign mmu_araddr       = mmu_araddr_wire;
 assign mmu_rready       = 1'b1;
 assign immu_miss_ready  = (stage_status == IDLE);
