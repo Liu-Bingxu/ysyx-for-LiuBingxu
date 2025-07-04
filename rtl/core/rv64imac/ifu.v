@@ -191,6 +191,12 @@ always @(posedge clk or negedge rst_n) begin
         pc_all_cnt<=3'h0;
     end
     else begin
+        `ifdef USE_ICACHE
+        if(flush_flag)begin
+            pc_all_cnt <= 3'h0;
+        end
+        else 
+        `endif
         if(ifu_arvalid&ifu_arready&ifu_rvalid&ifu_rready)begin
             pc_all_cnt<=pc_all_cnt;
         end
