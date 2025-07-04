@@ -455,12 +455,13 @@ assign way_flag_set = first_stage_valid & (!first_stage_ready);
 assign way_flag_clr = first_stage_ready;
 assign way_flag_wen = (way_flag_set | way_flag_clr);
 assign way_flag_nxt = (way_flag_set | (!way_flag_clr));
-FF_D_with_wen #(
+FF_D_with_syn_rst #(
     .DATA_LEN 	(1  ),
     .RST_DATA 	(0  ))
 u_way_flag(
     .clk      	(clk            ),
     .rst_n    	(rst_n          ),
+    .syn_rst  	(flush_flag     ),
     .wen      	(way_flag_wen   ),
     .data_in  	(way_flag_nxt   ),
     .data_out 	(way_flag       )
@@ -472,12 +473,13 @@ assign way_flag_mmu_set = first_stage_mmu_valid & (!first_stage_mmu_ready);
 assign way_flag_mmu_clr = first_stage_mmu_ready;
 assign way_flag_mmu_wen = (way_flag_mmu_set | way_flag_mmu_clr);
 assign way_flag_mmu_nxt = (way_flag_mmu_set | (!way_flag_mmu_clr));
-FF_D_with_wen #(
+FF_D_with_syn_rst #(
     .DATA_LEN 	(1  ),
     .RST_DATA 	(0  ))
 u_way_flag_mmu(
     .clk      	(clk                ),
     .rst_n    	(rst_n              ),
+    .syn_rst  	(flush_flag         ),
     .wen      	(way_flag_mmu_wen   ),
     .data_in  	(way_flag_mmu_nxt   ),
     .data_out 	(way_flag_mmu       )
