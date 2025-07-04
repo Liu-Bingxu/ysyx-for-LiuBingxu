@@ -1,56 +1,64 @@
 module icache#(
     parameter AXI_ID_SB = 3, 
+
+    // Address width in bits
+    parameter AXI_ADDR_W = 64,
+    // ID width in bits
+    parameter AXI_ID_W = 8,
+    // Data width in bits
+    parameter AXI_DATA_W = 64,
+
     parameter ICACHE_WAY = 2, 
     parameter ICACHE_GROUP = 2,
     parameter PMEM_START = 64'h8000_0000,
     parameter PMEM_END = 64'hFFFF_FFFF
 )(
-    input                   clk,
-    input                   rst_n,
+    input                           clk,
+    input                           rst_n,
 //interface with wbu 
-    input  [1:0]            current_priv_status,
-    input  [3:0]            satp_mode,
-    input  [15:0]           satp_asid,
+    input  [1:0]                    current_priv_status,
+    input  [3:0]                    satp_mode,
+    input  [15:0]                   satp_asid,
 //all flush flag 
-    input                   flush_flag,
-    input                   flush_i_valid,
-    output                  flush_i_ready,
-    input                   sflush_vma_valid,
-    output                  sflush_vma_ready,
+    input                           flush_flag,
+    input                           flush_i_valid,
+    output                          flush_i_ready,
+    input                           sflush_vma_valid,
+    output                          sflush_vma_ready,
 //interface with ifu
     //read addr channel
-    output                  ifu_arready,
-    input                   ifu_arvalid,
-    input  [63:0]           ifu_araddr,
+    output                          ifu_arready,
+    input                           ifu_arvalid,
+    input  [63:0]                   ifu_araddr,
     //read data channel
-    output                  ifu_rvalid,
-    input                   ifu_rready,
-    output [1:0]            ifu_rresp,
-    output [63:0]           ifu_rdata,
+    output                          ifu_rvalid,
+    input                           ifu_rready,
+    output [1:0]                    ifu_rresp,
+    output [63:0]                   ifu_rdata,
 //interface with l2tlb
-    output                  immu_miss_valid,
-    input                   immu_miss_ready,
-    output [63:0]           vaddr_i,
-    input                   pte_valid,
-    output                  pte_ready_i,
-    input  [127:0]          pte,
-    input                   pte_error,
+    output                          immu_miss_valid,
+    input                           immu_miss_ready,
+    output [63:0]                   vaddr_i,
+    input                           pte_valid,
+    output                          pte_ready_i,
+    input  [127:0]                  pte,
+    input                           pte_error,
 //interface with axi
     //read addr channel
-    input                   icache_arready,
-    output                  icache_arvalid,
-    output [63:0]           icache_araddr,
-    output [3:0]            icache_arid,
-    output [7:0]            icache_arlen,
-    output [2:0]            icache_arsize,
-    output [1:0]            icache_arburst,
+    output                          icache_arvalid,
+    input                           icache_arready,
+    output [AXI_ADDR_W    -1:0]     icache_araddr,
+    output [8             -1:0]     icache_arlen,
+    output [3             -1:0]     icache_arsize,
+    output [2             -1:0]     icache_arburst,
+    output [AXI_ID_W      -1:0]     icache_arid,
     //read data channel
-    output                  icache_rready,
-    input                   icache_rvalid,
-    input  [1:0]            icache_rresp,
-    input  [63:0]           icache_rdata,
-    input                   icache_rlast,
-    input  [3:0]            icache_rid
+    input                           icache_rvalid,
+    output                          icache_rready,
+    input  [AXI_ID_W      -1:0]     icache_rid,
+    input  [2             -1:0]     icache_rresp,
+    input  [AXI_DATA_W    -1:0]     icache_rdata,
+    input                           icache_rlast
 );
 
 localparam ICACHE_TAG_GROUP = (ICACHE_GROUP % 2 == 0) ? ICACHE_GROUP / 2 : (ICACHE_GROUP / 2 + 1);
