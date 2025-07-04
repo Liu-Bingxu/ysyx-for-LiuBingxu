@@ -228,8 +228,8 @@ wire [63:0]                 first_stage_wdata_flag;
 wire [7:0]                  first_stage_wstrb_flag;
 wire [DCACHE_WAY_LEN-1:0]   rand_way_reg;
 //TODO 需要评估时序，从valid一路到way_null需要许多组合电路，时序可能不太好。考虑删除其，仅通过随机选择（或者改用其他算法）替换路
-wire [DCACHE_WAY_LEN-1:0]   way_null[0:DCACHE_WAY-1];
-wire                        dcache_line_valid_way_bit[0:DCACHE_WAY-1] /* verilator split_var */;
+wire [DCACHE_WAY_LEN-1:0]   way_null[0:DCACHE_WAY-1]/* verilator split_var */;
+wire [DCACHE_WAY-1:0]       dcache_line_valid_way_bit/* verilator split_var */;
 wire [DCACHE_WAY_LEN-1:0]   way_sel;
 wire [127:0]                sram_data_way_reg[0:DCACHE_WAY-1];
 wire [63:0]                 sram_tag_way_reg[0:DCACHE_WAY-1];
@@ -261,8 +261,8 @@ wire                        first_stage_mmu_ready;
 wire [63:0]                 dcache_line_waddr_mmu;
 wire [DCACHE_WAY_LEN-1:0]   rand_way_mmu_reg;
 //TODO 需要评估时序，从valid一路到way_null需要许多组合电路，时序可能不太好。考虑删除其，仅通过随机选择（或者改用其他算法）替换路
-wire [DCACHE_WAY_LEN-1:0]   way_null_mmu[0:DCACHE_WAY-1];
-wire                        dcache_line_valid_way_bit_mmu[0:DCACHE_WAY-1] /* verilator split_var */;
+wire [DCACHE_WAY_LEN-1:0]   way_null_mmu[0:DCACHE_WAY-1]/* verilator split_var */;
+wire [DCACHE_WAY-1:0]       dcache_line_valid_way_bit_mmu/* verilator split_var */;
 wire [DCACHE_WAY_LEN-1:0]   way_sel_mmu;
 wire [127:0]                sram_data_way_mmu_reg[0:DCACHE_WAY-1];
 wire [63:0]                 sram_tag_way_mmu_reg[0:DCACHE_WAY-1];
@@ -394,7 +394,7 @@ generate
                 assign sram_tag_way_use[dcache_way_index]             = (way_flag) ? sram_tag_way_reg[dcache_way_index] : sram_tag_way[dcache_way_index];
                 assign dcache_line_valid_way_use[dcache_way_index]    = (way_flag) ? dcache_line_valid_way_reg[dcache_way_index] : dcache_line_valid_way[dcache_way_index];
                 assign dcache_line_dirty_way_use[dcache_way_index]    = (way_flag) ? dcache_line_dirty_way_reg[dcache_way_index] : dcache_line_dirty_way[dcache_way_index];
-                if(dcache_way_index == 1)begin
+                if(dcache_way_index == 0)begin
                     assign dcache_line_valid_way_bit[dcache_way_index]    = dcache_line_valid_way_use[dcache_way_index][dcache_line_waddr[9:4]];
                     assign way_null[dcache_way_index]                     = (!dcache_line_valid_way_bit[dcache_way_index]) ? dcache_way_index : 0;
                 end
@@ -411,7 +411,7 @@ generate
                 assign sram_tag_way_mmu_use[dcache_way_index]             = (way_flag_mmu) ? sram_tag_way_mmu_reg[dcache_way_index] : sram_tag_way_mmu[dcache_way_index];
                 assign dcache_line_valid_way_mmu_use[dcache_way_index]    = (way_flag_mmu) ? dcache_line_valid_way_mmu_reg[dcache_way_index] : dcache_line_valid_way_mmu[dcache_way_index];
                 assign dcache_line_dirty_way_mmu_use[dcache_way_index]    = (way_flag_mmu) ? dcache_line_dirty_way_mmu_reg[dcache_way_index] : dcache_line_dirty_way_mmu[dcache_way_index];
-                if(dcache_way_index == 1)begin
+                if(dcache_way_index == 0)begin
                     assign dcache_line_valid_way_bit_mmu[dcache_way_index]    = dcache_line_valid_way_mmu_use[dcache_way_index][dcache_line_waddr_mmu[9:4]];
                     assign way_null_mmu[dcache_way_index]                     = (!dcache_line_valid_way_bit_mmu[dcache_way_index]) ? dcache_way_index : 0;
                 end
