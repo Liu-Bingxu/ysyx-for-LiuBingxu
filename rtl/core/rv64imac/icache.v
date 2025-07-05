@@ -119,6 +119,8 @@ reg  [127:0]                sram_data_wdata;
 reg                         icache_line_wen;
 wire [63:0]                 icache_line_waddr;
 
+reg                         icache_send_not_recv_flag;
+
 //first stage register
 wire                        first_stage_valid;
 wire                        first_stage_ready;
@@ -377,7 +379,7 @@ always @(posedge clk or negedge rst_n) begin
     else begin
         case (icache_fsm)
             IDLE: begin
-                if(first_stage_valid & paddr_valid & (!(|sram_way_sel)) & (!paddr_error))begin
+                if(first_stage_valid & paddr_valid & (!(|sram_way_sel)) & (!paddr_error) & (!icache_send_not_recv_flag))begin
                     icache_fsm          <= WAIT_ARREADY;
                     icache_arvalid_reg  <= 1'b1;
                 end
@@ -412,7 +414,7 @@ always @(posedge clk or negedge rst_n) begin
                     icache_ifu_resp_reg <= 2'h3;
                 end
                 else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & (!icache_rlast))begin
-                    icache_fsm          <= SEND_DATA;
+                    icache_fsm          <= DATA0_ERROR;
                     icache_ifu_resp_reg <= 2'h3;
                 end
                 else if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & ((paddr > PMEM_END) | (paddr < PMEM_START)))begin
@@ -449,6 +451,28 @@ always @(posedge clk) begin
     end
     if((icache_fsm == WAIT_RVALID1) & icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & (icache_rresp == 2'h0) & icache_rlast)begin
         sram_data_wdata[127:64]        <= icache_rdata;
+    end
+end
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        icache_send_not_recv_flag       <= 1'b0;
+    end
+    else if(icache_send_not_recv_flag)begin
+        if(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & icache_rlast)begin
+            icache_send_not_recv_flag   <= 1'b0;
+        end
+    end
+    else if(flush_flag & (icache_fsm == WAIT_ARREADY) & icache_arvalid & icache_arready)begin
+        icache_send_not_recv_flag       <= 1'b1;
+    end
+    else if(flush_flag & (icache_fsm == WAIT_RVALID0) & (!(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & icache_rlast)))begin
+        icache_send_not_recv_flag       <= 1'b1;
+    end
+    else if(flush_flag & (icache_fsm == DATA0_ERROR) & (!(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & icache_rlast)))begin
+        icache_send_not_recv_flag       <= 1'b1;
+    end
+    else if(flush_flag & (icache_fsm == WAIT_RVALID1) & (!(icache_rvalid & icache_rready & (icache_rid == AXI_ID_SB) & icache_rlast)))begin
+        icache_send_not_recv_flag       <= 1'b1;
     end
 end
 
