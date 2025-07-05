@@ -234,6 +234,7 @@ wire [DCACHE_WAY_LEN-1:0]   rand_way_reg;
 wire [DCACHE_WAY_LEN-1:0]   way_null[0:DCACHE_WAY-1]/* verilator split_var */;
 wire [DCACHE_WAY-1:0]       dcache_line_valid_way_bit/* verilator split_var */;
 wire [DCACHE_WAY_LEN-1:0]   way_sel;
+wire [DCACHE_WAY_LEN-1:0]   hit_way[0:DCACHE_WAY-1]/* verilator split_var */;
 wire [127:0]                sram_data_way_reg[0:DCACHE_WAY-1];
 wire [63:0]                 sram_tag_way_reg[0:DCACHE_WAY-1];
 wire [63:0]                 dcache_line_valid_way_reg[0:DCACHE_WAY-1];
@@ -384,6 +385,12 @@ generate
                 assign sram_way_sel[dcache_way_index]                           = (sram_tag_way_use[dcache_way_index][63:64-DCACHE_TAG_SIZE] == paddr[63:64-DCACHE_TAG_SIZE]) & 
                                                                                     dcache_line_valid_way_use[dcache_way_index][dcache_line_waddr[9:4]]; 
                 assign sram_way_sel_dirty[dcache_way_index]                     = sram_way_sel[dcache_way_index] & dcache_line_dirty_way_use[dcache_way_index][dcache_line_waddr[9:4]];
+                if(dcache_way_index == 0)begin
+                    assign hit_way[dcache_way_index]                            = (sram_way_sel[dcache_way_index]) ? dcache_way_index : 0;
+                end
+                else begin
+                    assign hit_way[dcache_way_index]                            = (sram_way_sel[dcache_way_index]) ? dcache_way_index : hit_way[dcache_way_index - 1];
+                end
 
                 assign sram_way_sel_mmu[dcache_way_index]                       = (sram_tag_way_mmu_use[dcache_way_index][63:64-DCACHE_TAG_SIZE] == dcache_line_waddr_mmu[63:64-DCACHE_TAG_SIZE]) & 
                                                                                     dcache_line_valid_way_mmu_use[dcache_way_index][dcache_line_waddr_mmu[9:4]]; 
@@ -468,7 +475,7 @@ u_way_flag(
     .data_in  	(way_flag_nxt   ),
     .data_out 	(way_flag       )
 );
-assign way_sel                  = (&dcache_line_valid_way_bit) ? rand_way_reg : way_null[DCACHE_WAY - 1];
+assign way_sel                  = (|sram_way_sel) ? hit_way[DCACHE_WAY - 1] : ((&dcache_line_valid_way_bit) ? rand_way_reg : way_null[DCACHE_WAY - 1]);
 assign sram_data_sel            = dcache_line_sel(sram_way_sel, sram_data_way_use, sram_tag_way_use);
 
 assign way_flag_mmu_set = first_stage_mmu_valid & (!first_stage_mmu_ready);
