@@ -217,6 +217,7 @@ reg                         dcache_num;
 wire [127:0]                sram_tag_wdata;
 wire [127:0]                sram_data_wdata;
 reg  [127:0]                axi_rdata;
+reg  [63:0]                 dcache_rdata_reg;
 reg                         dcache_line_wen;
 wire [63:0]                 dcache_line_waddr;
 
@@ -1137,11 +1138,16 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 always @(posedge clk) begin
-    if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & (!dcache_num))begin
+    if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & (!dcache_rlast) & dcache_num)begin
         axi_rdata[63:0]          <= dcache_rdata;
     end
-    if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & dcache_num)begin
+    else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & dcache_rlast & (!dcache_num))begin
         axi_rdata[127:64]        <= dcache_rdata;
+    end
+end
+always @(posedge clk) begin
+    if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0))begin
+        dcache_rdata_reg          <= dcache_rdata;
     end
 end
 assign sram_wmask                           =  {{8{first_stage_wstrb_flag[7]}}, {8{first_stage_wstrb_flag[6]}}, 
@@ -1182,7 +1188,7 @@ assign out_fifo_wdata       =   ({68{out_mmu_hit                        &   dcac
                                 ({68{out_lsu_hit_write_cacheable                                      }} & {1'b0, 1'b0, 2'h0,              sram_data_sel[63:0]         }) |
                                 ({68{out_lsu_no_hit_read_cacheable      &   dcache_line_waddr[3]      }} & {1'b0, 1'b1, dcache_resp_reg,   sram_data_wdata[127:64]     }) |
                                 ({68{out_lsu_no_hit_read_cacheable      & (!dcache_line_waddr[3])     }} & {1'b0, 1'b1, dcache_resp_reg,   sram_data_wdata[63:0]       }) |
-                                ({68{out_lsu_no_hit_read_not_cacheable                                }} & {1'b0, 1'b1, dcache_resp_reg,   sram_data_wdata[63:0]       }) |
+                                ({68{out_lsu_no_hit_read_not_cacheable                                }} & {1'b0, 1'b1, dcache_resp_reg,   dcache_rdata_reg            }) |
                                 ({68{out_lsu_no_hit_write               &   dcache_line_waddr[3]      }} & {1'b0, 1'b0, dcache_resp_reg,   sram_data_sel[127:64]       }) |
                                 ({68{out_lsu_no_hit_write               & (!dcache_line_waddr[3])     }} & {1'b0, 1'b0, dcache_resp_reg,   sram_data_sel[63:0]         });
 
