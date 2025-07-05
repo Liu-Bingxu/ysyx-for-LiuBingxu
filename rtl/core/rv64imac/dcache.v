@@ -795,7 +795,7 @@ always @(posedge clk or negedge rst_n) begin
                     dcache_wlast_reg    <= 1'b0;
                 end
                 // //? not hit; cacheable; not dirty
-                else if(first_stage_valid & paddr_valid & (!paddr_error) & (!dcache_line_dirty_way_use[way_sel][dcache_line_waddr[9:4]]))begin
+                else if(first_stage_valid & paddr_valid & (!paddr_error) & (!(|sram_way_sel)) & (!dcache_line_dirty_way_use[way_sel][dcache_line_waddr[9:4]]))begin
                     dcache_fsm          <= WAIT_AR;
                     dcache_arvalid_reg  <= 1'b1;
                     dcache_len_reg      <= 8'h1;
