@@ -165,6 +165,7 @@ wire                        out_mmu_hit;
 wire                        out_lsu_read_hit;
 wire                        out_mmu_no_hit;
 wire                        out_lsu_hit_write;
+wire                        out_lsu_hit_write_cacheable;
 wire                        out_lsu_no_hit_read_cacheable;
 wire                        out_lsu_no_hit_read_not_cacheable;
 wire                        out_lsu_no_hit_write;
@@ -1162,11 +1163,12 @@ assign out_mmu_hit                          = (first_stage_mmu_valid & (|sram_wa
 assign out_lsu_read_hit                     = (first_stage_valid & paddr_valid & ((|sram_way_sel) | paddr_error) & first_stage_read_flag & (!first_stage_lock_flag) & (!first_stage_mmu_valid));
 assign out_mmu_no_hit                       = (dcache_fsm == SEND_DATA) & dcache_mmu_flag;
 assign out_lsu_hit_write                    = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & (!first_stage_read_flag) & (|sram_way_sel);
-assign out_lsu_no_hit_read_cacheable        = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & first_stage_read_flag;
-assign out_lsu_no_hit_read_not_cacheable    = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & first_stage_read_flag;
+assign out_lsu_hit_write_cacheable          = (dcache_fsm == WRITE_CACHE) & (!first_stage_read_flag) & (|sram_way_sel);
+assign out_lsu_no_hit_read_cacheable        = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & first_stage_read_flag & (!((paddr > PMEM_END) | (paddr < PMEM_START)));
+assign out_lsu_no_hit_read_not_cacheable    = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & first_stage_read_flag & (  (paddr > PMEM_END) | (paddr < PMEM_START));
 assign out_lsu_no_hit_write                 = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & (!first_stage_read_flag) & (!(|sram_way_sel));
 assign out_fifo_wen                         = (out_mmu_hit | out_lsu_read_hit | 
-                                                out_mmu_no_hit | out_lsu_hit_write |
+                                                out_mmu_no_hit | out_lsu_hit_write | out_lsu_hit_write_cacheable |
                                                 out_lsu_no_hit_read_cacheable | out_lsu_no_hit_read_not_cacheable | 
                                                 out_lsu_no_hit_write) & (out_fifo_cnt != 3'h7);
 assign out_fifo_wdata       =   ({68{out_mmu_hit                        &   dcache_line_waddr_mmu[3]  }} & {1'b1, 1'b1, 2'h0,              sram_data_sel_mmu[127:64]   }) |
@@ -1177,6 +1179,7 @@ assign out_fifo_wdata       =   ({68{out_mmu_hit                        &   dcac
                                 ({68{out_mmu_no_hit                     & (!dcache_line_waddr_mmu[3]) }} & {1'b1, 1'b1, dcache_resp_reg,   sram_data_wdata[63:0]       }) |
                                 ({68{out_lsu_hit_write                  &   dcache_line_waddr[3]      }} & {1'b0, 1'b0, dcache_resp_reg,   sram_data_sel[127:64]       }) |
                                 ({68{out_lsu_hit_write                  & (!dcache_line_waddr[3])     }} & {1'b0, 1'b0, dcache_resp_reg,   sram_data_sel[63:0]         }) |
+                                ({68{out_lsu_hit_write_cacheable                                      }} & {1'b0, 1'b0, 2'h0,              sram_data_sel[63:0]         }) |
                                 ({68{out_lsu_no_hit_read_cacheable      &   dcache_line_waddr[3]      }} & {1'b0, 1'b1, dcache_resp_reg,   sram_data_wdata[127:64]     }) |
                                 ({68{out_lsu_no_hit_read_cacheable      & (!dcache_line_waddr[3])     }} & {1'b0, 1'b1, dcache_resp_reg,   sram_data_wdata[63:0]       }) |
                                 ({68{out_lsu_no_hit_read_not_cacheable                                }} & {1'b0, 1'b1, dcache_resp_reg,   sram_data_wdata[63:0]       }) |
