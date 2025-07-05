@@ -460,7 +460,7 @@ else begin
     assign sram_tag_bwen        = (dcache_mmu_flag) ? ((dcache_line_waddr_mmu[10]) ? {{64{1'b0}}, {64{1'b1}}} : {{64{1'b1}}, {64{1'b0}}}) :
                                                     ((dcache_line_waddr[10]) ? {{64{1'b0}}, {64{1'b1}}} : {{64{1'b1}}, {64{1'b0}}});
 end
-assign way_flag_set = first_stage_valid & (!first_stage_ready);
+assign way_flag_set = first_stage_valid & (!first_stage_ready) & (!way_flag);
 assign way_flag_clr = first_stage_ready;
 assign way_flag_wen = (way_flag_set | way_flag_clr);
 assign way_flag_nxt = (way_flag_set | (!way_flag_clr));
@@ -478,7 +478,7 @@ u_way_flag(
 assign way_sel                  = (|sram_way_sel) ? hit_way[DCACHE_WAY - 1] : ((&dcache_line_valid_way_bit) ? rand_way_reg : way_null[DCACHE_WAY - 1]);
 assign sram_data_sel            = dcache_line_sel(sram_way_sel, sram_data_way_use, sram_tag_way_use);
 
-assign way_flag_mmu_set = first_stage_mmu_valid & (!first_stage_mmu_ready);
+assign way_flag_mmu_set = first_stage_mmu_valid & (!first_stage_mmu_ready) & (!way_flag_mmu);
 assign way_flag_mmu_clr = first_stage_mmu_ready;
 assign way_flag_mmu_wen = (way_flag_mmu_set | way_flag_mmu_clr);
 assign way_flag_mmu_nxt = (way_flag_mmu_set | (!way_flag_mmu_clr));

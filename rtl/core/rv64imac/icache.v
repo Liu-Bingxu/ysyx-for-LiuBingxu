@@ -247,7 +247,7 @@ end
 else begin
     assign sram_tag_bwen        = (icache_line_waddr[10]) ? {{64{1'b0}}, {64{1'b1}}} : {{64{1'b1}}, {64{1'b0}}};
 end
-assign way_flag_set = first_stage_valid & (!first_stage_ready);
+assign way_flag_set = first_stage_valid & (!first_stage_ready) & (!way_flag);
 assign way_flag_clr = first_stage_ready;
 assign way_flag_wen = (way_flag_set | way_flag_clr);
 assign way_flag_nxt = (way_flag_set | (!way_flag_clr));
