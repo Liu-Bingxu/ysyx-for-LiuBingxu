@@ -1176,7 +1176,7 @@ assign out_mmu_hit                          = (first_stage_mmu_valid & (|sram_wa
 assign out_lsu_read_hit                     = (first_stage_valid & paddr_valid & ((|sram_way_sel) | paddr_error) & first_stage_read_flag & (!first_stage_lock_flag) & (!first_stage_mmu_valid));
 assign out_mmu_no_hit                       = (dcache_fsm == SEND_DATA) & dcache_mmu_flag;
 assign out_lsu_hit_write                    = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & (!first_stage_read_flag) & (|sram_way_sel);
-assign out_lsu_hit_write_cacheable          = (dcache_fsm == WRITE_CACHE) & (!first_stage_read_flag) & (|sram_way_sel);
+assign out_lsu_hit_write_cacheable          = (dcache_fsm == WRITE_CACHE) & (!first_stage_read_flag) & (|sram_way_sel) & (!dcache_mmu_flag);
 assign out_lsu_no_hit_read_cacheable        = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & first_stage_read_flag & (!((paddr > PMEM_END) | (paddr < PMEM_START)));
 assign out_lsu_no_hit_read_not_cacheable    = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & first_stage_read_flag & (  (paddr > PMEM_END) | (paddr < PMEM_START));
 assign out_lsu_no_hit_write                 = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & (!first_stage_read_flag) & (!(|sram_way_sel));
