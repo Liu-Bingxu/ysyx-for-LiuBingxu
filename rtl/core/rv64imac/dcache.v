@@ -437,7 +437,8 @@ generate
         else begin
             assign sram_data_cen[dcache_group_index]                            =   (( lsu_fifo_empty ) | (dcache_group_index != lsu_fifo_rdata[9 + DCACHE_GROUP_LEN:10]) | dcache_line_wen | (mmu_arvalid & mmu_arready)) & 
                                                                                     ((!(mmu_arvalid & mmu_arready)) | (dcache_group_index != mmu_araddr[9 + DCACHE_GROUP_LEN:10]) | dcache_line_wen) & 
-                                                                                    ((!dcache_line_wen) | (dcache_group_index != dcache_line_waddr[9 + DCACHE_GROUP_LEN:10])) ;
+                                                                                    ((!dcache_line_wen) | (dcache_group_index != dcache_line_waddr[9 + DCACHE_GROUP_LEN:10]) | dcache_mmu_flag) &
+                                                                                    ((!dcache_line_wen) | (dcache_group_index != dcache_line_waddr_mmu[9 + DCACHE_GROUP_LEN:10]) | (!dcache_mmu_flag)) ;
         end
     end
 endgenerate
@@ -450,7 +451,7 @@ rand_lfsr_8_bit #(
 );
 FF_D_without_asyn_rst #(64)   u_dcache_line_waddr           (clk,lsu_fifo_ren,lsu_fifo_rdata[63:0],dcache_line_waddr);
 FF_D_without_asyn_rst #(64)   u_dcache_line_waddr_mmu       (clk,mmu_arready,mmu_araddr,dcache_line_waddr_mmu);
-assign sram_addr                = (dcache_line_wen) ? dcache_line_waddr[9:4] : 
+assign sram_addr                = (dcache_line_wen) ? ((dcache_mmu_flag) ? dcache_line_waddr_mmu[9:4] : dcache_line_waddr[9:4]) : 
                                     ((mmu_arvalid & mmu_arready) ? mmu_araddr[9:4] : lsu_fifo_rdata[9:4]);
 assign sram_tag_wdata           = (dcache_mmu_flag) ? {dcache_line_waddr_mmu, dcache_line_waddr_mmu} : {paddr, paddr};
 if(DCACHE_GROUP == 1)begin
