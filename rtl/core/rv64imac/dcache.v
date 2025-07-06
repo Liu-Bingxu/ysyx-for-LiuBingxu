@@ -436,7 +436,7 @@ generate
         end
         else begin
             assign sram_data_cen[dcache_group_index]                            =   (( lsu_fifo_empty ) | (dcache_group_index != lsu_fifo_rdata[9 + DCACHE_GROUP_LEN:10]) | dcache_line_wen | (mmu_arvalid & mmu_arready)) & 
-                                                                                    ((mmu_arvalid & mmu_arready) | (dcache_group_index != lsu_fifo_rdata[9 + DCACHE_GROUP_LEN:10]) | dcache_line_wen) & 
+                                                                                    ((!(mmu_arvalid & mmu_arready)) | (dcache_group_index != mmu_araddr[9 + DCACHE_GROUP_LEN:10]) | dcache_line_wen) & 
                                                                                     ((!dcache_line_wen) | (dcache_group_index != dcache_line_waddr[9 + DCACHE_GROUP_LEN:10])) ;
         end
     end
@@ -1164,7 +1164,7 @@ assign sram_wmask                           =  {{8{first_stage_wstrb_flag[7]}}, 
 assign sram_data_bwen                       = (dcache_mmu_flag | first_stage_read_flag | (!(|sram_way_sel))) ? {128{1'b0}} : ((dcache_line_waddr[3]) ? {(~sram_wmask), {64{1'b1}}} : {{64{1'b1}}, (~sram_wmask)});
 assign sram_data_bmask                      = (dcache_line_waddr[3]) ? {(~sram_wmask), {64{1'b1}}} : {{64{1'b1}}, (~sram_wmask)};
 assign sram_data_wdata                      = (dcache_mmu_flag | first_stage_read_flag | (!(|sram_way_sel))) ? 
-                                                ((!(|sram_way_sel)) ? ((axi_rdata & sram_data_bmask) | ({first_stage_wdata_flag, first_stage_wdata_flag} & (~sram_data_bmask))) : axi_rdata) : 
+                                                ((dcache_mmu_flag | first_stage_read_flag) ? axi_rdata : ((axi_rdata & sram_data_bmask) | ({first_stage_wdata_flag, first_stage_wdata_flag} & (~sram_data_bmask)))) : 
                                                 {first_stage_wdata_flag, first_stage_wdata_flag};
 
 assign lsu_fifo_ren                         = (!lsu_fifo_empty) & (!dcache_line_wen) & (!(mmu_arvalid & mmu_arready)) & (first_stage_ready | (!first_stage_valid));
