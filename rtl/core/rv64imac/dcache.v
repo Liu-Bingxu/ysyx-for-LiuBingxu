@@ -1173,8 +1173,8 @@ assign fifo_wen                             = (lsu_arvalid & lsu_arready) | (lsu
 assign lsu_fifo_wdata                       = (lsu_arvalid & lsu_arready) ? {8'h0, 64'h0, lsu_arlock, lsu_arsize, 1'b1, lsu_araddr} : {lsu_wstrb, lsu_wdata, lsu_awlock, lsu_awsize, 1'b0, lsu_awaddr};
 assign mmu_fifo_wdata                       = (lsu_arvalid & lsu_arready) ? {1'b1, lsu_araddr} : {1'b0, lsu_awaddr};
 assign out_fifo_ren                         = (lsu_rvalid & lsu_rready) | (lsu_bvalid & lsu_bready) | (mmu_rvalid & mmu_rready);
-assign out_mmu_hit                          = (first_stage_mmu_valid & (|sram_way_sel_mmu));
-assign out_lsu_read_hit                     = (first_stage_valid & paddr_valid & ((|sram_way_sel) | paddr_error) & first_stage_read_flag & (!first_stage_lock_flag) & (!first_stage_mmu_valid));
+assign out_mmu_hit                          = (dcache_fsm == IDLE) & (first_stage_mmu_valid & (|sram_way_sel_mmu));
+assign out_lsu_read_hit                     = (dcache_fsm == IDLE) & (first_stage_valid & paddr_valid & ((|sram_way_sel) | paddr_error) & first_stage_read_flag & (!first_stage_lock_flag) & (!first_stage_mmu_valid));
 assign out_mmu_no_hit                       = (dcache_fsm == SEND_DATA) & dcache_mmu_flag;
 assign out_lsu_hit_write                    = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & (!first_stage_read_flag) & (|sram_way_sel);
 assign out_lsu_hit_write_cacheable          = (dcache_fsm == WRITE_CACHE) & (!first_stage_read_flag) & (|sram_way_sel) & (!dcache_mmu_flag);
