@@ -1227,7 +1227,7 @@ dmmu u_dmmu(
     .paddr               	(paddr                ),
     .paddr_error         	(paddr_error          )
 );
-assign paddr_ready      = out_fifo_wen;
+assign paddr_ready      = first_stage_ready;
 //**********************************************************************************************
 //?out sign
 // assign flush_i_ready    = 1'b1;
