@@ -201,6 +201,7 @@ localparam WAIT_ERROR   = 4'h8;
 localparam WRITE_CACHE  = 4'h9;
 localparam SEND_DATA    = 4'hA;
 reg  [3:0]                  dcache_fsm;
+reg                         flush_flag_reg;
 reg                         dcache_mmu_flag;
 reg  [1:0]                  dcache_resp_reg;
 reg                         dcache_arvalid_reg;
@@ -673,28 +674,28 @@ always @(posedge clk or negedge rst_n) begin
         dcache_line_wen     <= 1'b0;
         dcache_resp_reg     <= 2'h0;
     end
-    else if(flush_flag)begin
-        dcache_fsm          <= IDLE;
-        dcache_mmu_flag     <= 1'b0;
-        dcache_arvalid_reg  <= 1'b0;
-        dcache_awvalid_reg  <= 1'b0;
-        dcache_wvalid_reg   <= 1'b0;
-        dcache_len_reg      <= 8'h0;
-        dcache_size_reg     <= 3'h0;
-        dcache_lock_reg     <= 1'b0;
-        dcache_num          <= 1'b0;
-        dcache_addr_reg     <= 64'b0;
-        dcache_wdata_reg    <= 64'b0;
-        dcache_wstrb_reg    <= 8'b0;
-        dcache_wlast_reg    <= 1'b0;
-        dcache_line_wen     <= 1'b0;
-        dcache_resp_reg     <= 2'h0;
-    end
     else begin
         case (dcache_fsm)
             IDLE: begin
+                if(flush_flag)begin
+                    dcache_fsm          <= IDLE;
+                    dcache_mmu_flag     <= 1'b0;
+                    dcache_arvalid_reg  <= 1'b0;
+                    dcache_awvalid_reg  <= 1'b0;
+                    dcache_wvalid_reg   <= 1'b0;
+                    dcache_len_reg      <= 8'h0;
+                    dcache_size_reg     <= 3'h0;
+                    dcache_lock_reg     <= 1'b0;
+                    dcache_num          <= 1'b0;
+                    dcache_addr_reg     <= 64'b0;
+                    dcache_wdata_reg    <= 64'b0;
+                    dcache_wstrb_reg    <= 8'b0;
+                    dcache_wlast_reg    <= 1'b0;
+                    dcache_line_wen     <= 1'b0;
+                    dcache_resp_reg     <= 2'h0;
+                end
                 //? hit cacheable mmu
-                if(first_stage_mmu_valid & (|sram_way_sel_mmu))begin
+                else if(first_stage_mmu_valid & (|sram_way_sel_mmu))begin
                     dcache_fsm          <= IDLE;
                 end
                 //? not hit; cacheable; dirty mmu
@@ -816,8 +817,25 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             FLUSH: begin
+                if(flush_flag)begin
+                    dcache_fsm          <= IDLE;
+                    dcache_mmu_flag     <= 1'b0;
+                    dcache_arvalid_reg  <= 1'b0;
+                    dcache_awvalid_reg  <= 1'b0;
+                    dcache_wvalid_reg   <= 1'b0;
+                    dcache_len_reg      <= 8'h0;
+                    dcache_size_reg     <= 3'h0;
+                    dcache_lock_reg     <= 1'b0;
+                    dcache_num          <= 1'b0;
+                    dcache_addr_reg     <= 64'b0;
+                    dcache_wdata_reg    <= 64'b0;
+                    dcache_wstrb_reg    <= 8'b0;
+                    dcache_wlast_reg    <= 1'b0;
+                    dcache_line_wen     <= 1'b0;
+                    dcache_resp_reg     <= 2'h0;
+                end
                 //? lock write
-                if(!first_stage_read_flag)begin
+                else if(!first_stage_read_flag)begin
                     dcache_fsm          <= WAIT_AW_W;
                     dcache_line_wen     <= 1'b0;
                     dcache_awvalid_reg  <= 1'b1;
@@ -941,8 +959,25 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             WAIT_B: begin
+                if((flush_flag | flush_flag_reg) & dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB))begin
+                    dcache_fsm          <= IDLE;
+                    dcache_mmu_flag     <= 1'b0;
+                    dcache_arvalid_reg  <= 1'b0;
+                    dcache_awvalid_reg  <= 1'b0;
+                    dcache_wvalid_reg   <= 1'b0;
+                    dcache_len_reg      <= 8'h0;
+                    dcache_size_reg     <= 3'h0;
+                    dcache_lock_reg     <= 1'b0;
+                    dcache_num          <= 1'b0;
+                    dcache_addr_reg     <= 64'b0;
+                    dcache_wdata_reg    <= 64'b0;
+                    dcache_wstrb_reg    <= 8'b0;
+                    dcache_wlast_reg    <= 1'b0;
+                    dcache_line_wen     <= 1'b0;
+                    dcache_resp_reg     <= 2'h0;
+                end
                 //? B handle not error; not hit mmu
-                if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & dcache_mmu_flag)begin
+                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0) & dcache_mmu_flag)begin
                     dcache_fsm          <= WAIT_AR;
                     dcache_arvalid_reg  <= 1'b1;
                     dcache_len_reg      <= 8'h1;
@@ -1004,8 +1039,28 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             WAIT_R: begin
+                if((flush_flag | flush_flag_reg) & dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (!dcache_rlast))begin
+                    dcache_fsm          <= WAIT_R;
+                end
+                else if((flush_flag | flush_flag_reg) & dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_rlast)begin
+                    dcache_fsm          <= IDLE;
+                    dcache_mmu_flag     <= 1'b0;
+                    dcache_arvalid_reg  <= 1'b0;
+                    dcache_awvalid_reg  <= 1'b0;
+                    dcache_wvalid_reg   <= 1'b0;
+                    dcache_len_reg      <= 8'h0;
+                    dcache_size_reg     <= 3'h0;
+                    dcache_lock_reg     <= 1'b0;
+                    dcache_num          <= 1'b0;
+                    dcache_addr_reg     <= 64'b0;
+                    dcache_wdata_reg    <= 64'b0;
+                    dcache_wstrb_reg    <= 8'b0;
+                    dcache_wlast_reg    <= 1'b0;
+                    dcache_line_wen     <= 1'b0;
+                    dcache_resp_reg     <= 2'h0;
+                end
                 //? R handle error; cacheable; last mmu
-                if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp != 2'h0) & dcache_rlast & dcache_mmu_flag)begin
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp != 2'h0) & dcache_rlast & dcache_mmu_flag)begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_resp_reg     <= 2'h3;
                 end
@@ -1098,19 +1153,56 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             WAIT_ERROR: begin
-                if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_rlast)begin
+                if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_rlast & (flush_flag | flush_flag_reg))begin
+                    dcache_fsm          <= SEND_DATA;
+                end
+                else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_rlast)begin
                     dcache_fsm          <= SEND_DATA;
                 end
             end
             SEND_DATA: begin
-                if(out_fifo_wen)begin
+                if(flush_flag)begin
+                    dcache_fsm          <= IDLE;
+                    dcache_mmu_flag     <= 1'b0;
+                    dcache_arvalid_reg  <= 1'b0;
+                    dcache_awvalid_reg  <= 1'b0;
+                    dcache_wvalid_reg   <= 1'b0;
+                    dcache_len_reg      <= 8'h0;
+                    dcache_size_reg     <= 3'h0;
+                    dcache_lock_reg     <= 1'b0;
+                    dcache_num          <= 1'b0;
+                    dcache_addr_reg     <= 64'b0;
+                    dcache_wdata_reg    <= 64'b0;
+                    dcache_wstrb_reg    <= 8'b0;
+                    dcache_wlast_reg    <= 1'b0;
+                    dcache_line_wen     <= 1'b0;
+                    dcache_resp_reg     <= 2'h0;
+                end
+                else if(out_fifo_wen)begin
                     dcache_fsm      <= IDLE;
                     dcache_mmu_flag <= 1'b0;
                 end
             end
             WRITE_CACHE: begin
+                if(flush_flag)begin
+                    dcache_fsm          <= IDLE;
+                    dcache_mmu_flag     <= 1'b0;
+                    dcache_arvalid_reg  <= 1'b0;
+                    dcache_awvalid_reg  <= 1'b0;
+                    dcache_wvalid_reg   <= 1'b0;
+                    dcache_len_reg      <= 8'h0;
+                    dcache_size_reg     <= 3'h0;
+                    dcache_lock_reg     <= 1'b0;
+                    dcache_num          <= 1'b0;
+                    dcache_addr_reg     <= 64'b0;
+                    dcache_wdata_reg    <= 64'b0;
+                    dcache_wstrb_reg    <= 8'b0;
+                    dcache_wlast_reg    <= 1'b0;
+                    dcache_line_wen     <= 1'b0;
+                    dcache_resp_reg     <= 2'h0;
+                end
                 //? mmu
-                if(dcache_mmu_flag)begin
+                else if(dcache_mmu_flag)begin
                     dcache_fsm          <= SEND_DATA;
                     dcache_line_wen     <= 1'b0;
                 end
@@ -1143,6 +1235,33 @@ always @(posedge clk or negedge rst_n) begin
                 dcache_resp_reg     <= 2'h0;
             end
         endcase
+    end
+end
+//TODO 假设l2tlb发起一笔传输，并且传输过程中flush_flag有效，此时如果已经开始对外传输，那必须完成对外的传输，如果不脏，则发起读传输，对系统状态无影响；如果是写，则会修改内存中的值，导致其与cache line中的值相同，造成假脏，可能会导致下次在写回，使得性能下降一点点？
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        flush_flag_reg <= 1'b0;
+    end
+    else if(flush_flag & ((dcache_fsm == WAIT_AW_W) | (dcache_fsm == WAIT_AW) | (dcache_fsm == WAIT_W) | (dcache_fsm == WAIT_AR)))begin
+        flush_flag_reg <= 1'b1;
+    end
+    else if(flush_flag & (dcache_fsm == WAIT_B) & (!(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB))))begin
+        flush_flag_reg <= 1'b1;
+    end
+    else if(flush_flag_reg & (dcache_fsm == WAIT_B) & dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB))begin
+        flush_flag_reg <= 1'b0;
+    end
+    else if(flush_flag & (dcache_fsm == WAIT_R) & (!(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_rlast)))begin
+        flush_flag_reg <= 1'b1;
+    end
+    else if(flush_flag_reg & (dcache_fsm == WAIT_R) & dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_rlast)begin
+        flush_flag_reg <= 1'b0;
+    end
+    else if(flush_flag & (dcache_fsm == WAIT_ERROR) & (!(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_rlast)))begin
+        flush_flag_reg <= 1'b1;
+    end
+    else if(flush_flag_reg & (dcache_fsm == WAIT_ERROR) & dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_rlast)begin
+        flush_flag_reg <= 1'b0;
     end
 end
 always @(posedge clk) begin
