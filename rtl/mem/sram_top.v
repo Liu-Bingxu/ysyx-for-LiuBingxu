@@ -129,11 +129,10 @@ always @(posedge aclk or negedge arst_n) begin
     else if(mst_arvalid & mst_arready)begin
         mst_araddr_reg  <= mst_araddr;
         mst_arlen_reg   <= mst_arlen;
-        mst_arsize_reg  <= mst_awsize;
+        mst_arsize_reg  <= mst_arsize;
     end
     else if((state == READ_PAUSE) & (|mst_arlen_reg))begin
         mst_araddr_reg  <= mst_araddr_reg + mst_araddr_increment;
-        mst_arlen_reg   <= mst_arlen_reg - 8'h1;
     end
     else if(mst_rvalid & mst_rready)begin
         mst_araddr_reg  <= mst_araddr_reg + mst_araddr_increment;
