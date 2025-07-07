@@ -1168,7 +1168,9 @@ assign sram_data_wdata                      = (dcache_mmu_flag | first_stage_rea
                                                 ((dcache_mmu_flag | first_stage_read_flag) ? axi_rdata : ((axi_rdata & sram_data_bmask) | ({first_stage_wdata_flag, first_stage_wdata_flag} & (~sram_data_bmask)))) : 
                                                 {first_stage_wdata_flag, first_stage_wdata_flag};
 
-assign lsu_fifo_ren                         = (!lsu_fifo_empty) & (!dcache_line_wen) & (!(mmu_arvalid & mmu_arready)) & (first_stage_ready | (!first_stage_valid));
+//TODO 加入了paddr_valid，会导致stage级别依赖于paddr，导致性能下降，考虑优化
+assign lsu_fifo_ren                         = (!lsu_fifo_empty) & (!dcache_line_wen) & (!(mmu_arvalid & mmu_arready)) & (first_stage_ready | (!first_stage_valid)) & paddr_valid & 
+                                                (!(first_stage_mmu_valid & (lsu_fifo_rdata[9 + DCACHE_GROUP_LEN:4] == dcache_line_waddr_mmu[9 + DCACHE_GROUP_LEN:4])));
 assign fifo_wen                             = (lsu_arvalid & lsu_arready) | (lsu_awvalid & lsu_awready & lsu_wvalid & lsu_wready);
 assign lsu_fifo_wdata                       = (lsu_arvalid & lsu_arready) ? {8'h0, 64'h0, lsu_arlock, lsu_arsize, 1'b1, lsu_araddr} : {lsu_wstrb, lsu_wdata, lsu_awlock, lsu_awsize, 1'b0, lsu_awaddr};
 assign mmu_fifo_wdata                       = (lsu_arvalid & lsu_arready) ? {1'b1, lsu_araddr} : {1'b0, lsu_awaddr};
@@ -1240,7 +1242,8 @@ assign lsu_awready      = (lsu_fifo_cnt != 3'h7) & (mmu_fifo_cnt != 3'h7) & (!ls
 assign lsu_wready       = (lsu_fifo_cnt != 3'h7) & (mmu_fifo_cnt != 3'h7) & (!lsu_arvalid);
 assign lsu_bvalid       = (!out_fifo_rdata[67]) & (!out_fifo_rdata[66]) & (!out_fifo_empty);
 assign lsu_bresp        = out_fifo_rdata[65:64];
-assign mmu_arready      = mmu_arvalid & (!dcache_line_wen) & ((!first_stage_mmu_valid) | first_stage_mmu_ready);
+assign mmu_arready      = mmu_arvalid & (!dcache_line_wen) & ((!first_stage_mmu_valid) | first_stage_mmu_ready) &
+                        (!(first_stage_valid & (mmu_araddr[9 + DCACHE_GROUP_LEN:4] == dcache_line_waddr[9 + DCACHE_GROUP_LEN:4])));
 assign mmu_rvalid       = out_fifo_rdata[67] & out_fifo_rdata[66] & (!out_fifo_empty);
 assign mmu_rresp        = out_fifo_rdata[65:64];
 assign mmu_rdata        = out_fifo_rdata[63:0];
