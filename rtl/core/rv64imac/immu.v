@@ -258,7 +258,7 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             SEND_ADDR: begin
-                if(paddr_valid & paddr_ready)begin
+                if(paddr_ready | (!paddr_valid))begin
                     stage_status        <= IDLE;
                 end
             end
