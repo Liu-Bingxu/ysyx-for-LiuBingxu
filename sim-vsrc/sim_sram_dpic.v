@@ -71,13 +71,20 @@ reg [AXI_ADDR_W    -1:0]     mst_araddr_reg;
 reg [8             -1:0]     mst_arlen_reg;
 reg [AXI_DATA_W    -1:0]     mst_rdata_reg;
 
-reg [1:0]                    state;
+reg [2:0]                    state;
 reg                          mst_bvalid_reg;
 reg                          mst_rvalid_reg;
-localparam  IDLE  = 2'h0;
-localparam  READ  = 2'h1;
-localparam  WRITE = 2'h2;
-localparam  WBACK = 2'h3;
+
+reg [2             -1:0]     mst_resp_reg;
+
+reg                          reservation_valid;
+reg [AXI_ADDR_W    -1:0]     reservation_addr;
+reg [3             -1:0]     reservation_size;
+localparam  IDLE  = 3'h0;
+localparam  READ  = 3'h1;
+localparam  WRITE = 3'h2;
+localparam  WBACK = 3'h3;
+localparam  WRITE_ERROR = 3'h4;
 
 always @(posedge aclk or negedge arst_n) begin
     if(!arst_n)begin
@@ -123,20 +130,44 @@ end
 
 always @(posedge aclk or negedge arst_n) begin
     if(!arst_n)begin
-        state           <= IDLE;
-        mst_bvalid_reg  <= 1'b0;
-        mst_rvalid_reg  <= 1'b0;
+        state               <= IDLE;
+        reservation_valid   <= 1'b0;
+        mst_bvalid_reg      <= 1'b0;
+        mst_rvalid_reg      <= 1'b0;
+        mst_resp_reg        <= 2'h0;
     end
     else begin
         case (state)
             IDLE: begin
-                if(mst_awvalid & mst_awready)begin
+                if(mst_awvalid & mst_awready & mst_awlock)begin
+                    reservation_valid   <= 1'b0;
+                    if(reservation_valid & (reservation_addr == mst_awaddr) & (reservation_size == mst_awsize))begin
+                        state           <= WRITE;
+                        mst_resp_reg    <= 2'h1;
+                    end
+                    else begin
+                        state           <= WRITE_ERROR;
+                        mst_resp_reg    <= 2'h3;
+                    end
+                end
+                else if(mst_awvalid & mst_awready)begin
                     state           <= WRITE;
+                    mst_resp_reg    <= 2'h0;
+                end
+                else if(mst_arvalid & mst_arready & mst_arlock)begin
+                    state               <= READ;
+                    mst_rvalid_reg      <= 1'b1;
+                    sim_sram_read(mst_araddr, mst_rdata_reg);
+                    reservation_valid   <= 1'b1;
+                    reservation_addr    <= mst_araddr;
+                    reservation_size    <= mst_arsize;
+                    mst_resp_reg        <= 2'h1;
                 end
                 else if(mst_arvalid & mst_arready)begin
                     state           <= READ;
                     mst_rvalid_reg  <= 1'b1;
                     sim_sram_read(mst_araddr, mst_rdata_reg);
+                    mst_resp_reg    <= 2'h0;
                 end
             end
             READ: begin
@@ -157,6 +188,12 @@ always @(posedge aclk or negedge arst_n) begin
                     end
                 end
             end
+            WRITE_ERROR: begin
+                if(mst_wvalid & mst_wready & mst_wlast)begin
+                    state           <= WBACK;
+                    mst_bvalid_reg  <= 1'b1;
+                end
+            end
             WBACK: begin
                 if(mst_bvalid & mst_bready)begin
                     state           <= IDLE;
@@ -165,9 +202,9 @@ always @(posedge aclk or negedge arst_n) begin
             end
             default: begin
                 state           <= IDLE;
-                mst_rdata_reg   <= {AXI_DATA_W{1'b0}};
                 mst_bvalid_reg  <= 1'b0;
                 mst_rvalid_reg  <= 1'b0;
+                mst_resp_reg    <= 2'h0;
             end
         endcase
     end
@@ -187,11 +224,11 @@ always @(posedge aclk) begin
             halt(1);
             // $stop;
         end
-        else if(mst_awlock != 1'h0)begin
-            $display("now mst_awlock != 1'h0");
-            halt(1);
-            // $stop;
-        end
+        // else if(mst_awlock != 1'h0)begin
+        //     $display("now mst_awlock != 1'h0");
+        //     halt(1);
+        //     // $stop;
+        // end
         else if(mst_awcache != 4'h0)begin
             $display("now mst_awcache != 4'h0");
             halt(1);
@@ -229,11 +266,11 @@ always @(posedge aclk) begin
             halt(1);
             // $stop;
         end
-        else if(mst_arlock != 1'h0)begin
-            $display("now mst_arlock != 1'h0");
-            halt(1);
-            // $stop;
-        end
+        // else if(mst_arlock != 1'h0)begin
+        //     $display("now mst_arlock != 1'h0");
+        //     halt(1);
+        //     // $stop;
+        // end
         else if(mst_arcache != 4'h0)begin
             $display("now mst_arcache != 4'h0");
             halt(1);
@@ -258,14 +295,14 @@ always @(posedge aclk) begin
 end
 
 assign mst_awready = (state == IDLE) & (!mst_arvalid);
-assign mst_wready  = (state == WRITE);
+assign mst_wready  = ((state == WRITE) | (state == WRITE_ERROR));
 assign mst_bvalid  = mst_bvalid_reg;
 assign mst_bid     = mst_id;
-assign mst_bresp   = 2'h0;
+assign mst_bresp   = mst_resp_reg;
 assign mst_arready = (state == IDLE);
 assign mst_rvalid  = mst_rvalid_reg;
 assign mst_rid     = mst_id;
-assign mst_rresp   = 2'h0;
+assign mst_rresp   = mst_resp_reg;
 assign mst_rdata   = mst_rdata_reg;
 assign mst_rlast   = (mst_arlen_reg == 8'h0);
 
