@@ -1265,15 +1265,15 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 always @(posedge clk) begin
-    if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & (!dcache_rlast) & dcache_num)begin
+    if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (!dcache_rlast) & dcache_num)begin
         axi_rdata[63:0]          <= dcache_rdata;
     end
-    else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0) & dcache_rlast & (!dcache_num))begin
+    else if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & dcache_rlast & (!dcache_num))begin
         axi_rdata[127:64]        <= dcache_rdata;
     end
 end
 always @(posedge clk) begin
-    if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB) & (dcache_rresp == 2'h0))begin
+    if(dcache_rvalid & dcache_rready & (dcache_rid == AXI_ID_SB))begin
         dcache_rdata_reg          <= dcache_rdata;
     end
 end
