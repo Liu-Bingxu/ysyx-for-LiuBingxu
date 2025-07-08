@@ -424,7 +424,7 @@ always @(posedge clk or negedge rst_n) begin
         case (atomic_state)
             ATOMIC_IDLE: begin
                 if(EX_LS_reg_execute_valid & (!trap_valid) & (!LS_EX_flush_flag) & EX_LS_reg_atomic_valid & EX_LS_reg_atomic_sc)begin
-                    atomic_state         <= WRITE_WAIT_AWREADY_WREADY;
+                    atomic_state         <= ATOMIC_WAIT_AWREADY_WREADY;
                     atomic_awvalid_reg   <= 1'b1;
                     atomic_wvalid_reg    <= 1'b1;
                 end
