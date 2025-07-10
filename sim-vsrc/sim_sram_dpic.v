@@ -172,10 +172,12 @@ always @(posedge aclk or negedge arst_n) begin
             end
             READ: begin
                 if(mst_rvalid & mst_rready)begin
-                    sim_sram_read(mst_araddr_reg, mst_rdata_reg);
                     if(mst_rlast)begin
                         state           <= IDLE;
                         mst_rvalid_reg  <= 1'b0;
+                    end
+                    else begin
+                        sim_sram_read(mst_araddr_reg, mst_rdata_reg);
                     end
                 end
             end
