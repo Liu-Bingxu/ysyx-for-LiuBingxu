@@ -585,8 +585,8 @@ assign csr_addr_legal   = ( (csr_addr == `CSR_ADDR_MISA          ) |
                             (csr_addr == `CSR_ADDR_MHPMCOUNTER27 ) |
                             (csr_addr == `CSR_ADDR_MHPMCOUNTER28 ) |
                             (csr_addr == `CSR_ADDR_MHPMCOUNTER29 ) |
-                            (csr_addr == `CSR_ADDR_MHPMCOUNTER3  ) |
-                            (csr_addr == `CSR_ADDR_MHPMCOUNTER3  ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER30 ) |
+                            (csr_addr == `CSR_ADDR_MHPMCOUNTER31 ) |
                             (csr_addr == `CSR_ADDR_MHPMENVENT3   ) |
                             (csr_addr == `CSR_ADDR_MHPMENVENT4   ) |
                             (csr_addr == `CSR_ADDR_MHPMENVENT5   ) |
