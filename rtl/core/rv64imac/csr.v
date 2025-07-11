@@ -944,7 +944,7 @@ module csr_mvendorid(
     output [63:0]           mvendorid
 );
 
-assign mvendorid = 64'h0;
+assign mvendorid = 64'h79737978;
 
 endmodule //csr_mvendorid
 
@@ -952,7 +952,7 @@ module csr_marchid (
     output [63:0]           marchid
 );
 
-assign marchid = 64'h0;
+assign marchid = 64'd23060081;
 
 endmodule //csr_marchid
 
