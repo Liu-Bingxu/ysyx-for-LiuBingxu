@@ -151,38 +151,38 @@ assign tlb_hit[31]          =   (tlb_sp_valid[14] & (tlb_sp[14][57:40] == vaddr[
 assign tlb_hit[32]          =   (tlb_sp_valid[15] & (tlb_sp[15][57:40] == vaddr[38:21]) & ((tlb_sp[15][127:112] == satp_asid) | tlb_sp[15][63]) & (tlb_sp[15][2:0] == 3'h1));
 
 assign tlb_sel              =   ({128{tlb_hit[0 ]}} & tlb_4K[vaddr[17:12]] ) | 
-                                ({128{tlb_hit[0 ]}} & tlb_sp[0 ]) | 
-                                ({128{tlb_hit[1 ]}} & tlb_sp[1 ]) | 
-                                ({128{tlb_hit[2 ]}} & tlb_sp[2 ]) | 
-                                ({128{tlb_hit[3 ]}} & tlb_sp[3 ]) | 
-                                ({128{tlb_hit[4 ]}} & tlb_sp[4 ]) | 
-                                ({128{tlb_hit[5 ]}} & tlb_sp[5 ]) | 
-                                ({128{tlb_hit[6 ]}} & tlb_sp[6 ]) | 
-                                ({128{tlb_hit[7 ]}} & tlb_sp[7 ]) | 
-                                ({128{tlb_hit[8 ]}} & tlb_sp[8 ]) | 
-                                ({128{tlb_hit[9 ]}} & tlb_sp[9 ]) | 
-                                ({128{tlb_hit[10]}} & tlb_sp[10]) | 
-                                ({128{tlb_hit[11]}} & tlb_sp[11]) | 
-                                ({128{tlb_hit[12]}} & tlb_sp[12]) | 
-                                ({128{tlb_hit[13]}} & tlb_sp[13]) | 
-                                ({128{tlb_hit[14]}} & tlb_sp[14]) | 
-                                ({128{tlb_hit[15]}} & tlb_sp[15]) | 
-                                ({128{tlb_hit[0 ]}} & tlb_sp[0 ]) | 
-                                ({128{tlb_hit[1 ]}} & tlb_sp[1 ]) | 
-                                ({128{tlb_hit[2 ]}} & tlb_sp[2 ]) | 
-                                ({128{tlb_hit[3 ]}} & tlb_sp[3 ]) | 
-                                ({128{tlb_hit[4 ]}} & tlb_sp[4 ]) | 
-                                ({128{tlb_hit[5 ]}} & tlb_sp[5 ]) | 
-                                ({128{tlb_hit[6 ]}} & tlb_sp[6 ]) | 
-                                ({128{tlb_hit[7 ]}} & tlb_sp[7 ]) | 
-                                ({128{tlb_hit[8 ]}} & tlb_sp[8 ]) | 
-                                ({128{tlb_hit[9 ]}} & tlb_sp[9 ]) | 
-                                ({128{tlb_hit[10]}} & tlb_sp[10]) | 
-                                ({128{tlb_hit[11]}} & tlb_sp[11]) | 
-                                ({128{tlb_hit[12]}} & tlb_sp[12]) | 
-                                ({128{tlb_hit[13]}} & tlb_sp[13]) | 
-                                ({128{tlb_hit[14]}} & tlb_sp[14]) | 
-                                ({128{tlb_hit[15]}} & tlb_sp[15]) | 
+                                ({128{tlb_hit[1 ]}} & tlb_sp[0 ]) | 
+                                ({128{tlb_hit[2 ]}} & tlb_sp[1 ]) | 
+                                ({128{tlb_hit[3 ]}} & tlb_sp[2 ]) | 
+                                ({128{tlb_hit[4 ]}} & tlb_sp[3 ]) | 
+                                ({128{tlb_hit[5 ]}} & tlb_sp[4 ]) | 
+                                ({128{tlb_hit[6 ]}} & tlb_sp[5 ]) | 
+                                ({128{tlb_hit[7 ]}} & tlb_sp[6 ]) | 
+                                ({128{tlb_hit[8 ]}} & tlb_sp[7 ]) | 
+                                ({128{tlb_hit[9 ]}} & tlb_sp[8 ]) | 
+                                ({128{tlb_hit[10]}} & tlb_sp[9 ]) | 
+                                ({128{tlb_hit[11]}} & tlb_sp[10]) | 
+                                ({128{tlb_hit[12]}} & tlb_sp[11]) | 
+                                ({128{tlb_hit[13]}} & tlb_sp[12]) | 
+                                ({128{tlb_hit[14]}} & tlb_sp[13]) | 
+                                ({128{tlb_hit[15]}} & tlb_sp[14]) | 
+                                ({128{tlb_hit[16]}} & tlb_sp[15]) | 
+                                ({128{tlb_hit[17]}} & tlb_sp[0 ]) | 
+                                ({128{tlb_hit[18]}} & tlb_sp[1 ]) | 
+                                ({128{tlb_hit[19]}} & tlb_sp[2 ]) | 
+                                ({128{tlb_hit[20]}} & tlb_sp[3 ]) | 
+                                ({128{tlb_hit[21]}} & tlb_sp[4 ]) | 
+                                ({128{tlb_hit[22]}} & tlb_sp[5 ]) | 
+                                ({128{tlb_hit[23]}} & tlb_sp[6 ]) | 
+                                ({128{tlb_hit[24]}} & tlb_sp[7 ]) | 
+                                ({128{tlb_hit[25]}} & tlb_sp[8 ]) | 
+                                ({128{tlb_hit[26]}} & tlb_sp[9 ]) | 
+                                ({128{tlb_hit[27]}} & tlb_sp[10]) | 
+                                ({128{tlb_hit[28]}} & tlb_sp[11]) | 
+                                ({128{tlb_hit[29]}} & tlb_sp[12]) | 
+                                ({128{tlb_hit[30]}} & tlb_sp[13]) | 
+                                ({128{tlb_hit[31]}} & tlb_sp[14]) | 
+                                ({128{tlb_hit[32]}} & tlb_sp[15]) | 
                                 ({128{(stage_status == SEND_ADDR)}} & pte_reg);
 
 assign page_4K_wen           = page_wen & (pte[2:0] == 3'h0);
