@@ -294,6 +294,7 @@ wire [1:0]      MPP;
 wire [3:0]      satp_mode;
 wire [15:0]     satp_asid;
 wire [43:0]     satp_ppn;
+wire            WB_IF_satp_change;
 wire        	WB_IF_jump_flag;
 wire [63:0] 	WB_IF_jump_addr;
 wire [63:0] 	WB_ID_src1;
@@ -720,6 +721,7 @@ wbu #(
     .satp_mode                  ( satp_mode                ),
     .satp_asid                  ( satp_asid                ),
     .satp_ppn                   ( satp_ppn                 ),
+    .WB_IF_satp_change         	( WB_IF_satp_change        ),
     .WB_IF_jump_flag         	( WB_IF_jump_flag          ),
     .WB_IF_jump_addr         	( WB_IF_jump_addr          ),
     .rs1                     	( rs1                      ),
@@ -925,8 +927,8 @@ u_l2tlb(
     .pte_error        	(pte_error         )
 );
 
-assign jump_flag = (EX_IF_jump_flag | WB_IF_jump_flag);
-assign jump_addr = (WB_IF_jump_flag) ? WB_IF_jump_addr : EX_IF_jump_addr;
+assign jump_flag = (EX_IF_jump_flag | WB_IF_jump_flag | WB_IF_satp_change);
+assign jump_addr = (WB_IF_jump_flag) ? WB_IF_jump_addr : ((WB_IF_satp_change) ? LS_WB_reg_next_PC : EX_IF_jump_addr);
 
 assign pte_ready = (pte_ready_i | pte_ready_d);
 

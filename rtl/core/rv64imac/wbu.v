@@ -16,6 +16,7 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
+`include "./define.v"
 module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     input                   clk,
     input                   rst_n,
@@ -37,6 +38,7 @@ module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     output [15:0]           satp_asid,
     output [43:0]           satp_ppn,
 //interface with ifu
+    output                  WB_IF_satp_change,
     output                  WB_IF_jump_flag,
     output [63:0]           WB_IF_jump_addr,
 //interface with idu
@@ -159,8 +161,9 @@ sync #(.DATA_LEN( 1 )) u_stip(.clk( clk ), .rst_n( rst_n ), .in_asyn( stip_asyn 
 assign write_data       = (LS_WB_reg_csr_ren) ? csr_rdata : LS_WB_reg_data;
 
 //**********************************************************************************************
-assign WB_LS_ls_ready   = 1'b1;
-assign WB_LS_flush_flag = WB_IF_jump_flag;
+assign WB_LS_ls_ready       = 1'b1;
+assign WB_LS_flush_flag     = WB_IF_jump_flag | WB_IF_satp_change;
+assign WB_IF_satp_change    = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (LS_WB_reg_csr_addr == `CSR_ADDR_SATP) & (LS_WB_reg_data[63:60] == 4'h8);
 //**********************************************************************************************
 
 endmodule //wbu

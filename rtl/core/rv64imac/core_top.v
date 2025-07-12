@@ -238,6 +238,7 @@ wire [63:0] 	LS_WB_reg_data;
 // wbu outports wire
 wire            debug_mode;
 wire [1:0]  	current_priv_status;
+wire            WB_IF_satp_change;
 wire        	WB_IF_jump_flag;
 wire [63:0] 	WB_IF_jump_addr;
 wire [63:0] 	WB_ID_src1;
@@ -623,6 +624,7 @@ wbu #(
     .satp_mode                  ( satp_mode                ),
     .satp_asid                  ( satp_asid                ),
     .satp_ppn                   ( satp_ppn                 ),
+    .WB_IF_satp_change         	( WB_IF_satp_change        ),
     .WB_IF_jump_flag         	( WB_IF_jump_flag          ),
     .WB_IF_jump_addr         	( WB_IF_jump_addr          ),
     .rs1                     	( rs1                      ),
@@ -657,7 +659,7 @@ wbu #(
     .LS_WB_reg_data          	( LS_WB_reg_data           )
 );
 
-assign jump_flag = (EX_IF_jump_flag | WB_IF_jump_flag);
-assign jump_addr = (WB_IF_jump_flag) ? WB_IF_jump_addr : EX_IF_jump_addr;
+assign jump_flag = (EX_IF_jump_flag | WB_IF_jump_flag | WB_IF_satp_change);
+assign jump_addr = (WB_IF_jump_flag) ? WB_IF_jump_addr : ((WB_IF_satp_change) ? LS_WB_reg_next_PC : EX_IF_jump_addr);
 
 endmodule //core_top
