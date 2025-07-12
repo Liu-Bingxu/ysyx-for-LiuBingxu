@@ -95,6 +95,7 @@ wire [63:0] 	ID_EX_reg_PC;
 wire [63:0] 	ID_EX_reg_next_PC;
 wire [31:0] 	ID_EX_reg_inst;
 wire [4:0]  	ID_EX_reg_rd;
+wire            ID_EX_reg_sflush_valid;
 wire        	ID_EX_reg_dest_wen;
 wire        	ID_EX_reg_sub;
 wire        	ID_EX_reg_word;
@@ -178,6 +179,7 @@ wire [63:0] 	EX_LS_reg_next_PC;
 wire [31:0] 	EX_LS_reg_inst;
 wire [4:0]  	EX_LS_reg_rd;
 wire        	EX_LS_reg_dest_wen;
+wire            EX_LS_reg_sflush_valid;
 wire        	EX_LS_reg_load_valid;
 wire        	EX_LS_reg_load_signed;
 wire        	EX_LS_reg_load_byte;
@@ -222,6 +224,7 @@ wire        	LS_WB_reg_ls_valid;
 wire [63:0] 	LS_WB_reg_PC;
 wire [63:0] 	LS_WB_reg_next_PC;
 wire [31:0] 	LS_WB_reg_inst;
+wire            LS_WB_reg_sflush_valid;
 wire        	LS_WB_reg_trap_valid;
 wire        	LS_WB_reg_mret_valid;
 wire        	LS_WB_reg_sret_valid;
@@ -239,6 +242,7 @@ wire [63:0] 	LS_WB_reg_data;
 wire            debug_mode;
 wire [1:0]  	current_priv_status;
 wire            WB_IF_satp_change;
+wire            WB_IF_reg_sflush_valid;
 wire        	WB_IF_jump_flag;
 wire [63:0] 	WB_IF_jump_addr;
 wire [63:0] 	WB_ID_src1;
@@ -301,6 +305,7 @@ idu u_idu(
     .ID_EX_reg_inst               	( ID_EX_reg_inst                ),
     .ID_EX_reg_rd                 	( ID_EX_reg_rd                  ),
     .ID_EX_reg_dest_wen           	( ID_EX_reg_dest_wen            ),
+    .ID_EX_reg_sflush_valid         ( ID_EX_reg_sflush_valid        ),
     .ID_EX_reg_sub                	( ID_EX_reg_sub                 ),
     .ID_EX_reg_word               	( ID_EX_reg_word                ),
     .ID_EX_reg_logic_valid        	( ID_EX_reg_logic_valid         ),
@@ -396,6 +401,7 @@ exu u_exu(
     .ID_EX_reg_inst          	( ID_EX_reg_inst           ),
     .ID_EX_reg_rd            	( ID_EX_reg_rd             ),
     .ID_EX_reg_dest_wen      	( ID_EX_reg_dest_wen       ),
+    .ID_EX_reg_sflush_valid     ( ID_EX_reg_sflush_valid   ),
     .ID_EX_reg_sub           	( ID_EX_reg_sub            ),
     .ID_EX_reg_word          	( ID_EX_reg_word           ),
     .ID_EX_reg_logic_valid   	( ID_EX_reg_logic_valid    ),
@@ -473,6 +479,7 @@ exu u_exu(
     .EX_LS_reg_inst          	( EX_LS_reg_inst           ),
     .EX_LS_reg_rd            	( EX_LS_reg_rd             ),
     .EX_LS_reg_dest_wen      	( EX_LS_reg_dest_wen       ),
+    .EX_LS_reg_sflush_valid     ( EX_LS_reg_sflush_valid   ),
     .EX_LS_reg_load_valid    	( EX_LS_reg_load_valid     ),
     .EX_LS_reg_load_signed   	( EX_LS_reg_load_signed    ),
     .EX_LS_reg_load_byte     	( EX_LS_reg_load_byte      ),
@@ -548,6 +555,7 @@ lsu u_lsu(
     .EX_LS_reg_inst          	( EX_LS_reg_inst           ),
     .EX_LS_reg_rd            	( EX_LS_reg_rd             ),
     .EX_LS_reg_dest_wen      	( EX_LS_reg_dest_wen       ),
+    .EX_LS_reg_sflush_valid     ( EX_LS_reg_sflush_valid   ),
     .EX_LS_reg_load_valid    	( EX_LS_reg_load_valid     ),
     .EX_LS_reg_load_signed   	( EX_LS_reg_load_signed    ),
     .EX_LS_reg_load_byte     	( EX_LS_reg_load_byte      ),
@@ -588,6 +596,7 @@ lsu u_lsu(
     .LS_WB_reg_PC            	( LS_WB_reg_PC             ),
     .LS_WB_reg_next_PC       	( LS_WB_reg_next_PC        ),
     .LS_WB_reg_inst          	( LS_WB_reg_inst           ),
+    .LS_WB_reg_sflush_valid     ( LS_WB_reg_sflush_valid   ),
     .LS_WB_reg_trap_valid    	( LS_WB_reg_trap_valid     ),
     .LS_WB_reg_mret_valid    	( LS_WB_reg_mret_valid     ),
     .LS_WB_reg_sret_valid    	( LS_WB_reg_sret_valid     ),
@@ -625,6 +634,7 @@ wbu #(
     .satp_asid                  ( satp_asid                ),
     .satp_ppn                   ( satp_ppn                 ),
     .WB_IF_satp_change         	( WB_IF_satp_change        ),
+    .WB_IF_reg_sflush_valid     ( WB_IF_reg_sflush_valid   ),
     .WB_IF_jump_flag         	( WB_IF_jump_flag          ),
     .WB_IF_jump_addr         	( WB_IF_jump_addr          ),
     .rs1                     	( rs1                      ),
@@ -645,6 +655,7 @@ wbu #(
     .LS_WB_reg_PC            	( LS_WB_reg_PC             ),
     .LS_WB_reg_next_PC       	( LS_WB_reg_next_PC        ),
     .LS_WB_reg_inst          	( LS_WB_reg_inst           ),
+    .LS_WB_reg_sflush_valid     ( LS_WB_reg_sflush_valid   ),
     .LS_WB_reg_trap_valid    	( LS_WB_reg_trap_valid     ),
     .LS_WB_reg_mret_valid    	( LS_WB_reg_mret_valid     ),
     .LS_WB_reg_sret_valid    	( LS_WB_reg_sret_valid     ),
@@ -659,7 +670,7 @@ wbu #(
     .LS_WB_reg_data          	( LS_WB_reg_data           )
 );
 
-assign jump_flag = (EX_IF_jump_flag | WB_IF_jump_flag | WB_IF_satp_change);
-assign jump_addr = (WB_IF_jump_flag) ? WB_IF_jump_addr : ((WB_IF_satp_change) ? LS_WB_reg_next_PC : EX_IF_jump_addr);
+assign jump_flag = (EX_IF_jump_flag | WB_IF_jump_flag | WB_IF_satp_change | WB_IF_reg_sflush_valid);
+assign jump_addr = (WB_IF_jump_flag) ? WB_IF_jump_addr : ((WB_IF_satp_change | WB_IF_reg_sflush_valid) ? LS_WB_reg_next_PC : EX_IF_jump_addr);
 
 endmodule //core_top

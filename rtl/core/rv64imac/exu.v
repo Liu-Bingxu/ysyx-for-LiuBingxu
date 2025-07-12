@@ -35,6 +35,8 @@ module exu (
     input  [31:0]           ID_EX_reg_inst,
     input  [4 :0]           ID_EX_reg_rd,
     input                   ID_EX_reg_dest_wen,
+    //sflush sign:
+    input                   ID_EX_reg_sflush_valid,
     //control_sign:
     input                   ID_EX_reg_sub,
     input                   ID_EX_reg_word,
@@ -127,6 +129,8 @@ module exu (
     output [31:0]           EX_LS_reg_inst,
     output [4 :0]           EX_LS_reg_rd,
     output                  EX_LS_reg_dest_wen,
+    //sflush sign:
+    output                  EX_LS_reg_sflush_valid,
     //load_sign:
     output                  EX_LS_reg_load_valid,
     output                  EX_LS_reg_load_signed,
@@ -408,6 +412,8 @@ FF_D_without_asyn_rst #(1)  u_dest_wen      (clk,EX_ID_decode_ready,ID_EX_reg_de
 FF_D_without_asyn_rst #(32) u_inst          (clk,EX_ID_decode_ready,ID_EX_reg_inst,     EX_LS_reg_inst);
 FF_D_without_asyn_rst #(64) u_PC            (clk,EX_ID_decode_ready,ID_EX_reg_PC,       EX_LS_reg_PC);
 FF_D_without_asyn_rst #(64) u_next_PC       (clk,EX_ID_decode_ready,next_PC,            EX_LS_reg_next_PC);
+//sflush_sign:
+FF_D_without_asyn_rst #(1)  u_sflush_valid  (clk,EX_ID_decode_ready,ID_EX_reg_sflush_valid,EX_LS_reg_sflush_valid);
 //load_sign:
 FF_D_without_asyn_rst #(1)  u_load_valid    (clk,EX_ID_decode_ready,ID_EX_reg_load_valid,   EX_LS_reg_load_valid);
 FF_D_without_asyn_rst #(1)  u_load_signed   (clk,EX_ID_decode_ready,ID_EX_reg_load_signed,  EX_LS_reg_load_signed);

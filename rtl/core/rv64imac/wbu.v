@@ -39,6 +39,7 @@ module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     output [43:0]           satp_ppn,
 //interface with ifu
     output                  WB_IF_satp_change,
+    output                  WB_IF_reg_sflush_valid,
     output                  WB_IF_jump_flag,
     output [63:0]           WB_IF_jump_addr,
 //interface with idu
@@ -63,6 +64,8 @@ module wbu#(parameter MHARTID = 0,RST_PC=64'h0)(
     input  [63:0]           LS_WB_reg_PC,
     input  [63:0]           LS_WB_reg_next_PC,
     input  [31:0]           LS_WB_reg_inst,
+    //sflush sign:
+    input                   LS_WB_reg_sflush_valid,
     //trap:
     input                   LS_WB_reg_trap_valid,
     input                   LS_WB_reg_mret_valid,
@@ -161,9 +164,10 @@ sync #(.DATA_LEN( 1 )) u_stip(.clk( clk ), .rst_n( rst_n ), .in_asyn( stip_asyn 
 assign write_data       = (LS_WB_reg_csr_ren) ? csr_rdata : LS_WB_reg_data;
 
 //**********************************************************************************************
-assign WB_LS_ls_ready       = 1'b1;
-assign WB_LS_flush_flag     = WB_IF_jump_flag | WB_IF_satp_change;
-assign WB_IF_satp_change    = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (LS_WB_reg_csr_addr == `CSR_ADDR_SATP) & (LS_WB_reg_data[63:60] == 4'h8);
+assign WB_LS_ls_ready           = 1'b1;
+assign WB_LS_flush_flag         = WB_IF_jump_flag | WB_IF_satp_change | WB_IF_reg_sflush_valid;
+assign WB_IF_satp_change        = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (LS_WB_reg_csr_addr == `CSR_ADDR_SATP) & (LS_WB_reg_data[63:60] == 4'h8);
+assign WB_IF_reg_sflush_valid   = LS_WB_reg_ls_valid & LS_WB_reg_sflush_valid;
 //**********************************************************************************************
 
 endmodule //wbu

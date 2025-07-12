@@ -56,6 +56,8 @@ module lsu (
     input [31:0]            EX_LS_reg_inst,
     input [4 :0]            EX_LS_reg_rd,
     input                   EX_LS_reg_dest_wen,
+    //sflush sign:
+    input                   EX_LS_reg_sflush_valid,
     //load_sign:
     input                   EX_LS_reg_load_valid,
     input                   EX_LS_reg_load_signed,
@@ -104,6 +106,8 @@ module lsu (
     output [63:0]           LS_WB_reg_PC,
     output [63:0]           LS_WB_reg_next_PC,
     output [31:0]           LS_WB_reg_inst,
+    //sflush sign:
+    output                  LS_WB_reg_sflush_valid,
     //trap:
     output                  LS_WB_reg_trap_valid,
     output                  LS_WB_reg_mret_valid,
@@ -649,6 +653,8 @@ FF_D_with_syn_rst #(
 FF_D_without_asyn_rst #(32) u_inst          (clk,LS_EX_execute_ready,EX_LS_reg_inst,    LS_WB_reg_inst);
 FF_D_without_asyn_rst #(64) u_PC            (clk,LS_EX_execute_ready,EX_LS_reg_PC,      LS_WB_reg_PC);
 FF_D_without_asyn_rst #(64) u_next_PC       (clk,LS_EX_execute_ready,EX_LS_reg_next_PC, LS_WB_reg_next_PC);
+//sflush_sign:
+FF_D_without_asyn_rst #(1)  u_sflush_valid  (clk,LS_EX_execute_ready,EX_LS_reg_sflush_valid,LS_WB_reg_sflush_valid);
 //trap:
 FF_D_without_asyn_rst #(1)  u_trap_valid    (clk,LS_EX_execute_ready,          trap_valid,LS_WB_reg_trap_valid);
 FF_D_without_asyn_rst #(1)  u_mret_valid    (clk,LS_EX_execute_ready,EX_LS_reg_mret_valid,LS_WB_reg_mret_valid);
