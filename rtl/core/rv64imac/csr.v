@@ -1864,7 +1864,7 @@ assign interrupt_cause          = (m_mode_interrupt_pending[11]) ? 64'h8000_0000
                                         (m_mode_interrupt_pending[7]) ? 64'h8000_0000_0000_0007 : (
                                             (m_mode_interrupt_pending[9]) ? 64'h8000_0000_0000_0009 : (
                                                 (m_mode_interrupt_pending[1]) ? 64'h8000_0000_0000_0001 : (
-                                                    (m_mode_interrupt_pending[5]) ? 64'h8000_0000_0000_0001 : 64'h8000_0000_0000_0000
+                                                    (m_mode_interrupt_pending[5]) ? 64'h8000_0000_0000_0005 : 64'h8000_0000_0000_0000
                                                 )
                                             )
                                         )
