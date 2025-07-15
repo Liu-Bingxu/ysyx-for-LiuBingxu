@@ -547,6 +547,7 @@ interrupt_control u_interrupt_control(
     .sip                 	    ( sip                       ),
     .mie                 	    ( mie                       ),
     .sie                 	    ( sie                       ),
+    .mideleg                    ( mideleg                   ),
     .halt_req                   ( halt_req                  ),
     .debug_mode                 ( debug_mode                ),
     .dcsr_step                  ( dcsr_step                 ),
@@ -1813,6 +1814,7 @@ module interrupt_control(
     input  [63:0]           sip,
     input  [63:0]           mie,
     input  [63:0]           sie,
+    input  [63:0]           mideleg,
     input                   halt_req,
     input                   debug_mode,
     input                   dcsr_step,
@@ -1832,6 +1834,10 @@ wire            m_mode_interrupt_enable;
 wire            s_mode_interrupt_enable;
 wire [63:0]     m_mode_interrupt_pending;
 wire [63:0]     s_mode_interrupt_pending;
+wire [63:0]     interrupt_pending;
+
+wire            interrupt_m_flag_inter;
+wire            interrupt_s_flag_inter;
 
 reg  [1:0]      debug_step_flag;
 
@@ -1852,19 +1858,24 @@ end
 
 assign m_mode_interrupt_enable  = (mstatus_MIE | (current_priv_status < `PRV_M));
 assign s_mode_interrupt_enable  = ((mstatus_SIE | (current_priv_status < `PRV_S)) & (current_priv_status != `PRV_M));
-assign m_mode_interrupt_pending = (mie & mip);
+assign m_mode_interrupt_pending = (mie & mip & (~mideleg));
 assign s_mode_interrupt_pending = (sie & sip);
+assign        interrupt_pending = ((m_mode_interrupt_pending & {64{interrupt_m_flag_inter}}) | 
+                                    (s_mode_interrupt_pending & {64{interrupt_s_flag_inter}}));
 
-assign interrupt_m_flag         = (m_mode_interrupt_enable & m_mode_interrupt_pending[interrupt_cause[5:0]] & (!interrupt_s_flag) & (!interrupt_debug_flag) & (!debug_mode)); 
-assign interrupt_s_flag         = (s_mode_interrupt_enable & s_mode_interrupt_pending[interrupt_cause[5:0]] & (!interrupt_debug_flag) & (!debug_mode)); 
+assign interrupt_m_flag_inter   = (m_mode_interrupt_enable & (|m_mode_interrupt_pending) & (!interrupt_debug_flag) & (!debug_mode));
+assign interrupt_s_flag_inter   = (s_mode_interrupt_enable & (|s_mode_interrupt_pending) & (!interrupt_debug_flag) & (!debug_mode));
+
+assign interrupt_m_flag         = (interrupt_m_flag_inter & m_mode_interrupt_pending[interrupt_cause[5:0]]);
+assign interrupt_s_flag         = (interrupt_s_flag_inter & s_mode_interrupt_pending[interrupt_cause[5:0]]);
 assign interrupt_debug_flag     = ((halt_req | ((debug_step_flag == 2'h1) & EX_LS_reg_execute_valid) | (debug_step_flag == 2'h2)) & (!debug_mode));
 
-assign interrupt_cause          = (m_mode_interrupt_pending[11]) ? 64'h8000_0000_0000_000B : (
-                                    (m_mode_interrupt_pending[3]) ? 64'h8000_0000_0000_0003 : (
-                                        (m_mode_interrupt_pending[7]) ? 64'h8000_0000_0000_0007 : (
-                                            (m_mode_interrupt_pending[9]) ? 64'h8000_0000_0000_0009 : (
-                                                (m_mode_interrupt_pending[1]) ? 64'h8000_0000_0000_0001 : (
-                                                    (m_mode_interrupt_pending[5]) ? 64'h8000_0000_0000_0005 : 64'h8000_0000_0000_0000
+assign interrupt_cause          = (interrupt_pending[11]) ? 64'h8000_0000_0000_000B : (
+                                    (interrupt_pending[3]) ? 64'h8000_0000_0000_0003 : (
+                                        (interrupt_pending[7]) ? 64'h8000_0000_0000_0007 : (
+                                            (interrupt_pending[9]) ? 64'h8000_0000_0000_0009 : (
+                                                (interrupt_pending[1]) ? 64'h8000_0000_0000_0001 : (
+                                                    (interrupt_pending[5]) ? 64'h8000_0000_0000_0005 : 64'h8000_0000_0000_0000
                                                 )
                                             )
                                         )
