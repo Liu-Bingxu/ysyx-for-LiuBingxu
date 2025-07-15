@@ -1,5 +1,5 @@
 `include "define.v"
-module core_debugger_top (
+module core_debugger_top_with_idcache (
     input       clock,
     input       rst_n,
 
@@ -19,30 +19,35 @@ module core_debugger_top (
 
 wire clk = clock;
 
-// output declaration of module core_top
-wire MXR;
-wire SUM;
-wire MPRV;
-wire [1:0] MPP;
-wire [3:0] satp_mode;
-wire [15:0] satp_asid;
-wire [43:0] satp_ppn;
-wire ifu_arvalid;
-wire [63:0] ifu_araddr;
-wire ifu_rready;
-wire lsu_arvalid;
-wire lsu_arlock;
-wire [2:0] lsu_arsize;
-wire [63:0] lsu_araddr;
-wire lsu_rready;
-wire lsu_awvalid;
-wire lsu_awlock;
-wire [2:0] lsu_awsize;
-wire [63:0] lsu_awaddr;
-wire lsu_wvalid;
-wire [7:0] lsu_wstrb;
-wire [63:0] lsu_wdata;
-wire lsu_bready;
+
+// output declaration of module core_top_with_i_dcache
+wire        icache_arvalid;
+wire [63:0] icache_araddr;
+wire [7:0]  icache_arid;
+wire [7:0]  icache_arlen;
+wire [2:0]  icache_arsize;
+wire [1:0]  icache_arburst;
+wire        icache_rready;
+wire        dcache_arvalid;
+wire [63:0] dcache_araddr;
+wire [7:0]  dcache_arid;
+wire [7:0]  dcache_arlen;
+wire [2:0]  dcache_arsize;
+wire        dcache_arlock;
+wire [1:0]  dcache_arburst;
+wire        dcache_rready;
+wire        dcache_awvalid;
+wire [63:0] dcache_awaddr;
+wire [7:0]  dcache_awid;
+wire [7:0]  dcache_awlen;
+wire [2:0]  dcache_awsize;
+wire        dcache_awlock;
+wire [1:0]  dcache_awburst;
+wire        dcache_wvalid;
+wire [63:0] dcache_wdata;
+wire [7:0]  dcache_wstrb;
+wire        dcache_wlast;
+wire        dcache_bready;
 
 // Address width in bits
 localparam AXI_ADDR_W = 64;
@@ -368,57 +373,87 @@ always @(posedge tck or negedge rst_n) begin
     end
 end
 
-core_top #(
-    .MHARTID 	(0          ),
-    .RST_PC  	(`RST_PC    ))
-u_core_top(
-    .clk         	(clk          ),
-    .rst_n       	(core_rst_n   ),
-    .stip_asyn   	(stip_asyn    ),
-    .seip_asyn   	(seip_asyn    ),
-    .ssip_asyn   	(ssip_asyn    ),
-    .mtip_asyn   	(mtip_asyn    ),
-    .meip_asyn   	(meip_asyn    ),
-    .msip_asyn   	(msip_asyn    ),
-    .halt_req       (halt_req     ),
-    .MXR         	(MXR          ),
-    .SUM         	(SUM          ),
-    .MPRV        	(MPRV         ),
-    .MPP         	(MPP          ),
-    .satp_mode   	(satp_mode    ),
-    .satp_asid   	(satp_asid    ),
-    .satp_ppn    	(satp_ppn     ),
+wire test_mmu_bit  = u_core_top_with_i_dcache.u_dcache.lsu_awaddr[63:0] == 64'hffffffc6febfe018;
+wire test_mmu_bit2 = (u_core_top_with_i_dcache.u_dcache.sram_data_wen[1][0] == 1'b0) & (u_core_top_with_i_dcache.u_dcache.sram_addr[5:0] == 6'h3D);
+wire test_mmu_bit3 = (u_core_top_with_i_dcache.u_dcache.sram_data_wen[1][1] == 1'b0) & (u_core_top_with_i_dcache.u_dcache.sram_addr[5:0] == 6'h3D);
+wire test_mmu_bit4 = (u_core_top_with_i_dcache.u_dcache.sram_data_cen[0] == 1'b0) & (u_core_top_with_i_dcache.u_dcache.sram_addr[5:0] == 6'h3D);
 
-    .ifu_arready 	(slv0_arready ),
-    .ifu_arvalid 	(ifu_arvalid  ),
-    .ifu_araddr  	(ifu_araddr   ),
-    .ifu_rvalid  	(slv0_rvalid  ),
-    .ifu_rready  	(ifu_rready   ),
-    .ifu_rresp   	(slv0_rresp   ),
-    .ifu_rdata   	(slv0_rdata   ),
+wire test_mmu_bit5 = (u_core_top_with_i_dcache.u_dcache.dcache_awaddr[63:4] == 60'h8002_900) & u_core_top_with_i_dcache.u_dcache.dcache_awvalid;
+wire test_mmu_bit6 = (u_core_top_with_i_dcache.u_dcache.lsu_awaddr[63:4] == 60'h0002_900) & u_core_top_with_i_dcache.u_dcache.lsu_awvalid;
+wire test_mmu_bit7 = (u_core_top_with_i_dcache.u_dcache.lsu_araddr[63:4] == 60'h0002_900) & u_core_top_with_i_dcache.u_dcache.lsu_arvalid;
 
-    .lsu_arvalid 	(lsu_arvalid  ),
-    .lsu_arready 	(slv1_arready ),
-    .lsu_arlock  	(lsu_arlock   ),
-    .lsu_arsize  	(lsu_arsize   ),
-    .lsu_araddr  	(lsu_araddr   ),
-    .lsu_rvalid  	(slv1_rvalid  ),
-    .lsu_rready  	(lsu_rready   ),
-    .lsu_rresp   	(slv1_rresp   ),
-    .lsu_rdata   	(slv1_rdata   ),
-    .lsu_awvalid 	(lsu_awvalid  ),
-    .lsu_awready 	(slv1_awready ),
-    .lsu_awlock  	(lsu_awlock   ),
-    .lsu_awsize  	(lsu_awsize   ),
-    .lsu_awaddr  	(lsu_awaddr   ),
-    .lsu_wvalid  	(lsu_wvalid   ),
-    .lsu_wready  	(slv1_wready  ),
-    .lsu_wstrb  	(lsu_wstrb    ),
-    .lsu_wdata   	(lsu_wdata    ),
-    .lsu_bvalid  	(slv1_bvalid  ),
-    .lsu_bready  	(lsu_bready   ),
-    .lsu_bresp   	(slv1_bresp   )
+core_top_with_i_dcache #(
+    .MHARTID      	(0              ),
+    .RST_PC       	(64'h8000_0000  ),
+    .AXI_ID_I     	(8'h10          ),
+    .AXI_ID_D     	(8'h20          ),
+    .AXI_ADDR_W   	(AXI_ADDR_W     ),
+    .AXI_ID_W     	(AXI_ID_W       ),
+    .AXI_DATA_W   	(AXI_DATA_W     ),
+    .ICACHE_WAY   	(2              ),
+    .ICACHE_GROUP 	(2              ),
+    .DCACHE_WAY   	(2              ),
+    .DCACHE_GROUP 	(4              ),
+    .MMU_WAY      	(2              ),
+    .MMU_GROUP    	(1              ),
+    .PMEM_START   	(64'h8000_0000  ),
+    .PMEM_END     	(64'h9fff_ffff  ))
+u_core_top_with_i_dcache(
+    .clk            	(clk             ),
+    .rst_n          	(rst_n           ),
+    .stip_asyn      	(stip_asyn       ),
+    .seip_asyn      	(seip_asyn       ),
+    .ssip_asyn      	(ssip_asyn       ),
+    .mtip_asyn      	(mtip_asyn       ),
+    .meip_asyn      	(meip_asyn       ),
+    .msip_asyn      	(msip_asyn       ),
+    .halt_req       	(halt_req        ),
+    .icache_arready 	(slv0_arready    ),
+    .icache_arvalid 	(icache_arvalid  ),
+    .icache_araddr  	(icache_araddr   ),
+    .icache_arid    	(icache_arid     ),
+    .icache_arlen   	(icache_arlen    ),
+    .icache_arsize  	(icache_arsize   ),
+    .icache_arburst 	(icache_arburst  ),
+    .icache_rready  	(icache_rready   ),
+    .icache_rvalid  	(slv0_rvalid     ),
+    .icache_rresp   	(slv0_rresp      ),
+    .icache_rdata   	(slv0_rdata      ),
+    .icache_rlast   	(slv0_rlast      ),
+    .icache_rid     	(slv0_rid        ),
+    .dcache_arready 	(slv0_arready    ),
+    .dcache_arvalid 	(dcache_arvalid  ),
+    .dcache_araddr  	(dcache_araddr   ),
+    .dcache_arid    	(dcache_arid     ),
+    .dcache_arlen   	(dcache_arlen    ),
+    .dcache_arsize  	(dcache_arsize   ),
+    .dcache_arlock  	(dcache_arlock   ),
+    .dcache_arburst 	(dcache_arburst  ),
+    .dcache_rready  	(dcache_rready   ),
+    .dcache_rvalid  	(slv1_rvalid     ),
+    .dcache_rresp   	(slv1_rresp      ),
+    .dcache_rdata   	(slv1_rdata      ),
+    .dcache_rlast   	(slv1_rlast      ),
+    .dcache_rid     	(slv1_rid        ),
+    .dcache_awready 	(slv1_awready    ),
+    .dcache_awvalid 	(dcache_awvalid  ),
+    .dcache_awaddr  	(dcache_awaddr   ),
+    .dcache_awid    	(dcache_awid     ),
+    .dcache_awlen   	(dcache_awlen    ),
+    .dcache_awsize  	(dcache_awsize   ),
+    .dcache_awlock  	(dcache_awlock   ),
+    .dcache_awburst 	(dcache_awburst  ),
+    .dcache_wready  	(slv1_wready     ),
+    .dcache_wvalid  	(dcache_wvalid   ),
+    .dcache_wdata   	(dcache_wdata    ),
+    .dcache_wstrb   	(dcache_wstrb    ),
+    .dcache_wlast   	(dcache_wlast    ),
+    .dcache_bready  	(dcache_bready   ),
+    .dcache_bvalid  	(slv1_bvalid     ),
+    .dcache_bresp   	(slv1_bresp      ),
+    .dcache_bid     	(slv1_bid        )
 );
+
 
 axicb_crossbar_top #(
     .AXI_ADDR_W          	(AXI_ADDR_W         ),
@@ -482,8 +517,8 @@ axicb_crossbar_top #(
     .SLV0_KEEP_BASE_ADDR 	(1        ),
 
     .SLV1_CDC            	(0        ),
-    .SLV1_START_ADDR     	(64'h0000_1000    ),
-    .SLV1_END_ADDR       	(64'h0000_0fff    ),
+    .SLV1_START_ADDR     	(64'h0100_0000    ),
+    .SLV1_END_ADDR       	(64'h1fff_ffff    ),
     .SLV1_OSTDREQ_NUM    	(4        ),
     .SLV1_OSTDREQ_SIZE   	(1        ),
     .SLV1_KEEP_BASE_ADDR 	(1        ),
@@ -533,21 +568,21 @@ u_axicb_crossbar_top(
     .slv0_bid      	(slv0_bid       ),
     .slv0_bresp    	(slv0_bresp     ),
     .slv0_buser    	(slv0_buser     ),
-    .slv0_arvalid  	(ifu_arvalid    ),
+    .slv0_arvalid  	(icache_arvalid ),
     .slv0_arready  	(slv0_arready   ),
-    .slv0_araddr   	(ifu_araddr     ),
-    .slv0_arlen    	(8'h0           ),
-    .slv0_arsize   	(3'h3           ),
-    .slv0_arburst  	(2'h1           ),
+    .slv0_araddr   	(icache_araddr  ),
+    .slv0_arlen    	(icache_arlen   ),
+    .slv0_arsize   	(icache_arsize  ),
+    .slv0_arburst  	(icache_arburst ),
     .slv0_arlock   	(1'h0           ),
     .slv0_arcache  	(4'h0           ),
     .slv0_arprot   	(3'h0           ),
     .slv0_arqos    	(4'h0           ),
     .slv0_arregion 	(4'h0           ),
-    .slv0_arid     	(8'h10          ),
+    .slv0_arid     	(icache_arid    ),
     .slv0_aruser   	(1'b0           ),
     .slv0_rvalid   	(slv0_rvalid    ),
-    .slv0_rready   	(ifu_rready     ),
+    .slv0_rready   	(icache_rready  ),
     .slv0_rid      	(slv0_rid       ),
     .slv0_rresp    	(slv0_rresp     ),
     .slv0_rdata    	(slv0_rdata     ),
@@ -557,45 +592,45 @@ u_axicb_crossbar_top(
     .slv1_aclk     	(clk            ),
     .slv1_aresetn  	(core_rst_n     ),
     .slv1_srst     	(1'b0           ),
-    .slv1_awvalid  	(lsu_awvalid    ),
+    .slv1_awvalid  	(dcache_awvalid ),
     .slv1_awready  	(slv1_awready   ),
-    .slv1_awaddr   	(lsu_awaddr     ),
-    .slv1_awlen    	(8'h0           ),
-    .slv1_awsize   	(lsu_awsize     ),
-    .slv1_awburst  	(2'h1           ),
-    .slv1_awlock   	(lsu_awlock     ),
+    .slv1_awaddr   	(dcache_awaddr  ),
+    .slv1_awlen    	(dcache_awlen   ),
+    .slv1_awsize   	(dcache_awsize  ),
+    .slv1_awburst  	(dcache_awburst ),
+    .slv1_awlock   	(dcache_awlock  ),
     .slv1_awcache  	(4'h0           ),
     .slv1_awprot   	(3'h0           ),
     .slv1_awqos    	(4'h0           ),
     .slv1_awregion 	(4'h0           ),
-    .slv1_awid     	(8'h20          ),
+    .slv1_awid     	(dcache_awid    ),
     .slv1_awuser   	(1'b0           ),
-    .slv1_wvalid   	(lsu_wvalid     ),
+    .slv1_wvalid   	(dcache_wvalid  ),
     .slv1_wready   	(slv1_wready    ),
-    .slv1_wlast    	(1'b1           ),
-    .slv1_wdata    	(lsu_wdata      ),
-    .slv1_wstrb    	(lsu_wstrb      ),
+    .slv1_wlast    	(dcache_wlast   ),
+    .slv1_wdata    	(dcache_wdata   ),
+    .slv1_wstrb    	(dcache_wstrb   ),
     .slv1_wuser    	(1'b0           ),
     .slv1_bvalid   	(slv1_bvalid    ),
-    .slv1_bready   	(lsu_bready     ),
+    .slv1_bready   	(dcache_bready  ),
     .slv1_bid      	(slv1_bid       ),
     .slv1_bresp    	(slv1_bresp     ),
     .slv1_buser    	(slv1_buser     ),
-    .slv1_arvalid  	(lsu_arvalid    ),
+    .slv1_arvalid  	(dcache_arvalid ),
     .slv1_arready  	(slv1_arready   ),
-    .slv1_araddr   	(lsu_araddr     ),
-    .slv1_arlen    	(8'h0           ),
-    .slv1_arsize   	(lsu_arsize     ),
-    .slv1_arburst  	(2'h1           ),
-    .slv1_arlock   	(lsu_arlock     ),
+    .slv1_araddr   	(dcache_araddr  ),
+    .slv1_arlen    	(dcache_arlen   ),
+    .slv1_arsize   	(dcache_arsize  ),
+    .slv1_arburst  	(dcache_arburst ),
+    .slv1_arlock   	(dcache_arlock  ),
     .slv1_arcache  	(4'h0           ),
     .slv1_arprot   	(3'h0           ),
     .slv1_arqos    	(4'h0           ),
     .slv1_arregion 	(4'h0           ),
-    .slv1_arid     	(8'h20          ),
+    .slv1_arid     	(dcache_arid    ),
     .slv1_aruser   	(1'b0           ),
     .slv1_rvalid   	(slv1_rvalid    ),
-    .slv1_rready   	(lsu_rready     ),
+    .slv1_rready   	(dcache_rready  ),
     .slv1_rid      	(slv1_rid       ),
     .slv1_rresp    	(slv1_rresp     ),
     .slv1_rdata    	(slv1_rdata     ),
@@ -891,57 +926,13 @@ u_axicb_crossbar_top(
     .mst3_ruser    	(1'b0           )
 );
 
-// dummy_axi_slv #(
-//     .AXI_ADDR_W 	(AXI_ADDR_W     ),
-//     .AXI_ID_W   	(AXI_ID_W       ),
-//     .AXI_DATA_W 	(AXI_DATA_W     ))
-// u_dummy_axi_slv0(
-//     .mst_awvalid  	(mst0_awvalid   ),
-//     .mst_awready  	(mst0_awready   ),
-//     .mst_awaddr   	(mst0_awaddr    ),
-//     .mst_awlen    	(mst0_awlen     ),
-//     .mst_awsize   	(mst0_awsize    ),
-//     .mst_awburst  	(mst0_awburst   ),
-//     .mst_awlock   	(mst0_awlock    ),
-//     .mst_awcache  	(mst0_awcache   ),
-//     .mst_awprot   	(mst0_awprot    ),
-//     .mst_awqos    	(mst0_awqos     ),
-//     .mst_awregion 	(mst0_awregion  ),
-//     .mst_awid     	(mst0_awid      ),
-//     .mst_wvalid   	(mst0_wvalid    ),
-//     .mst_wready   	(mst0_wready    ),
-//     .mst_wlast    	(mst0_wlast     ),
-//     .mst_wdata    	(mst0_wdata     ),
-//     .mst_wstrb    	(mst0_wstrb     ),
-//     .mst_bvalid   	(mst0_bvalid    ),
-//     .mst_bready   	(mst0_bready    ),
-//     .mst_bid      	(mst0_bid       ),
-//     .mst_bresp    	(mst0_bresp     ),
-//     .mst_arvalid  	(mst0_arvalid   ),
-//     .mst_arready  	(mst0_arready   ),
-//     .mst_araddr   	(mst0_araddr    ),
-//     .mst_arlen    	(mst0_arlen     ),
-//     .mst_arsize   	(mst0_arsize    ),
-//     .mst_arburst  	(mst0_arburst   ),
-//     .mst_arlock   	(mst0_arlock    ),
-//     .mst_arcache  	(mst0_arcache   ),
-//     .mst_arprot   	(mst0_arprot    ),
-//     .mst_arqos    	(mst0_arqos     ),
-//     .mst_arregion 	(mst0_arregion  ),
-//     .mst_arid     	(mst0_arid      ),
-//     .mst_rvalid   	(mst0_rvalid    ),
-//     .mst_rready   	(mst0_rready    ),
-//     .mst_rid      	(mst0_rid       ),
-//     .mst_rresp    	(mst0_rresp     ),
-//     .mst_rdata    	(mst0_rdata     ),
-//     .mst_rlast    	(mst0_rlast     )
-// );
-
-dummy_axi_slv #(
+sim_periph_dpic #(
     .AXI_ADDR_W 	(AXI_ADDR_W     ),
     .AXI_ID_W   	(AXI_ID_W       ),
     .AXI_DATA_W 	(AXI_DATA_W     ))
-u_dummy_axi_slv1(
+u_sim_periph_dpic0(
+    .aclk         	(clk            ),
+    .arst_n       	(core_rst_n     ),
     .mst_awvalid  	(mst1_awvalid   ),
     .mst_awready  	(mst1_awready   ),
     .mst_awaddr   	(mst1_awaddr    ),
@@ -983,53 +974,7 @@ u_dummy_axi_slv1(
     .mst_rlast    	(mst1_rlast     )
 );
 
-// dummy_axi_slv #(
-//     .AXI_ADDR_W 	(AXI_ADDR_W     ),
-//     .AXI_ID_W   	(AXI_ID_W       ),
-//     .AXI_DATA_W 	(AXI_DATA_W     ))
-// u_dummy_axi_slv2(
-//     .mst_awvalid  	(mst2_awvalid   ),
-//     .mst_awready  	(mst2_awready   ),
-//     .mst_awaddr   	(mst2_awaddr    ),
-//     .mst_awlen    	(mst2_awlen     ),
-//     .mst_awsize   	(mst2_awsize    ),
-//     .mst_awburst  	(mst2_awburst   ),
-//     .mst_awlock   	(mst2_awlock    ),
-//     .mst_awcache  	(mst2_awcache   ),
-//     .mst_awprot   	(mst2_awprot    ),
-//     .mst_awqos    	(mst2_awqos     ),
-//     .mst_awregion 	(mst2_awregion  ),
-//     .mst_awid     	(mst2_awid      ),
-//     .mst_wvalid   	(mst2_wvalid    ),
-//     .mst_wready   	(mst2_wready    ),
-//     .mst_wlast    	(mst2_wlast     ),
-//     .mst_wdata    	(mst2_wdata     ),
-//     .mst_wstrb    	(mst2_wstrb     ),
-//     .mst_bvalid   	(mst2_bvalid    ),
-//     .mst_bready   	(mst2_bready    ),
-//     .mst_bid      	(mst2_bid       ),
-//     .mst_bresp    	(mst2_bresp     ),
-//     .mst_arvalid  	(mst2_arvalid   ),
-//     .mst_arready  	(mst2_arready   ),
-//     .mst_araddr   	(mst2_araddr    ),
-//     .mst_arlen    	(mst2_arlen     ),
-//     .mst_arsize   	(mst2_arsize    ),
-//     .mst_arburst  	(mst2_arburst   ),
-//     .mst_arlock   	(mst2_arlock    ),
-//     .mst_arcache  	(mst2_arcache   ),
-//     .mst_arprot   	(mst2_arprot    ),
-//     .mst_arqos    	(mst2_arqos     ),
-//     .mst_arregion 	(mst2_arregion  ),
-//     .mst_arid     	(mst2_arid      ),
-//     .mst_rvalid   	(mst2_rvalid    ),
-//     .mst_rready   	(mst2_rready    ),
-//     .mst_rid      	(mst2_rid       ),
-//     .mst_rresp    	(mst2_rresp     ),
-//     .mst_rdata    	(mst2_rdata     ),
-//     .mst_rlast    	(mst2_rlast     )
-// );
-
-sram_top #(
+sim_sram_dpic #(
     .AXI_ADDR_W 	(64  ),
     .AXI_ID_W   	(8   ),
     .AXI_DATA_W 	(64  ))
@@ -1082,7 +1027,7 @@ initial begin
     if($value$plusargs("image=%s", image))begin
         image_path = image;
     end
-    $readmemh(image_path, u_sim_sram_dpic.u_sram.ram);
+    // $readmemh(image_path, u_sim_sram_dpic.u_sram.ram);
 end
 
 sim_periph_dpic #(
@@ -1236,121 +1181,101 @@ assign tap_state = u_dm_top.u_dtm.jtag_tap_state;
 
 DifftestArchIntRegState u_DifftestArchIntRegState(
     .io_value_0  	(64'h0                                  ),
-    .io_value_1  	(u_core_top.u_wbu.u_gpr.riscv_reg[1]    ),
-    .io_value_2  	(u_core_top.u_wbu.u_gpr.riscv_reg[2]    ),
-    .io_value_3  	(u_core_top.u_wbu.u_gpr.riscv_reg[3]    ),
-    .io_value_4  	(u_core_top.u_wbu.u_gpr.riscv_reg[4]    ),
-    .io_value_5  	(u_core_top.u_wbu.u_gpr.riscv_reg[5]    ),
-    .io_value_6  	(u_core_top.u_wbu.u_gpr.riscv_reg[6]    ),
-    .io_value_7  	(u_core_top.u_wbu.u_gpr.riscv_reg[7]    ),
-    .io_value_8  	(u_core_top.u_wbu.u_gpr.riscv_reg[8]    ),
-    .io_value_9  	(u_core_top.u_wbu.u_gpr.riscv_reg[9]    ),
-    .io_value_10 	(u_core_top.u_wbu.u_gpr.riscv_reg[10]   ),
-    .io_value_11 	(u_core_top.u_wbu.u_gpr.riscv_reg[11]   ),
-    .io_value_12 	(u_core_top.u_wbu.u_gpr.riscv_reg[12]   ),
-    .io_value_13 	(u_core_top.u_wbu.u_gpr.riscv_reg[13]   ),
-    .io_value_14 	(u_core_top.u_wbu.u_gpr.riscv_reg[14]   ),
-    .io_value_15 	(u_core_top.u_wbu.u_gpr.riscv_reg[15]   ),
-    .io_value_16 	(u_core_top.u_wbu.u_gpr.riscv_reg[16]   ),
-    .io_value_17 	(u_core_top.u_wbu.u_gpr.riscv_reg[17]   ),
-    .io_value_18 	(u_core_top.u_wbu.u_gpr.riscv_reg[18]   ),
-    .io_value_19 	(u_core_top.u_wbu.u_gpr.riscv_reg[19]   ),
-    .io_value_20 	(u_core_top.u_wbu.u_gpr.riscv_reg[20]   ),
-    .io_value_21 	(u_core_top.u_wbu.u_gpr.riscv_reg[21]   ),
-    .io_value_22 	(u_core_top.u_wbu.u_gpr.riscv_reg[22]   ),
-    .io_value_23 	(u_core_top.u_wbu.u_gpr.riscv_reg[23]   ),
-    .io_value_24 	(u_core_top.u_wbu.u_gpr.riscv_reg[24]   ),
-    .io_value_25 	(u_core_top.u_wbu.u_gpr.riscv_reg[25]   ),
-    .io_value_26 	(u_core_top.u_wbu.u_gpr.riscv_reg[26]   ),
-    .io_value_27 	(u_core_top.u_wbu.u_gpr.riscv_reg[27]   ),
-    .io_value_28 	(u_core_top.u_wbu.u_gpr.riscv_reg[28]   ),
-    .io_value_29 	(u_core_top.u_wbu.u_gpr.riscv_reg[29]   ),
-    .io_value_30 	(u_core_top.u_wbu.u_gpr.riscv_reg[30]   ),
-    .io_value_31 	(u_core_top.u_wbu.u_gpr.riscv_reg[31]   )
+    .io_value_1  	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[1]    ),
+    .io_value_2  	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[2]    ),
+    .io_value_3  	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[3]    ),
+    .io_value_4  	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[4]    ),
+    .io_value_5  	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[5]    ),
+    .io_value_6  	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[6]    ),
+    .io_value_7  	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[7]    ),
+    .io_value_8  	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[8]    ),
+    .io_value_9  	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[9]    ),
+    .io_value_10 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[10]   ),
+    .io_value_11 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[11]   ),
+    .io_value_12 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[12]   ),
+    .io_value_13 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[13]   ),
+    .io_value_14 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[14]   ),
+    .io_value_15 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[15]   ),
+    .io_value_16 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[16]   ),
+    .io_value_17 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[17]   ),
+    .io_value_18 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[18]   ),
+    .io_value_19 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[19]   ),
+    .io_value_20 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[20]   ),
+    .io_value_21 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[21]   ),
+    .io_value_22 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[22]   ),
+    .io_value_23 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[23]   ),
+    .io_value_24 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[24]   ),
+    .io_value_25 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[25]   ),
+    .io_value_26 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[26]   ),
+    .io_value_27 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[27]   ),
+    .io_value_28 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[28]   ),
+    .io_value_29 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[29]   ),
+    .io_value_30 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[30]   ),
+    .io_value_31 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[31]   )
 );
 
 DifftestCSRState u_DifftestCSRState(
-    .io_privilegeMode 	({{62{1'b0}},u_core_top.u_wbu.u_csr.current_priv_status}),
-    .io_mstatus       	(u_core_top.u_wbu.u_csr.mstatus                         ),
-    .io_sstatus       	(u_core_top.u_wbu.u_csr.sstatus                         ),
-    .io_mepc          	(u_core_top.u_wbu.u_csr.mepc                            ),
-    .io_sepc          	(u_core_top.u_wbu.u_csr.sepc                            ),
-    .io_mtval         	(u_core_top.u_wbu.u_csr.mtval                           ),
-    .io_stval         	(u_core_top.u_wbu.u_csr.stval                           ),
-    .io_mtvec         	(u_core_top.u_wbu.u_csr.mtvec                           ),
-    .io_stvec         	(u_core_top.u_wbu.u_csr.stvec                           ),
-    .io_mcause        	(u_core_top.u_wbu.u_csr.mcause                          ),
-    .io_scause        	(u_core_top.u_wbu.u_csr.scause                          ),
-    .io_satp          	(u_core_top.u_wbu.u_csr.satp                            ),
-    .io_mip           	(u_core_top.u_wbu.u_csr.mip                             ),
-    .io_mie           	(u_core_top.u_wbu.u_csr.mie                             ),
-    .io_mscratch      	(u_core_top.u_wbu.u_csr.mscratch                        ),
-    .io_sscratch      	(u_core_top.u_wbu.u_csr.sscratch                        ),
-    .io_mideleg       	(u_core_top.u_wbu.u_csr.mideleg                         ),
-    .io_medeleg       	(u_core_top.u_wbu.u_csr.medeleg                         )
+    .io_privilegeMode 	({{62{1'b0}},u_core_top_with_i_dcache.u_wbu.u_csr.current_priv_status}),
+    .io_mstatus       	(u_core_top_with_i_dcache.u_wbu.u_csr.mstatus                         ),
+    .io_sstatus       	(u_core_top_with_i_dcache.u_wbu.u_csr.sstatus                         ),
+    .io_mepc          	(u_core_top_with_i_dcache.u_wbu.u_csr.mepc                            ),
+    .io_sepc          	(u_core_top_with_i_dcache.u_wbu.u_csr.sepc                            ),
+    .io_mtval         	(u_core_top_with_i_dcache.u_wbu.u_csr.mtval                           ),
+    .io_stval         	(u_core_top_with_i_dcache.u_wbu.u_csr.stval                           ),
+    .io_mtvec         	(u_core_top_with_i_dcache.u_wbu.u_csr.mtvec                           ),
+    .io_stvec         	(u_core_top_with_i_dcache.u_wbu.u_csr.stvec                           ),
+    .io_mcause        	(u_core_top_with_i_dcache.u_wbu.u_csr.mcause                          ),
+    .io_scause        	(u_core_top_with_i_dcache.u_wbu.u_csr.scause                          ),
+    .io_satp          	(u_core_top_with_i_dcache.u_wbu.u_csr.satp                            ),
+    .io_mip           	(u_core_top_with_i_dcache.u_wbu.u_csr.mip                             ),
+    .io_mie           	(u_core_top_with_i_dcache.u_wbu.u_csr.mie                             ),
+    .io_mscratch      	(u_core_top_with_i_dcache.u_wbu.u_csr.mscratch                        ),
+    .io_sscratch      	(u_core_top_with_i_dcache.u_wbu.u_csr.sscratch                        ),
+    .io_mideleg       	(u_core_top_with_i_dcache.u_wbu.u_csr.mideleg                         ),
+    .io_medeleg       	(u_core_top_with_i_dcache.u_wbu.u_csr.medeleg                         )
 );
 
-
-    // input                   LS_WB_reg_ls_valid,
-    // input  [63:0]           LS_WB_reg_PC,
-    // input  [63:0]           LS_WB_reg_next_PC,
-    // input  [31:0]           LS_WB_reg_inst,
-    // //trap:
-    // input                   LS_WB_reg_trap_valid,
-    // input                   LS_WB_reg_mret_valid,
-    // input                   LS_WB_reg_sret_valid,
-    // input  [63:0]           LS_WB_reg_trap_cause,
-    // input  [63:0]           LS_WB_reg_trap_tval,
-    // //csr
-    // input                   LS_WB_reg_csr_wen,
-    // input                   LS_WB_reg_csr_ren,
-    // input  [11:0]           LS_WB_reg_csr_addr,
-    // //gpr
-    // input  [4:0]            LS_WB_reg_rd,
-    // input                   LS_WB_reg_dest_wen,
-    // input  [63:0]           LS_WB_reg_data
-
 DifftestInstrCommit u_DifftestInstrCommit(
-    .clock      	(clk                                    ),
-    .io_valid   	(u_core_top.u_wbu.LS_WB_reg_ls_valid    ),
-    .io_skip    	(1'b0                                   ),
+    .clock      	(clk                                                  ),
+    .io_valid   	(u_core_top_with_i_dcache.u_wbu.LS_WB_reg_ls_valid    ),
+    .io_skip    	(1'b0                                                 ),
     //todo 暂不支持查询是否压缩指令
-    .io_isRVC   	(1'b0    ),
+    .io_isRVC   	(1'b0                                                 ),
 
-    .io_rfwen   	(u_core_top.u_wbu.LS_WB_reg_dest_wen    ),
-    .io_fpwen   	(1'b0                                   ),
-    .io_vecwen  	(1'b0                                   ),
-    .io_wpdest  	(u_core_top.u_wbu.LS_WB_reg_rd          ),
-    .io_wdest   	({3'h0, u_core_top.u_wbu.LS_WB_reg_rd}  ),
-    .io_pc      	((u_core_top.u_wbu.WB_IF_jump_flag) ? 
-                    u_core_top.u_wbu.WB_IF_jump_addr : 
-                    u_core_top.u_wbu.LS_WB_reg_next_PC     ),
-    .io_instr   	(u_core_top.u_wbu.LS_WB_reg_inst        ),
-    .io_robIdx  	(10'h0                                  ),
-    .io_lqIdx   	(7'h0                                   ),
-    .io_sqIdx   	(7'h0                                   ),
+    .io_rfwen   	(u_core_top_with_i_dcache.u_wbu.LS_WB_reg_dest_wen    ),
+    .io_fpwen   	(1'b0                                                 ),
+    .io_vecwen  	(1'b0                                                 ),
+    .io_wpdest  	(u_core_top_with_i_dcache.u_wbu.LS_WB_reg_rd          ),
+    .io_wdest   	({3'h0, u_core_top_with_i_dcache.u_wbu.LS_WB_reg_rd}  ),
+    .io_pc      	((u_core_top_with_i_dcache.u_wbu.WB_IF_jump_flag) ? 
+                    u_core_top_with_i_dcache.u_wbu.WB_IF_jump_addr : 
+                    u_core_top_with_i_dcache.u_wbu.LS_WB_reg_next_PC     ),
+    .io_instr   	(u_core_top_with_i_dcache.u_wbu.LS_WB_reg_inst        ),
+    .io_robIdx  	(10'h0                                                ),
+    .io_lqIdx   	(7'h0                                                 ),
+    .io_sqIdx   	(7'h0                                                 ),
     //todo 暂不支持查询是否访存指令
-    .io_isLoad  	(1'b0   ),
-    .io_isStore 	(1'b0  ),
+    .io_isLoad  	(1'b0                                                 ),
+    .io_isStore 	(1'b0                                                 ),
 
-    .io_nFused  	(8'h0                                   ),
-    .io_special 	(8'h0                                   ),
-    .io_coreid  	(8'h0                                   ),
-    .io_index   	(8'h0                                   )
+    .io_nFused  	(8'h0                                                 ),
+    .io_special 	(8'h0                                                 ),
+    .io_coreid  	(8'h0                                                 ),
+    .io_index   	(8'h0                                                 )
 );
 
 DifftestTrapEvent u_DifftestTrapEvent(
-    .clock         (clk                                                     ),
-    .enable        (u_core_top.u_wbu.u_csr.u_trap_control.trap_m_interrupt  ),
-    .io_hasTrap    (1'b0                                                    ),
-    .io_cycleCnt   (u_core_top.u_wbu.u_csr.Performance_Monitor[1]           ),
-    .io_instrCnt   (u_core_top.u_wbu.u_csr.Performance_Monitor[2]           ),
-    .io_hasWFI     (1'b0                                                    ),
-    .io_code       (u_core_top.u_wbu.u_csr.u_trap_control.cause             ),
-    .io_pc         (u_core_top.u_wbu.u_csr.u_trap_control.next_pc           ),
-    .io_coreid     (8'h0                                                    )
+    .clock         (clk                                                                    ),
+    .enable        (u_core_top_with_i_dcache.u_wbu.u_csr.u_trap_control.trap_m_interrupt |
+                    u_core_top_with_i_dcache.u_wbu.u_csr.u_trap_control.trap_s_interrupt          ),
+    .io_hasTrap    (1'b0                                                                   ),
+    .io_cycleCnt   (u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[1]            ),
+    .io_instrCnt   (u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[2]            ),
+    .io_hasWFI     (1'b0                                                                   ),
+    .io_code       (u_core_top_with_i_dcache.u_wbu.u_csr.u_trap_control.cause              ),
+    .io_pc         (u_core_top_with_i_dcache.u_wbu.u_csr.u_trap_control.next_pc            ),
+    .io_coreid     (8'h0                                                                   )
 );
 
 
-
-endmodule //core_debugger_top
+endmodule //core_debugger_top_with_idcache
