@@ -4,7 +4,7 @@ module clint_axi#(
     // ID width in bits
     parameter AXI_ID_W = 8,
     // Data width in bits
-    parameter AXI_DATA_W = 64,
+    parameter AXI_DATA_W = 32,
 
     parameter HART_NUM = 1
 )(
@@ -55,11 +55,13 @@ module clint_axi#(
     output                          mst_rlast
 );
 
-wire                        mtime_wen;
-wire [HART_NUM - 1:0]       mtimecmp_wen;
+wire                        mtime_l_wen;
+wire                        mtime_h_wen;
+wire [HART_NUM - 1:0]       mtimecmp_l_wen;
+wire [HART_NUM - 1:0]       mtimecmp_h_wen;
 wire [HART_NUM - 1:0]       msip_wen;
 
-wire [63:0]                 reg_wdata;
+wire [31:0]                 reg_wdata;
 wire [63:0]                 mtime;
 wire [64 * HART_NUM -1:0]   mtimecmp;
 
@@ -69,69 +71,73 @@ clint_axi2reg #(
 	.AXI_DATA_W 	( AXI_DATA_W  ),
 	.HART_NUM   	( HART_NUM    ))
 u_clint_axi2reg(
-	.clk          	( clk           ),
-	.rst_n        	( rst_n         ),
-	.mtime_wen    	( mtime_wen     ),
-	.mtimecmp_wen 	( mtimecmp_wen  ),
-	.msip_wen     	( msip_wen      ),
-	.reg_wdata    	( reg_wdata     ),
-	.mtime        	( mtime         ),
-	.mtimecmp     	( mtimecmp      ),
-	.msip         	( msip          ),
-	.mst_awvalid  	( mst_awvalid   ),
-	.mst_awready  	( mst_awready   ),
-	.mst_awaddr   	( mst_awaddr    ),
-	.mst_awlen    	( mst_awlen     ),
-	.mst_awsize   	( mst_awsize    ),
-	.mst_awburst  	( mst_awburst   ),
-	.mst_awlock   	( mst_awlock    ),
-	.mst_awcache  	( mst_awcache   ),
-	.mst_awprot   	( mst_awprot    ),
-	.mst_awqos    	( mst_awqos     ),
-	.mst_awregion 	( mst_awregion  ),
-	.mst_awid     	( mst_awid      ),
-	.mst_wvalid   	( mst_wvalid    ),
-	.mst_wready   	( mst_wready    ),
-	.mst_wlast    	( mst_wlast     ),
-	.mst_wdata    	( mst_wdata     ),
-	.mst_wstrb    	( mst_wstrb     ),
-	.mst_bvalid   	( mst_bvalid    ),
-	.mst_bready   	( mst_bready    ),
-	.mst_bid      	( mst_bid       ),
-	.mst_bresp    	( mst_bresp     ),
-	.mst_arvalid  	( mst_arvalid   ),
-	.mst_arready  	( mst_arready   ),
-	.mst_araddr   	( mst_araddr    ),
-	.mst_arlen    	( mst_arlen     ),
-	.mst_arsize   	( mst_arsize    ),
-	.mst_arburst  	( mst_arburst   ),
-	.mst_arlock   	( mst_arlock    ),
-	.mst_arcache  	( mst_arcache   ),
-	.mst_arprot   	( mst_arprot    ),
-	.mst_arqos    	( mst_arqos     ),
-	.mst_arregion 	( mst_arregion  ),
-	.mst_arid     	( mst_arid      ),
-	.mst_rvalid   	( mst_rvalid    ),
-	.mst_rready   	( mst_rready    ),
-	.mst_rid      	( mst_rid       ),
-	.mst_rresp    	( mst_rresp     ),
-	.mst_rdata    	( mst_rdata     ),
-	.mst_rlast    	( mst_rlast     )
+	.clk          	( clk               ),
+	.rst_n        	( rst_n             ),
+	.mtime_l_wen    ( mtime_l_wen       ),
+	.mtime_h_wen    ( mtime_h_wen       ),
+	.mtimecmp_l_wen ( mtimecmp_l_wen    ),
+	.mtimecmp_h_wen ( mtimecmp_h_wen    ),
+	.msip_wen     	( msip_wen          ),
+	.reg_wdata    	( reg_wdata         ),
+	.mtime        	( mtime             ),
+	.mtimecmp     	( mtimecmp          ),
+	.msip         	( msip              ),
+	.mst_awvalid  	( mst_awvalid       ),
+	.mst_awready  	( mst_awready       ),
+	.mst_awaddr   	( mst_awaddr        ),
+	.mst_awlen    	( mst_awlen         ),
+	.mst_awsize   	( mst_awsize        ),
+	.mst_awburst  	( mst_awburst       ),
+	.mst_awlock   	( mst_awlock        ),
+	.mst_awcache  	( mst_awcache       ),
+	.mst_awprot   	( mst_awprot        ),
+	.mst_awqos    	( mst_awqos         ),
+	.mst_awregion 	( mst_awregion      ),
+	.mst_awid     	( mst_awid          ),
+	.mst_wvalid   	( mst_wvalid        ),
+	.mst_wready   	( mst_wready        ),
+	.mst_wlast    	( mst_wlast         ),
+	.mst_wdata    	( mst_wdata         ),
+	.mst_wstrb    	( mst_wstrb         ),
+	.mst_bvalid   	( mst_bvalid        ),
+	.mst_bready   	( mst_bready        ),
+	.mst_bid      	( mst_bid           ),
+	.mst_bresp    	( mst_bresp         ),
+	.mst_arvalid  	( mst_arvalid       ),
+	.mst_arready  	( mst_arready       ),
+	.mst_araddr   	( mst_araddr        ),
+	.mst_arlen    	( mst_arlen         ),
+	.mst_arsize   	( mst_arsize        ),
+	.mst_arburst  	( mst_arburst       ),
+	.mst_arlock   	( mst_arlock        ),
+	.mst_arcache  	( mst_arcache       ),
+	.mst_arprot   	( mst_arprot        ),
+	.mst_arqos    	( mst_arqos         ),
+	.mst_arregion 	( mst_arregion      ),
+	.mst_arid     	( mst_arid          ),
+	.mst_rvalid   	( mst_rvalid        ),
+	.mst_rready   	( mst_rready        ),
+	.mst_rid      	( mst_rid           ),
+	.mst_rresp    	( mst_rresp         ),
+	.mst_rdata    	( mst_rdata         ),
+	.mst_rlast    	( mst_rlast         )
 );
 
 clint_core #(
     .HART_NUM 	(HART_NUM  ))
 u_clint_core(
-    .clk          	(clk           ),
-    .rst_n        	(rst_n         ),
-    .mtime_wen    	(mtime_wen     ),
-    .mtimecmp_wen 	(mtimecmp_wen  ),
-    .msip_wen     	(msip_wen      ),
-    .reg_wdata    	(reg_wdata     ),
-    .mtime        	(mtime         ),
-    .mtimecmp     	(mtimecmp      ),
-    .mtip         	(mtip          ),
-    .msip         	(msip          )
+    .clk          	(clk            ),
+    .rst_n        	(rst_n          ),
+	.mtime_l_wen    (mtime_l_wen    ),
+	.mtime_h_wen    (mtime_h_wen    ),
+	.mtimecmp_l_wen (mtimecmp_l_wen ),
+	.mtimecmp_h_wen (mtimecmp_h_wen ),
+    .msip_wen     	(msip_wen       ),
+    .reg_wdata    	(reg_wdata      ),
+    .mtime        	(mtime          ),
+    .mtimecmp     	(mtimecmp       ),
+    .mtip         	(mtip           ),
+    .msip         	(msip           )
 );
 
 

@@ -4,18 +4,20 @@ module clint_axi2reg#(
     // ID width in bits
     parameter AXI_ID_W = 8,
     // Data width in bits
-    parameter AXI_DATA_W = 64,
+    parameter AXI_DATA_W = 32,
 
     parameter HART_NUM = 1
 )(
     input                           clk,
     input                           rst_n,
 
-    output                          mtime_wen,
-    output [HART_NUM - 1:0]         mtimecmp_wen,
+    output                          mtime_l_wen,
+    output                          mtime_h_wen,
+    output [HART_NUM - 1:0]         mtimecmp_l_wen,
+    output [HART_NUM - 1:0]         mtimecmp_h_wen,
     output [HART_NUM - 1:0]         msip_wen,
 
-    output [63:0]                   reg_wdata,
+    output [31:0]                   reg_wdata,
 
     input  [63:0]                   mtime,
     input  [64 * HART_NUM -1:0]     mtimecmp,
@@ -75,7 +77,7 @@ initial begin
         $finish;
     end
 
-    if (AXI_DATA_W != 64) begin
+    if (AXI_DATA_W != 32) begin
         $error("Error: Interface data width must be 32");
         $finish;
     end
@@ -100,11 +102,15 @@ reg                       mst_rlast_reg;
 wire [AXI_DATA_W    -1:0] mst_wmask;
 
 wire [63:0]               clint_mtimecmp[0:HART_NUM -1];
+wire [31:0]               clint_mtimecmp_l[0:HART_NUM -1];
+wire [31:0]               clint_mtimecmp_h[0:HART_NUM -1];
 
 wire [15:0]               mst_addr_use;
 wire [HART_NUM - 1:0]     clint_sel_msip;
-wire                      clint_sel_mtime;
-wire [HART_NUM - 1:0]     clint_sel_mtimecmp;
+wire                      clint_sel_mtime_l;
+wire                      clint_sel_mtime_h;
+wire [HART_NUM - 1:0]     clint_sel_mtimecmp_l;
+wire [HART_NUM - 1:0]     clint_sel_mtimecmp_h;
 wire                      clint_success_access;
 
 genvar mask_index;
@@ -113,26 +119,41 @@ generate for(mask_index = 0 ; mask_index < (AXI_DATA_W/8); mask_index = mask_ind
 end
 endgenerate
 
-assign clint_sel_mtime            = (mst_addr_use == 16'hBFF8);
-assign mtime_wen                  = ((mst_awaddr_reg == 16'hBFF8) & (axi_state == AXI_WRITE) & mst_wvalid & mst_wready);
+assign clint_sel_mtime_l          = (mst_addr_use == 16'hBFF8);
+assign clint_sel_mtime_h          = (mst_addr_use == 16'hBFFC);
+assign mtime_l_wen                = ((mst_awaddr_reg == 16'hBFF8) & (axi_state == AXI_WRITE) & mst_wvalid & mst_wready);
+assign mtime_h_wen                = ((mst_awaddr_reg == 16'hBFFC) & (axi_state == AXI_WRITE) & mst_wvalid & mst_wready);
 
 genvar reg_sel_index;
 generate for(reg_sel_index = 0 ; reg_sel_index < HART_NUM; reg_sel_index = reg_sel_index + 1) begin : reg_sel_gen
-    assign clint_sel_msip[reg_sel_index]     = (mst_addr_use == (reg_sel_index * 16'h4));
-    assign clint_sel_mtimecmp[reg_sel_index] = (mst_addr_use == (reg_sel_index * 16'h8 + 16'h4000));
+    assign clint_sel_msip[reg_sel_index]        = (mst_addr_use == (reg_sel_index * 16'h4));
+    assign clint_sel_mtimecmp_l[reg_sel_index]  = (mst_addr_use == (reg_sel_index * 16'h8 + 16'h4000));
+    assign clint_sel_mtimecmp_h[reg_sel_index]  = (mst_addr_use == (reg_sel_index * 16'h8 + 16'h4004));
 
-    assign msip_wen[reg_sel_index]           = ((mst_awaddr_reg == (reg_sel_index * 16'h4))            & (axi_state == AXI_WRITE) & mst_wvalid & mst_wready);
-    assign mtimecmp_wen[reg_sel_index]       = ((mst_awaddr_reg == (reg_sel_index * 16'h8 + 16'h4000)) & (axi_state == AXI_WRITE) & mst_wvalid & mst_wready);
+    assign msip_wen[reg_sel_index]              = ((mst_awaddr_reg == (reg_sel_index * 16'h4))            & (axi_state == AXI_WRITE) & mst_wvalid & mst_wready);
+    assign mtimecmp_l_wen[reg_sel_index]        = ((mst_awaddr_reg == (reg_sel_index * 16'h8 + 16'h4000)) & (axi_state == AXI_WRITE) & mst_wvalid & mst_wready);
+    assign mtimecmp_h_wen[reg_sel_index]        = ((mst_awaddr_reg == (reg_sel_index * 16'h8 + 16'h4004)) & (axi_state == AXI_WRITE) & mst_wvalid & mst_wready);
 
-    assign clint_mtimecmp[reg_sel_index]     = mtimecmp[reg_sel_index * 64 + 63 : reg_sel_index * 64];
+    assign clint_mtimecmp[reg_sel_index]        = mtimecmp[reg_sel_index * 64 + 63 : reg_sel_index * 64];
+    assign clint_mtimecmp_l[reg_sel_index]      = clint_mtimecmp[reg_sel_index][31:0];
+    assign clint_mtimecmp_h[reg_sel_index]      = clint_mtimecmp[reg_sel_index][63:32];
 end
 endgenerate
 
 
 assign mst_addr_use            = mst_awvalid ? mst_awaddr[15:0] : mst_araddr[15:0];
-assign clint_success_access    = clint_sel_mtime | (|clint_sel_msip) | (|clint_sel_mtimecmp);
+assign clint_success_access    = clint_sel_mtime_l | clint_sel_mtime_h | (|clint_sel_msip) | (|clint_sel_mtimecmp_l) | (|clint_sel_mtimecmp_h);
 
-assign mst_rdata_sel           = reg_data_sel(clint_sel_mtime, clint_sel_msip, clint_sel_mtimecmp, mtime, msip, clint_mtimecmp);
+assign mst_rdata_sel           = reg_data_sel(clint_sel_mtime_l,
+                                                clint_sel_mtime_h, 
+                                                clint_sel_msip, 
+                                                clint_sel_mtimecmp_l, 
+                                                clint_sel_mtimecmp_h, 
+                                                mtime[31:0], 
+                                                mtime[63:32], 
+                                                msip, 
+                                                clint_mtimecmp_l, 
+                                                clint_mtimecmp_h);
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
@@ -231,7 +252,18 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
-assign reg_wdata       = reg_wdata_sel(mtime_wen, msip_wen, mtimecmp_wen, mst_wdata, mst_wmask, mtime, msip, clint_mtimecmp);
+assign reg_wdata       = reg_wdata_sel(mtime_l_wen, 
+                                        mtime_h_wen, 
+                                        msip_wen, 
+                                        mtimecmp_l_wen, 
+                                        mtimecmp_h_wen, 
+                                        mst_wdata, 
+                                        mst_wmask, 
+                                        mtime[31:0], 
+                                        mtime[63:32], 
+                                        msip, 
+                                        clint_mtimecmp_l, 
+                                        clint_mtimecmp_h);
 
 assign mst_awready  = (axi_state == AXI_IDLE);
 assign mst_wready   = mst_wready_reg;
@@ -246,67 +278,77 @@ assign mst_rdata    = mst_rdata_reg;
 assign mst_rlast    = mst_rlast_reg;
 //**********************************************************************************************
 //?function
-function [63:0] reg_data_sel;
-    input                   mtime_sel;
+function [31:0] reg_data_sel;
+    input                   mtime_sel_l;
+    input                   mtime_sel_h;
     input [HART_NUM-1:0]    msip_sel;
-    input [HART_NUM-1:0]    mtimecmp_sel;
-    input [63:0]            mtime_get;
+    input [HART_NUM-1:0]    mtimecmp_sel_l;
+    input [HART_NUM-1:0]    mtimecmp_sel_h;
+    input [31:0]            mtime_get_l;
+    input [31:0]            mtime_get_h;
     input [HART_NUM-1:0]    msip_get;
-    input [63:0]            mtimecmp_get[0:HART_NUM-1];
+    input [31:0]            mtimecmp_get_l[0:HART_NUM-1];
+    input [31:0]            mtimecmp_get_h[0:HART_NUM-1];
     integer msip_index;
     integer mtimecmp_index;
     begin
-        reg_data_sel = 64'h0;
-        if(mtime_sel == 1'b1)begin
-            reg_data_sel = reg_data_sel | mtime_get;
+        reg_data_sel = 32'h0;
+        if(mtime_sel_l == 1'b1)begin
+            reg_data_sel = reg_data_sel | mtime_get_l;
+        end
+        if(mtime_sel_h == 1'b1)begin
+            reg_data_sel = reg_data_sel | mtime_get_h;
         end
         for (msip_index = 0; msip_index < HART_NUM; msip_index = msip_index + 1) begin
             if(msip_sel[msip_index] == 1'b1)begin
-                if(msip_index % 2 == 0)begin
-                    reg_data_sel = reg_data_sel | {63'h0, msip_get[msip_index]};
-                end
-                else begin
-                    reg_data_sel = reg_data_sel | {31'h0, msip_get[msip_index], 32'h0};
-                end
+                reg_data_sel = reg_data_sel | {31'h0, msip_get[msip_index]};
             end
         end
         for (mtimecmp_index = 0; mtimecmp_index < HART_NUM; mtimecmp_index = mtimecmp_index + 1) begin
-            if(mtimecmp_sel[mtimecmp_index] == 1'b1)begin
-                reg_data_sel = reg_data_sel | mtimecmp_get[mtimecmp_index];
+            if(mtimecmp_sel_l[mtimecmp_index] == 1'b1)begin
+                reg_data_sel = reg_data_sel | mtimecmp_get_l[mtimecmp_index];
+            end
+            if(mtimecmp_sel_h[mtimecmp_index] == 1'b1)begin
+                reg_data_sel = reg_data_sel | mtimecmp_get_h[mtimecmp_index];
             end
         end
     end
 endfunction
 
-function [63:0] reg_wdata_sel;
-    input                   mtime_sel;
+function [31:0] reg_wdata_sel;
+    input                   mtime_sel_l;
+    input                   mtime_sel_h;
     input [HART_NUM-1:0]    msip_sel;
-    input [HART_NUM-1:0]    mtimecmp_sel;
-    input [63:0]            axi_wdata;
-    input [63:0]            wmask;
-    input [63:0]            mtime_get;
+    input [HART_NUM-1:0]    mtimecmp_sel_l;
+    input [HART_NUM-1:0]    mtimecmp_sel_h;
+    input [31:0]            axi_wdata;
+    input [31:0]            wmask;
+    input [31:0]            mtime_get_l;
+    input [31:0]            mtime_get_h;
     input [HART_NUM-1:0]    msip_get;
-    input [63:0]            mtimecmp_get[0:HART_NUM-1];
+    input [31:0]            mtimecmp_get_l[0:HART_NUM-1];
+    input [31:0]            mtimecmp_get_h[0:HART_NUM-1];
     integer msip_index;
     integer mtimecmp_index;
     begin
-        reg_wdata_sel = 64'h0;
-        if(mtime_sel == 1'b1)begin
-            reg_wdata_sel = reg_wdata_sel | ((mtime_get & (~wmask)) | (axi_wdata & wmask));
+        reg_wdata_sel = 32'h0;
+        if(mtime_sel_l == 1'b1)begin
+            reg_wdata_sel = reg_wdata_sel | ((mtime_get_l & (~wmask)) | (axi_wdata & wmask));
+        end
+        if(mtime_sel_h == 1'b1)begin
+            reg_wdata_sel = reg_wdata_sel | ((mtime_get_h & (~wmask)) | (axi_wdata & wmask));
         end
         for (msip_index = 0; msip_index < HART_NUM; msip_index = msip_index + 1) begin
             if(msip_sel[msip_index] == 1'b1)begin
-                if(msip_index % 2 == 0)begin
-                    reg_wdata_sel = reg_wdata_sel | (({63'h0, msip_get[msip_index]} & (~wmask)) | (axi_wdata & wmask));
-                end
-                else begin
-                    reg_wdata_sel = reg_wdata_sel | (({31'h0, msip_get[msip_index], 32'h0} & (~wmask)) | (axi_wdata & wmask));
-                end
+                reg_wdata_sel = reg_wdata_sel | (({31'h0, msip_get[msip_index]} & (~wmask)) | (axi_wdata & wmask));
             end
         end
         for (mtimecmp_index = 0; mtimecmp_index < HART_NUM; mtimecmp_index = mtimecmp_index + 1) begin
-            if(mtimecmp_sel[mtimecmp_index] == 1'b1)begin
-                reg_wdata_sel = reg_wdata_sel | ((mtimecmp_get[mtimecmp_index] & (~wmask)) | (axi_wdata & wmask));
+            if(mtimecmp_sel_l[mtimecmp_index] == 1'b1)begin
+                reg_wdata_sel = reg_wdata_sel | ((mtimecmp_get_l[mtimecmp_index] & (~wmask)) | (axi_wdata & wmask));
+            end
+            if(mtimecmp_sel_h[mtimecmp_index] == 1'b1)begin
+                reg_wdata_sel = reg_wdata_sel | ((mtimecmp_get_h[mtimecmp_index] & (~wmask)) | (axi_wdata & wmask));
             end
         end
     end
