@@ -313,7 +313,6 @@ wire        	WB_LS_flush_flag;
 
 // output declaration of module icache
 wire        flush_i_ready_i;
-wire        sflush_vma_ready_i;
 wire        ifu_arready;
 wire        ifu_rvalid;
 wire [1:0]  ifu_rresp;
@@ -324,7 +323,6 @@ wire        pte_ready_i;
 
 // output declaration of module dcache
 wire        flush_i_ready_d;
-wire        sflush_vma_ready_d;
 wire        lsu_arready;
 wire        lsu_rvalid;
 wire [1:0]  lsu_rresp;
@@ -342,7 +340,6 @@ wire [1:0]  mmu_rresp;
 wire [63:0] mmu_rdata;
 
 // output declaration of module l2tlb
-wire            sflush_vma_ready;
 wire            mmu_arvalid;
 wire [63:0]     mmu_araddr;
 wire            mmu_rready;
@@ -786,7 +783,6 @@ u_icache(
     .flush_i_valid       	(flush_i_valid                  ),
     .flush_i_ready       	(flush_i_ready_i                ),
     .sflush_vma_valid    	(sflush_vma_valid               ),
-    .sflush_vma_ready    	(sflush_vma_ready_i             ),
     .ifu_arready         	(ifu_arready                    ),
     .ifu_arvalid         	(ifu_arvalid                    ),
     .ifu_araddr          	(ifu_araddr                     ),
@@ -839,7 +835,6 @@ u_dcache(
     .flush_i_valid       	(flush_i_valid        ),
     .flush_i_ready       	(flush_i_ready_d      ),
     .sflush_vma_valid    	(sflush_vma_valid     ),
-    .sflush_vma_ready    	(sflush_vma_ready_d   ),
     .lsu_arready         	(lsu_arready          ),
     .lsu_arvalid         	(lsu_arvalid          ),
     .lsu_arlock          	(lsu_arlock           ),
@@ -918,7 +913,6 @@ u_l2tlb(
     .satp_ppn         	(satp_ppn          ),
     .flush_flag         (LS_EX_flush_flag  ),
     .sflush_vma_valid 	(sflush_vma_valid  ),
-    .sflush_vma_ready 	(sflush_vma_ready  ),
     .mmu_arready      	(mmu_arready       ),
     .mmu_arvalid      	(mmu_arvalid       ),
     .mmu_araddr       	(mmu_araddr        ),

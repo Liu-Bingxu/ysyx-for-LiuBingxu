@@ -29,7 +29,6 @@ module dcache#(
     input                           flush_i_valid,
     output                          flush_i_ready,
     input                           sflush_vma_valid,
-    output                          sflush_vma_ready,
 //interface with lsu
     //read addr channel
     output                          lsu_arready,
@@ -1333,7 +1332,6 @@ dmmu u_dmmu(
     .satp_asid           	(satp_asid            ),
     .flush_flag          	(flush_flag           ),
     .sflush_vma_valid    	(sflush_vma_valid     ),
-    .sflush_vma_ready    	(sflush_vma_ready     ),
     .dmmu_miss_valid     	(dmmu_miss_valid      ),
     .dmmu_miss_ready     	(dmmu_miss_ready      ),
     .vaddr_d             	(vaddr_d              ),

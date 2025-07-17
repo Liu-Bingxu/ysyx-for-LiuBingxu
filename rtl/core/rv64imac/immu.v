@@ -9,7 +9,6 @@ module immu(
 //all flush flag 
     input                   flush_flag,
     input                   sflush_vma_valid,
-    output                  sflush_vma_ready,
 //interface with l2tlb
     output                  immu_miss_valid,
     input                   immu_miss_ready,
@@ -274,7 +273,6 @@ FF_D_without_asyn_rst #(1)    u_pte_error      (clk,pte_valid & pte_ready_i,pte_
 assign page_wen         = (stage_status == WAIT_RESP) & (pte_valid) & (pte_ready_i);
 //**********************************************************************************************
 //?output
-assign sflush_vma_ready = 1'b1;
 assign immu_miss_valid  = immu_miss_valid_reg;
 assign vaddr_i          = vaddr;
 assign pte_ready_i      = 1'b1;

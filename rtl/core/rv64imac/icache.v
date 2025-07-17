@@ -24,7 +24,6 @@ module icache#(
     input                           flush_i_valid,
     output                          flush_i_ready,
     input                           sflush_vma_valid,
-    output                          sflush_vma_ready,
 //interface with ifu
     //read addr channel
     output                          ifu_arready,
@@ -492,7 +491,6 @@ immu u_immu(
     .satp_asid           	(satp_asid            ),
     .flush_flag          	(flush_flag           ),
     .sflush_vma_valid    	(sflush_vma_valid     ),
-    .sflush_vma_ready    	(sflush_vma_ready     ),
     .immu_miss_valid     	(immu_miss_valid      ),
     .immu_miss_ready     	(immu_miss_ready      ),
     .vaddr_i             	(vaddr_i              ),

@@ -8,7 +8,6 @@ module l2tlb#(parameter MMU_WAY = 2, MMU_GROUP = 1)(
 //all flush flag 
     input                   flush_flag,
     input                   sflush_vma_valid,
-    output                  sflush_vma_ready,
 //interface with dcache
     //read addr channel
     input                   mmu_arready,
@@ -456,7 +455,6 @@ assign mmu_rdata_page_V        = mmu_rdata[0];
 assign mmu_araddr_wire         = {8'h0, mmu_araddr_ppn, mmu_araddr_offset, 3'h0};
 //**********************************************************************************************
 //?output
-assign sflush_vma_ready = 1'b1;
 assign mmu_arvalid      = mmu_arvalid_reg;
 assign mmu_araddr       = mmu_araddr_wire;
 assign mmu_rready       = 1'b1;

@@ -13,7 +13,6 @@ module dmmu (
 //all flush flag 
     input                   flush_flag,
     input                   sflush_vma_valid,
-    output                  sflush_vma_ready,
 //interface with l2tlb
     output                  dmmu_miss_valid,
     input                   dmmu_miss_ready,
@@ -243,7 +242,6 @@ FF_D_without_asyn_rst #(1)    u_pte_error      (clk,pte_valid & pte_ready_d,pte_
 assign page_wen         = (stage_status == WAIT_RESP) & (pte_valid) & (pte_ready_d);
 //**********************************************************************************************
 //?output
-assign sflush_vma_ready = 1'b1;
 assign dmmu_miss_valid  = dmmu_miss_valid_reg;
 assign vaddr_d          = vaddr[63:0];
 assign pte_ready_d      = 1'b1;
