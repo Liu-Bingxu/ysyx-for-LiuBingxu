@@ -37,6 +37,7 @@ module exu (
     input                   ID_EX_reg_dest_wen,
     //sflush sign:
     input                   ID_EX_reg_sflush_valid,
+    input                   ID_EX_reg_fence_i_valid,
     //control_sign:
     input                   ID_EX_reg_sub,
     input                   ID_EX_reg_word,
@@ -131,6 +132,7 @@ module exu (
     output                  EX_LS_reg_dest_wen,
     //sflush sign:
     output                  EX_LS_reg_sflush_valid,
+    output                  EX_LS_reg_fence_i_valid,
     //load_sign:
     output                  EX_LS_reg_load_valid,
     output                  EX_LS_reg_load_signed,
@@ -280,7 +282,7 @@ end
 alu u_alu(
     .clk                     	( clk                      ),
     .rst_n                   	( rst_n                    ),
-    .flush_flag              	( LS_EX_flush_flag         ),
+    .flush_flag              	( EX_ID_flush_flag         ),
     .ready_flag              	( EX_ID_decode_ready       ),
     .Data_Conflict              ( Data_Conflict            ),
     .ID_EX_reg_decode_valid  	( ID_EX_reg_decode_valid   ),
@@ -337,7 +339,7 @@ always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
         jump_cnt <= 1'b0;
     end
-    else if(LS_EX_flush_flag)begin
+    else if(EX_ID_flush_flag)begin
         jump_cnt <= 1'b0;
     end
     else if(ID_EX_reg_decode_valid & EX_ID_decode_ready)begin
@@ -352,7 +354,7 @@ always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
         src1_valid <= 1'b0;
     end
-    else if(LS_EX_flush_flag)begin
+    else if(EX_ID_flush_flag)begin
         src1_valid <= 1'b0;
     end
     else if(ID_EX_reg_decode_valid & EX_ID_decode_ready)begin
@@ -372,7 +374,7 @@ always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
         src2_valid <= 1'b0;
     end
-    else if(LS_EX_flush_flag)begin
+    else if(EX_ID_flush_flag)begin
         src2_valid <= 1'b0;
     end
     else if(ID_EX_reg_decode_valid & EX_ID_decode_ready)begin
@@ -390,7 +392,7 @@ end
 //**********************************************************************
 assign EX_ID_decode_ready = (ID_EX_reg_decode_valid & ((!EX_LS_reg_execute_valid) | LS_EX_execute_ready) & (!WB_EX_interrupt_flag) &
                             ((!(((ID_EX_reg_mul_valid | ID_EX_reg_div_valid) & (!o_valid)) | Data_Conflict)) | ID_EX_reg_trap_valid));
-assign EX_ID_flush_flag   = (LS_EX_flush_flag | (EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid | EX_LS_reg_dret_valid)));
+assign EX_ID_flush_flag   = (LS_EX_flush_flag | (EX_LS_reg_execute_valid & (EX_LS_reg_trap_valid | EX_LS_reg_mret_valid | EX_LS_reg_sret_valid | EX_LS_reg_dret_valid | EX_LS_reg_fence_i_valid)));
 assign EX_IF_jump_flag    = (ID_EX_reg_decode_valid & (ID_EX_reg_jump_valid | (ID_EX_reg_branch_valid & branch_flag)) & (!jump_cnt) & (!Data_Conflict));
 assign EX_IF_jump_addr    = {jump_addr[63:1], 1'b0};
 
@@ -414,6 +416,7 @@ FF_D_without_asyn_rst #(64) u_PC            (clk,EX_ID_decode_ready,ID_EX_reg_PC
 FF_D_without_asyn_rst #(64) u_next_PC       (clk,EX_ID_decode_ready,next_PC,            EX_LS_reg_next_PC);
 //sflush_sign:
 FF_D_without_asyn_rst #(1)  u_sflush_valid  (clk,EX_ID_decode_ready,ID_EX_reg_sflush_valid,EX_LS_reg_sflush_valid);
+FF_D_without_asyn_rst #(1)  u_fence_i_valid (clk,EX_ID_decode_ready,ID_EX_reg_fence_i_valid,EX_LS_reg_fence_i_valid);
 //load_sign:
 FF_D_without_asyn_rst #(1)  u_load_valid    (clk,EX_ID_decode_ready,ID_EX_reg_load_valid,   EX_LS_reg_load_valid);
 FF_D_without_asyn_rst #(1)  u_load_signed   (clk,EX_ID_decode_ready,ID_EX_reg_load_signed,  EX_LS_reg_load_signed);

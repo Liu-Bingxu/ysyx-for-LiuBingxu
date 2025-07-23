@@ -52,6 +52,7 @@ module idu(
     //TODO add asid & vaddr
     //sflush sign:
     output                  ID_EX_reg_sflush_valid,
+    output                  ID_EX_reg_fence_i_valid,
     //control_sign:
     output                  ID_EX_reg_sub,
     output                  ID_EX_reg_word,
@@ -794,6 +795,7 @@ FF_D_without_asyn_rst #(64) u_PC            (clk,ID_IF_inst_ready,IF_ID_reg_PC,I
 FF_D_without_asyn_rst #(64) u_next_PC       (clk,ID_IF_inst_ready,next_PC,ID_EX_reg_next_PC);
 //sflush_sign:
 FF_D_without_asyn_rst #(1)  u_sflush_valid  (clk,ID_IF_inst_ready,sfence_vma,ID_EX_reg_sflush_valid);
+FF_D_without_asyn_rst #(1)  u_fence_i_valid (clk,ID_IF_inst_ready,fence_i,ID_EX_reg_fence_i_valid);
 //control_sign:
 FF_D_without_asyn_rst #(1)  u_sub           (clk,ID_IF_inst_ready,alu_sub,ID_EX_reg_sub);
 FF_D_without_asyn_rst #(1)  u_word          (clk,ID_IF_inst_ready,word,ID_EX_reg_word);

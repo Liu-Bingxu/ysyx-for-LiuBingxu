@@ -107,8 +107,11 @@ wire            jump_flag;
 wire [63:0]     jump_addr;
 wire            pte_ready;
 
-wire            flush_i_valid = 1'b0;
+wire            flush_i_valid;
 wire            sflush_vma_valid;
+
+wire            flush_i_flag;
+wire            d_mmu_flush_valid;
 
 // ifu outports wire
 wire            ifu_arvalid;
@@ -133,6 +136,7 @@ wire [31:0] 	ID_EX_reg_inst;
 wire [4:0]  	ID_EX_reg_rd;
 wire        	ID_EX_reg_dest_wen;
 wire            ID_EX_reg_sflush_valid;
+wire            ID_EX_reg_fence_i_valid;
 wire        	ID_EX_reg_sub;
 wire        	ID_EX_reg_word;
 wire        	ID_EX_reg_logic_valid;
@@ -216,6 +220,7 @@ wire [31:0] 	EX_LS_reg_inst;
 wire [4:0]  	EX_LS_reg_rd;
 wire        	EX_LS_reg_dest_wen;
 wire            EX_LS_reg_sflush_valid;
+wire            EX_LS_reg_fence_i_valid;
 wire        	EX_LS_reg_load_valid;
 wire        	EX_LS_reg_load_signed;
 wire        	EX_LS_reg_load_byte;
@@ -312,7 +317,6 @@ wire        	WB_LS_ls_ready;
 wire        	WB_LS_flush_flag;
 
 // output declaration of module icache
-wire        flush_i_ready_i;
 wire        ifu_arready;
 wire        ifu_rvalid;
 wire [1:0]  ifu_rresp;
@@ -322,7 +326,7 @@ wire [63:0] vaddr_i;
 wire        pte_ready_i;
 
 // output declaration of module dcache
-wire        flush_i_ready_d;
+wire        flush_i_ready;
 wire        lsu_arready;
 wire        lsu_rvalid;
 wire [1:0]  lsu_rresp;
@@ -400,6 +404,7 @@ idu u_idu(
     .ID_EX_reg_rd                 	( ID_EX_reg_rd                  ),
     .ID_EX_reg_dest_wen           	( ID_EX_reg_dest_wen            ),
     .ID_EX_reg_sflush_valid         ( ID_EX_reg_sflush_valid        ),
+    .ID_EX_reg_fence_i_valid        ( ID_EX_reg_fence_i_valid       ),
     .ID_EX_reg_sub                	( ID_EX_reg_sub                 ),
     .ID_EX_reg_word               	( ID_EX_reg_word                ),
     .ID_EX_reg_logic_valid        	( ID_EX_reg_logic_valid         ),
@@ -496,6 +501,7 @@ exu u_exu(
     .ID_EX_reg_rd            	( ID_EX_reg_rd             ),
     .ID_EX_reg_dest_wen      	( ID_EX_reg_dest_wen       ),
     .ID_EX_reg_sflush_valid     ( ID_EX_reg_sflush_valid   ),
+    .ID_EX_reg_fence_i_valid    ( ID_EX_reg_fence_i_valid  ),
     .ID_EX_reg_sub           	( ID_EX_reg_sub            ),
     .ID_EX_reg_word          	( ID_EX_reg_word           ),
     .ID_EX_reg_logic_valid   	( ID_EX_reg_logic_valid    ),
@@ -574,6 +580,7 @@ exu u_exu(
     .EX_LS_reg_rd            	( EX_LS_reg_rd             ),
     .EX_LS_reg_dest_wen      	( EX_LS_reg_dest_wen       ),
     .EX_LS_reg_sflush_valid     ( EX_LS_reg_sflush_valid   ),
+    .EX_LS_reg_fence_i_valid    ( EX_LS_reg_fence_i_valid  ),
     .EX_LS_reg_load_valid    	( EX_LS_reg_load_valid     ),
     .EX_LS_reg_load_signed   	( EX_LS_reg_load_signed    ),
     .EX_LS_reg_load_byte     	( EX_LS_reg_load_byte      ),
@@ -620,6 +627,7 @@ exu u_exu(
 lsu u_lsu(
     .clk                     	( clk                      ),
     .rst_n                   	( rst_n                    ),
+    .flush_i_ready              ( flush_i_ready            ),
     .lsu_arvalid             	( lsu_arvalid              ),
     .lsu_arready             	( lsu_arready              ),
     .lsu_arlock              	( lsu_arlock               ),
@@ -650,6 +658,7 @@ lsu u_lsu(
     .EX_LS_reg_rd            	( EX_LS_reg_rd             ),
     .EX_LS_reg_dest_wen      	( EX_LS_reg_dest_wen       ),
     .EX_LS_reg_sflush_valid     ( EX_LS_reg_sflush_valid   ),
+    .EX_LS_reg_fence_i_valid    ( EX_LS_reg_fence_i_valid  ),
     .EX_LS_reg_load_valid    	( EX_LS_reg_load_valid     ),
     .EX_LS_reg_load_signed   	( EX_LS_reg_load_signed    ),
     .EX_LS_reg_load_byte     	( EX_LS_reg_load_byte      ),
@@ -781,7 +790,6 @@ u_icache(
     .satp_asid           	(satp_asid                      ),
     .flush_flag          	(ID_IF_flush_flag |jump_flag    ),
     .flush_i_valid       	(flush_i_valid                  ),
-    .flush_i_ready       	(flush_i_ready_i                ),
     .sflush_vma_valid    	(sflush_vma_valid               ),
     .ifu_arready         	(ifu_arready                    ),
     .ifu_arvalid         	(ifu_arvalid                    ),
@@ -831,9 +839,9 @@ u_dcache(
     .MPP                 	(MPP                  ),
     .satp_mode           	(satp_mode            ),
     .satp_asid           	(satp_asid            ),
-    .flush_flag          	(LS_EX_flush_flag     ),
+    .flush_flag          	(d_mmu_flush_valid    ),
     .flush_i_valid       	(flush_i_valid        ),
-    .flush_i_ready       	(flush_i_ready_d      ),
+    .flush_i_ready       	(flush_i_ready        ),
     .sflush_vma_valid    	(sflush_vma_valid     ),
     .lsu_arready         	(lsu_arready          ),
     .lsu_arvalid         	(lsu_arvalid          ),
@@ -911,7 +919,7 @@ u_l2tlb(
     .rst_n            	(rst_n             ),
     .satp_asid        	(satp_asid         ),
     .satp_ppn         	(satp_ppn          ),
-    .flush_flag         (LS_EX_flush_flag  ),
+    .flush_flag         (d_mmu_flush_valid ),
     .sflush_vma_valid 	(sflush_vma_valid  ),
     .mmu_arready      	(mmu_arready       ),
     .mmu_arvalid      	(mmu_arvalid       ),
@@ -932,11 +940,31 @@ u_l2tlb(
     .pte_error        	(pte_error         )
 );
 
-assign jump_flag        = (EX_IF_jump_flag | WB_IF_jump_flag | WB_IF_satp_change | WB_IF_reg_sflush_valid);
-assign jump_addr        = (WB_IF_jump_flag) ? WB_IF_jump_addr : ((WB_IF_satp_change | WB_IF_reg_sflush_valid) ? LS_WB_reg_next_PC : EX_IF_jump_addr);
+wire flush_i_flag_set = flush_i_valid & (!flush_i_flag);
+wire flush_i_flag_clr = flush_i_valid & flush_i_ready;
+wire flush_i_flag_wen = (flush_i_flag_set | flush_i_flag_clr);
+wire flush_i_flag_nxt = (flush_i_flag_set | (!flush_i_flag_clr));
+FF_D_with_wen #(
+    .DATA_LEN 	(1  ),
+    .RST_DATA 	(0  ))
+u_flush_i_flag(
+    .clk      	(clk                ),
+    .rst_n    	(rst_n              ),
+    .wen      	(flush_i_flag_wen   ),
+    .data_in  	(flush_i_flag_nxt   ),
+    .data_out 	(flush_i_flag       )
+);
 
-assign pte_ready        = (pte_ready_i | pte_ready_d);
+assign jump_flag         = (EX_IF_jump_flag | WB_IF_jump_flag | WB_IF_satp_change | WB_IF_reg_sflush_valid | (flush_i_valid & (!flush_i_flag)));
+assign jump_addr         = (WB_IF_jump_flag) ? WB_IF_jump_addr : 
+                                (flush_i_valid & (!flush_i_flag)) ? EX_LS_reg_next_PC : 
+                                ((WB_IF_satp_change | WB_IF_reg_sflush_valid) ? LS_WB_reg_next_PC : EX_IF_jump_addr);
 
-assign sflush_vma_valid = WB_IF_reg_sflush_valid;
+assign pte_ready         = (pte_ready_i | pte_ready_d);
+
+assign flush_i_valid     = EX_LS_reg_execute_valid & EX_LS_reg_fence_i_valid & (!EX_LS_reg_trap_valid) & (!WB_LS_flush_flag);
+assign sflush_vma_valid  = WB_IF_reg_sflush_valid;
+
+assign d_mmu_flush_valid = LS_EX_flush_flag | (flush_i_valid & (!flush_i_flag));
 
 endmodule //core_top_with_i_dcache

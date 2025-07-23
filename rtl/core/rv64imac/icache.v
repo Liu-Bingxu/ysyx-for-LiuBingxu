@@ -22,7 +22,6 @@ module icache#(
 //all flush flag 
     input                           flush_flag,
     input                           flush_i_valid,
-    output                          flush_i_ready,
     input                           sflush_vma_valid,
 //interface with ifu
     //read addr channel
@@ -509,7 +508,6 @@ immu u_immu(
 assign paddr_ready      = out_fifo_wen;
 //**********************************************************************************************
 //?out sign
-assign flush_i_ready    = 1'b1;
 assign ifu_arready      = (rch_fifo_cnt != 3'h7) & (mmu_fifo_cnt != 3'h7);
 assign ifu_rvalid       = (!out_fifo_empty);
 assign ifu_rresp        = out_fifo_rdata[65:64];

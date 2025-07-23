@@ -127,11 +127,16 @@ wire                        sram_tag_wen[0:DCACHE_TAG_GROUP-1][0:DCACHE_WAY-1];
 wire [127:0]                sram_tag_bwen;
 wire [127:0]                sram_data_rdata[0:DCACHE_GROUP-1][0:DCACHE_WAY-1];
 wire                        sram_data_cen[0:DCACHE_GROUP-1];
-wire                        sram_data_wen[0:DCACHE_GROUP-1][0:DCACHE_WAY-1];
+wire                        data_sram_data_wen[0:DCACHE_GROUP-1][0:DCACHE_WAY-1];
+wire                        flag_sram_data_wen[0:DCACHE_GROUP-1][0:DCACHE_WAY-1];
+wire                        flag_sram_data_can_wen;
 wire [127:0]                sram_data_bwen;
 wire [127:0]                sram_data_bmask;
 wire [63:0]                 sram_wmask;
-wire [5:0]                  sram_addr;
+wire [5:0]                  data_sram_addr;
+wire [5:0]                  flag_sram_addr;
+wire                        valid_flag_wdata;
+wire                        drity_flag_wdata;
 wire [DCACHE_WAY_LEN-1:0]   rand_way;
 
 //fifo signs 
@@ -188,17 +193,22 @@ wire [63:0]                 paddr;
 wire                        paddr_error;
 
 //dcache fsm sign
-localparam IDLE         = 4'h0;
-localparam FLUSH        = 4'h1;
-localparam WAIT_AW_W    = 4'h2;
-localparam WAIT_AW      = 4'h3;
-localparam WAIT_W       = 4'h4;
-localparam WAIT_B       = 4'h5;
-localparam WAIT_AR      = 4'h6;
-localparam WAIT_R       = 4'h7;
-localparam WAIT_ERROR   = 4'h8;
-localparam WRITE_CACHE  = 4'h9;
-localparam SEND_DATA    = 4'hA;
+localparam IDLE             = 4'h0;
+localparam FLUSH            = 4'h1;
+localparam WAIT_AW_W        = 4'h2;
+localparam WAIT_AW          = 4'h3;
+localparam WAIT_W           = 4'h4;
+localparam WAIT_B           = 4'h5;
+localparam WAIT_AR          = 4'h6;
+localparam WAIT_R           = 4'h7;
+localparam WAIT_ERROR       = 4'h8;
+localparam WRITE_CACHE      = 4'h9;
+localparam SEND_DATA        = 4'hA;
+localparam FLUSH_READ       = 4'hB;
+localparam FLUSH_WAIT_AW_W  = 4'hC;
+localparam FLUSH_WAIT_AW    = 4'hD;
+localparam FLUSH_WAIT_W     = 4'hE;
+localparam FLUSH_WAIT_B     = 4'hF;
 reg  [3:0]                  dcache_fsm;
 reg                         flush_flag_reg;
 reg                         dcache_mmu_flag;
@@ -220,6 +230,13 @@ reg  [127:0]                axi_rdata;
 reg  [63:0]                 dcache_rdata_reg;
 reg                         dcache_line_wen;
 wire [63:0]                 dcache_line_waddr;
+
+reg  [DCACHE_GROUP_LEN-1:0] dcache_flush_i_group_index;
+reg  [DCACHE_WAY_LEN-1:0]   dcache_flush_i_way_index;
+reg  [5:0]                  dcache_flush_addr_index;
+reg  [5:0]                  dcache_flush_addr_index_read;
+reg  [127:0]                dcache_flush_i_data;
+reg  [63:0]                 dcache_flush_i_tag;
 
 //first stage register
 wire                        first_stage_valid;
@@ -301,13 +318,15 @@ generate
                 .Q    	( sram_data_rdata[dcache_group_index][dcache_way_index]     ),
                 .CLK  	( clk                                                       ),
                 .CEN  	( sram_data_cen[dcache_group_index]                         ),
-                .WEN  	( sram_data_wen[dcache_group_index][dcache_way_index]       ),
+                .WEN  	( data_sram_data_wen[dcache_group_index][dcache_way_index]  ),
                 .BWEN 	( sram_data_bwen                                            ),
-                .A    	( sram_addr                                                 ),
+                .A    	( data_sram_addr                                            ),
                 .D    	( sram_data_wdata                                           )
             );
             if(DCACHE_GROUP == 1)begin
-                assign sram_data_wen[dcache_group_index][dcache_way_index]          = (!dcache_line_wen) | (((dcache_way_index != way_sel) | dcache_mmu_flag) & ((dcache_way_index != way_sel_mmu) | (!dcache_mmu_flag)));
+                assign data_sram_data_wen[dcache_group_index][dcache_way_index]     = (!dcache_line_wen) | (((dcache_way_index != way_sel) | dcache_mmu_flag) & ((dcache_way_index != way_sel_mmu) | (!dcache_mmu_flag)));
+                assign flag_sram_data_wen[dcache_group_index][dcache_way_index]     = data_sram_data_wen[dcache_group_index][dcache_way_index] & 
+                                                                                        ((!flag_sram_data_can_wen) | (dcache_way_index != dcache_flush_i_way_index));
                 assign sram_data_way[dcache_way_index]                              = sram_data_rdata[dcache_group_index][dcache_way_index];
                 assign sram_tag_way[dcache_way_index]                               = sram_tag[dcache_group_index][dcache_way_index];
                 assign dcache_line_valid_way[dcache_way_index]                      = dcache_line_valid[dcache_group_index][dcache_way_index];
@@ -319,9 +338,11 @@ generate
                 assign dcache_line_dirty_way_mmu[dcache_way_index]                  = dcache_line_dirty[dcache_group_index][dcache_way_index];
             end
             else begin
-                assign sram_data_wen[dcache_group_index][dcache_way_index]          = (((dcache_way_index != way_sel) | (dcache_group_index != dcache_line_waddr[9 + DCACHE_GROUP_LEN:10]) | dcache_mmu_flag) & 
+                assign data_sram_data_wen[dcache_group_index][dcache_way_index]     = (((dcache_way_index != way_sel) | (dcache_group_index != dcache_line_waddr[9 + DCACHE_GROUP_LEN:10]) | dcache_mmu_flag) & 
                                                                                         ((dcache_way_index != way_sel_mmu) | (dcache_group_index != dcache_line_waddr_mmu[9 + DCACHE_GROUP_LEN:10]) | (!dcache_mmu_flag))) |
                                                                                         (!dcache_line_wen);
+                assign flag_sram_data_wen[dcache_group_index][dcache_way_index]     = data_sram_data_wen[dcache_group_index][dcache_way_index] & 
+                                                                                        ((!flag_sram_data_can_wen) | (dcache_way_index != dcache_flush_i_way_index) | (dcache_group_index != dcache_flush_i_group_index));
                 assign sram_data_way[dcache_way_index]                              = sram_data_rdata[dcache_line_waddr[9 + DCACHE_GROUP_LEN:10]][dcache_way_index];
                 assign sram_tag_way[dcache_way_index]                               = sram_tag[dcache_line_waddr[9 + DCACHE_GROUP_LEN:10]][dcache_way_index];
                 assign dcache_line_valid_way[dcache_way_index]                      = dcache_line_valid[dcache_line_waddr[9 + DCACHE_GROUP_LEN:10]][dcache_way_index];
@@ -339,16 +360,16 @@ generate
                     .CEN  	( sram_tag_cen[dcache_group_index/2]                        ),
                     .WEN  	( sram_tag_wen[dcache_group_index/2][dcache_way_index]      ),
                     .BWEN 	( sram_tag_bwen                                             ),
-                    .A    	( sram_addr                                                 ),
+                    .A    	( data_sram_addr                                            ),
                     .D    	( sram_tag_wdata                                            )
                 );
                 if((dcache_group_index + 1) >= DCACHE_GROUP)begin
                     assign sram_tag_cen[dcache_group_index/2]                       = sram_data_cen[dcache_group_index];
-                    assign sram_tag_wen[dcache_group_index/2][dcache_way_index]     = sram_data_wen[dcache_group_index][dcache_way_index];
+                    assign sram_tag_wen[dcache_group_index/2][dcache_way_index]     = data_sram_data_wen[dcache_group_index][dcache_way_index];
                 end
                 else begin
-                    assign sram_tag_cen[dcache_group_index/2]                       = sram_data_cen[dcache_group_index]                     & sram_data_cen[dcache_group_index+1];
-                    assign sram_tag_wen[dcache_group_index/2][dcache_way_index]     = sram_data_wen[dcache_group_index][dcache_way_index]   & sram_data_wen[dcache_group_index+1][dcache_way_index];
+                    assign sram_tag_cen[dcache_group_index/2]                       = sram_data_cen[dcache_group_index]                          & sram_data_cen[dcache_group_index+1];
+                    assign sram_tag_wen[dcache_group_index/2][dcache_way_index]     = data_sram_data_wen[dcache_group_index][dcache_way_index]   & data_sram_data_wen[dcache_group_index+1][dcache_way_index];
                 end
             end
             if(dcache_group_index % 2 == 0)begin
@@ -357,29 +378,27 @@ generate
             else begin
                 assign sram_tag[dcache_group_index][dcache_way_index]               = sram_tag_rdata[dcache_group_index/2][dcache_way_index][127:64];
             end
-            FF_D_with_addr #(
+            FF_D_with_addr_without_sync_rst #(
                 .ADDR_LEN   ( 6 ),
                 .RST_DATA   ( 0 )
             )u_dcache_line_valid(
                 .clk        ( clk                                                       ),
                 .rst_n      ( rst_n                                                     ),
-                .syn_rst    ( flush_i_valid                                             ),
-                .wen        ( !sram_data_wen[dcache_group_index][dcache_way_index]      ),
-                .addr       ( sram_addr                                                 ),
-                .data_in    ( dcache_fsm != FLUSH                                       ),
+                .wen        ( !flag_sram_data_wen[dcache_group_index][dcache_way_index] ),
+                .addr       ( flag_sram_addr                                            ),
+                .data_in    ( valid_flag_wdata                                          ),
                 .data_out   ( dcache_line_valid[dcache_group_index][dcache_way_index]   )
             );
-            FF_D_with_addr #(
+            FF_D_with_addr_without_sync_rst #(
                 .ADDR_LEN   ( 6 ),
                 .RST_DATA   ( 0 )
             )u_dcache_line_dirty(
-                .clk        ( clk                                                                   ),
-                .rst_n      ( rst_n                                                                 ),
-                .syn_rst    ( flush_i_valid                                                         ),
-                .wen        ( !sram_data_wen[dcache_group_index][dcache_way_index]                  ),
-                .addr       ( sram_addr                                                             ),
-                .data_in    ( (dcache_fsm != FLUSH) & (!dcache_mmu_flag) & (!first_stage_read_flag) ),
-                .data_out   ( dcache_line_dirty[dcache_group_index][dcache_way_index]               )
+                .clk        ( clk                                                       ),
+                .rst_n      ( rst_n                                                     ),
+                .wen        ( !flag_sram_data_wen[dcache_group_index][dcache_way_index] ),
+                .addr       ( flag_sram_addr                                            ),
+                .data_in    ( drity_flag_wdata                                          ),
+                .data_out   ( dcache_line_dirty[dcache_group_index][dcache_way_index]   )
             );
             if(dcache_group_index == 0)begin
                 assign sram_way_sel[dcache_way_index]                           = (sram_tag_way_use[dcache_way_index][63:64-DCACHE_TAG_SIZE] == paddr[63:64-DCACHE_TAG_SIZE]) & 
@@ -432,13 +451,14 @@ generate
             end
         end
         if(DCACHE_GROUP == 1)begin
-            assign sram_data_cen[dcache_group_index]                            =   (!dcache_line_wen) & (lsu_fifo_empty) & (!(mmu_arvalid & mmu_arready));
+            assign sram_data_cen[dcache_group_index]                            =   (!dcache_line_wen) & (lsu_fifo_empty) & (!(mmu_arvalid & mmu_arready)) & (!flush_i_valid);
         end
         else begin
             assign sram_data_cen[dcache_group_index]                            =   (( lsu_fifo_empty ) | (dcache_group_index != lsu_fifo_rdata[9 + DCACHE_GROUP_LEN:10]) | dcache_line_wen | (mmu_arvalid & mmu_arready)) & 
                                                                                     ((!(mmu_arvalid & mmu_arready)) | (dcache_group_index != mmu_araddr[9 + DCACHE_GROUP_LEN:10]) | dcache_line_wen) & 
                                                                                     ((!dcache_line_wen) | (dcache_group_index != dcache_line_waddr[9 + DCACHE_GROUP_LEN:10]) | dcache_mmu_flag) &
-                                                                                    ((!dcache_line_wen) | (dcache_group_index != dcache_line_waddr_mmu[9 + DCACHE_GROUP_LEN:10]) | (!dcache_mmu_flag)) ;
+                                                                                    ((!dcache_line_wen) | (dcache_group_index != dcache_line_waddr_mmu[9 + DCACHE_GROUP_LEN:10]) | (!dcache_mmu_flag)) & 
+                                                                                    (!flush_i_valid) ;
         end
     end
 endgenerate
@@ -451,7 +471,11 @@ rand_lfsr_8_bit #(
 );
 FF_D_without_asyn_rst #(64)   u_dcache_line_waddr           (clk,lsu_fifo_ren,lsu_fifo_rdata[63:0],dcache_line_waddr);
 FF_D_without_asyn_rst #(64)   u_dcache_line_waddr_mmu       (clk,mmu_arready,mmu_araddr,dcache_line_waddr_mmu);
-assign sram_addr                = (dcache_line_wen) ? ((dcache_mmu_flag) ? dcache_line_waddr_mmu[9:4] : dcache_line_waddr[9:4]) : 
+assign data_sram_addr           =   (flush_i_valid) ? dcache_flush_addr_index_read : 
+                                    (dcache_line_wen) ? ((dcache_mmu_flag) ? dcache_line_waddr_mmu[9:4] : dcache_line_waddr[9:4]) : 
+                                    ((mmu_arvalid & mmu_arready) ? mmu_araddr[9:4] : lsu_fifo_rdata[9:4]);
+assign flag_sram_addr           =   (flush_i_valid) ? dcache_flush_addr_index : 
+                                    (dcache_line_wen) ? ((dcache_mmu_flag) ? dcache_line_waddr_mmu[9:4] : dcache_line_waddr[9:4]) : 
                                     ((mmu_arvalid & mmu_arready) ? mmu_araddr[9:4] : lsu_fifo_rdata[9:4]);
 assign sram_tag_wdata           = (dcache_mmu_flag) ? {dcache_line_waddr_mmu, dcache_line_waddr_mmu} : {paddr, paddr};
 if(DCACHE_GROUP == 1)begin
@@ -496,6 +520,9 @@ u_way_flag_mmu(
 );
 assign way_sel_mmu       = (&dcache_line_valid_way_bit_mmu) ? rand_way_mmu_reg : way_null_mmu[DCACHE_WAY - 1];
 assign sram_data_sel_mmu = dcache_line_sel(sram_way_sel_mmu, sram_data_way_mmu_use, sram_tag_way_mmu_use);
+
+assign valid_flag_wdata = ((dcache_fsm != FLUSH) & (dcache_fsm != FLUSH_READ) & (dcache_fsm != FLUSH_WAIT_B));
+assign drity_flag_wdata = ((dcache_fsm != FLUSH) & (dcache_fsm != FLUSH_READ) & (dcache_fsm != FLUSH_WAIT_B) & (!dcache_mmu_flag) & (!first_stage_read_flag));
 //**********************************************************************************************
 ifu_fifo #(
     .DATA_LEN   	( 141 ),
@@ -692,6 +719,10 @@ always @(posedge clk or negedge rst_n) begin
                     dcache_wlast_reg    <= 1'b0;
                     dcache_line_wen     <= 1'b0;
                     dcache_resp_reg     <= 2'h0;
+                end
+                //? goto flush all cache line
+                else if(flush_i_valid)begin
+                    dcache_fsm          <= FLUSH_READ;
                 end
                 //? hit cacheable mmu
                 else if(first_stage_mmu_valid & (|sram_way_sel_mmu))begin
@@ -1216,6 +1247,106 @@ always @(posedge clk or negedge rst_n) begin
                     dcache_line_wen     <= 1'b0;
                 end
             end
+            FLUSH_READ: begin
+                if((!dcache_line_valid[dcache_flush_i_group_index][dcache_flush_i_way_index][dcache_flush_addr_index]) | (!dcache_line_dirty[dcache_flush_i_group_index][dcache_flush_i_way_index][dcache_flush_addr_index]))begin
+                    if((dcache_flush_addr_index == 6'h3F) & (dcache_flush_i_group_index == {DCACHE_GROUP_LEN{1'b1}}) & (dcache_flush_i_way_index == {DCACHE_WAY_LEN{1'b1}}))begin
+                        dcache_fsm <= IDLE;
+                    end
+                    else begin
+                        dcache_fsm <= FLUSH_READ;
+                    end
+                end
+                else begin
+                    dcache_fsm          <= FLUSH_WAIT_AW_W;
+                    dcache_awvalid_reg  <= 1'b1;
+                    dcache_wvalid_reg   <= 1'b1;
+                    dcache_len_reg      <= 8'h1;
+                    dcache_size_reg     <= 3'h3;
+                    dcache_lock_reg     <= 1'b0;
+                    dcache_addr_reg     <= {sram_tag[dcache_flush_i_group_index][dcache_flush_i_way_index][63:4], 4'h0};
+                    dcache_wdata_reg    <= sram_data_rdata[dcache_flush_i_group_index][dcache_flush_i_way_index][63:0];
+                    dcache_wstrb_reg    <= 8'hff;
+                    dcache_wlast_reg    <= 1'b0;
+                end
+            end
+            FLUSH_WAIT_AW_W: begin
+                //? AW handle; W handle; last
+                if(dcache_awvalid & dcache_awready & dcache_wvalid & dcache_wready & dcache_wlast)begin
+                    dcache_fsm          <= FLUSH_WAIT_B;
+                    dcache_awvalid_reg  <= 1'b0;
+                    dcache_wvalid_reg   <= 1'b0;
+                end
+                //? AW handle; W handle; not last
+                else if(dcache_awvalid & dcache_awready & dcache_wvalid & dcache_wready & (!dcache_wlast))begin
+                    dcache_fsm          <= FLUSH_WAIT_W;
+                    dcache_awvalid_reg  <= 1'b0;
+                    dcache_wdata_reg    <= dcache_flush_i_data[127:64];
+                    dcache_wstrb_reg    <= 8'hff;
+                    dcache_wlast_reg    <= 1'b1;
+                end
+                //? AW handle;
+                else if(dcache_awvalid & dcache_awready)begin
+                    dcache_fsm          <= FLUSH_WAIT_W;
+                    dcache_awvalid_reg  <= 1'b0;
+                end
+                //? W handle; last
+                else if(dcache_wvalid & dcache_wready & dcache_wlast)begin
+                    dcache_fsm          <= FLUSH_WAIT_AW;
+                    dcache_wvalid_reg   <= 1'b0;
+                end
+                //? W handle; not last
+                else if(dcache_wvalid & dcache_wready & (!dcache_wlast))begin
+                    dcache_fsm          <= FLUSH_WAIT_AW_W;
+                    dcache_wdata_reg    <= dcache_flush_i_data[127:64];
+                    dcache_wstrb_reg    <= 8'hff;
+                    dcache_wlast_reg    <= 1'b1;
+                end
+            end
+            FLUSH_WAIT_AW: begin
+                //? AW handle;
+                if(dcache_awvalid & dcache_awready)begin
+                    dcache_fsm          <= FLUSH_WAIT_B;
+                    dcache_awvalid_reg  <= 1'b0;
+                end
+            end
+            FLUSH_WAIT_W: begin
+                //? W handle; last
+                if(dcache_wvalid & dcache_wready & dcache_wlast)begin
+                    dcache_fsm          <= FLUSH_WAIT_B;
+                    dcache_wvalid_reg   <= 1'b0;
+                end
+                //? W handle; not last
+                else if(dcache_wvalid & dcache_wready & (!dcache_wlast))begin
+                    dcache_fsm          <= FLUSH_WAIT_W;
+                    dcache_wdata_reg    <= dcache_flush_i_data[127:64];
+                    dcache_wstrb_reg    <= 8'hff;
+                    dcache_wlast_reg    <= 1'b1;
+                end
+            end
+            FLUSH_WAIT_B: begin
+                //? B handle error
+                if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp != 2'h0))begin
+                    dcache_fsm          <= FLUSH_WAIT_AW_W;
+                    dcache_awvalid_reg  <= 1'b1;
+                    dcache_wvalid_reg   <= 1'b1;
+                    dcache_len_reg      <= 8'h1;
+                    dcache_size_reg     <= 3'h3;
+                    dcache_lock_reg     <= 1'b0;
+                    dcache_addr_reg     <= {dcache_flush_i_tag[63:4], 4'h0};
+                    dcache_wdata_reg    <= dcache_flush_i_data[63:0];
+                    dcache_wstrb_reg    <= 8'hff;
+                    dcache_wlast_reg    <= 1'b0;
+                end
+                //? B handle not error
+                else if(dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0))begin
+                    if((dcache_flush_addr_index == 6'h3F) & (dcache_flush_i_group_index == {DCACHE_GROUP_LEN{1'b1}}) & (dcache_flush_i_way_index == {DCACHE_WAY_LEN{1'b1}}))begin
+                        dcache_fsm <= IDLE;
+                    end
+                    else begin
+                        dcache_fsm <= FLUSH_READ;
+                    end
+                end
+            end
             default: begin
                 dcache_fsm          <= IDLE;
                 dcache_mmu_flag     <= 1'b0;
@@ -1236,6 +1367,80 @@ always @(posedge clk or negedge rst_n) begin
         endcase
     end
 end
+FF_D_without_asyn_rst #(128)   u_flush_i_data (clk,(dcache_fsm == FLUSH_READ),sram_data_rdata[dcache_flush_i_group_index][dcache_flush_i_way_index],dcache_flush_i_data);
+FF_D_without_asyn_rst #(64 )   u_flush_i_tag  (clk,(dcache_fsm == FLUSH_READ),sram_tag[dcache_flush_i_group_index][dcache_flush_i_way_index],dcache_flush_i_tag);
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        dcache_flush_i_group_index      <= {DCACHE_GROUP_LEN{1'b0}};
+        dcache_flush_i_way_index        <= {DCACHE_WAY_LEN{1'b0}};
+        dcache_flush_addr_index         <= 6'h0;
+    end
+    else if((dcache_fsm == FLUSH_READ) & ((!dcache_line_valid[dcache_flush_i_group_index][dcache_flush_i_way_index][dcache_flush_addr_index]) | (!dcache_line_dirty[dcache_flush_i_group_index][dcache_flush_i_way_index][dcache_flush_addr_index])))begin
+        if(dcache_flush_addr_index == 6'h3F)begin
+            dcache_flush_addr_index <= 6'h0;
+            if(dcache_flush_i_group_index == {DCACHE_GROUP_LEN{1'b1}})begin
+                dcache_flush_i_group_index <= {DCACHE_GROUP_LEN{1'b0}};
+                if(dcache_flush_i_way_index == {DCACHE_WAY_LEN{1'b1}})
+                    dcache_flush_i_way_index <= {DCACHE_WAY_LEN{1'b0}};
+                else 
+                    dcache_flush_i_way_index <= dcache_flush_i_way_index + 1'b1;
+            end
+            else begin
+                dcache_flush_i_group_index <= dcache_flush_i_group_index + 1'b1;
+            end
+        end
+        else begin
+            dcache_flush_addr_index <= dcache_flush_addr_index + 6'h1;
+        end
+    end
+    else if((dcache_fsm == FLUSH_WAIT_B) & dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0))begin
+        if(dcache_flush_addr_index == 6'h3F)begin
+            dcache_flush_addr_index <= 6'h0;
+            if(dcache_flush_i_group_index == {DCACHE_GROUP_LEN{1'b1}})begin
+                dcache_flush_i_group_index <= {DCACHE_GROUP_LEN{1'b0}};
+                if(dcache_flush_i_way_index == {DCACHE_WAY_LEN{1'b1}})
+                    dcache_flush_i_way_index <= {DCACHE_WAY_LEN{1'b0}};
+                else 
+                    dcache_flush_i_way_index <= dcache_flush_i_way_index + 1'b1;
+            end
+            else begin
+                dcache_flush_i_group_index <= dcache_flush_i_group_index + 1'b1;
+            end
+        end
+        else begin
+            dcache_flush_addr_index <= dcache_flush_addr_index + 6'h1;
+        end
+    end
+end
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)begin
+        dcache_flush_addr_index_read    <= 6'h0;
+    end
+    else if((dcache_fsm == IDLE) & (!flush_flag) & flush_i_valid)begin
+        dcache_flush_addr_index_read    <= 6'h1;
+    end
+    else if(dcache_fsm == IDLE)begin
+        dcache_flush_addr_index_read    <= 6'h0;
+    end
+    else if((dcache_fsm == FLUSH_READ) & ((!dcache_line_valid[dcache_flush_i_group_index][dcache_flush_i_way_index][dcache_flush_addr_index]) | (!dcache_line_dirty[dcache_flush_i_group_index][dcache_flush_i_way_index][dcache_flush_addr_index])))begin
+        if(dcache_flush_addr_index_read == 6'h3F)begin
+            dcache_flush_addr_index_read <= 6'h0;
+        end
+        else begin
+            dcache_flush_addr_index_read <= dcache_flush_addr_index_read + 6'h1;
+        end
+    end
+    else if((dcache_fsm == FLUSH_WAIT_B) & dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0))begin
+        if(dcache_flush_addr_index_read == 6'h3F)begin
+            dcache_flush_addr_index_read <= 6'h0;
+        end
+        else begin
+            dcache_flush_addr_index_read <= dcache_flush_addr_index_read + 6'h1;
+        end
+    end
+end
+assign flag_sram_data_can_wen = ((dcache_fsm == FLUSH_READ) & ((!dcache_line_valid[dcache_flush_i_group_index][dcache_flush_i_way_index][dcache_flush_addr_index]) | (!dcache_line_dirty[dcache_flush_i_group_index][dcache_flush_i_way_index][dcache_flush_addr_index]))) | 
+                                ((dcache_fsm == FLUSH_WAIT_B) & dcache_bvalid & dcache_bready & (dcache_bid == AXI_ID_SB) & (dcache_bresp == 2'h0));
 //TODO 假设l2tlb发起一笔传输，并且传输过程中flush_flag有效，此时如果已经开始对外传输，那必须完成对外的传输，如果不脏，则发起读传输，对系统状态无影响；如果是写，则会修改内存中的值，导致其与cache line中的值相同，造成假脏，可能会导致下次在写回，使得性能下降一点点？
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
@@ -1350,7 +1555,7 @@ dmmu u_dmmu(
 assign paddr_ready      = first_stage_ready;
 //**********************************************************************************************
 //?out sign
-// assign flush_i_ready    = 1'b1;
+assign flush_i_ready    = flag_sram_data_can_wen & (dcache_flush_addr_index == 6'h3F) & (dcache_flush_i_group_index == {DCACHE_GROUP_LEN{1'b1}}) & (dcache_flush_i_way_index == {DCACHE_WAY_LEN{1'b1}});
 assign lsu_arready      = (lsu_fifo_cnt != 3'h7) & (mmu_fifo_cnt != 3'h7);
 assign lsu_rvalid       = (!out_fifo_rdata[67]) & out_fifo_rdata[66] & (!out_fifo_empty);
 assign lsu_rresp        = out_fifo_rdata[65:64];
