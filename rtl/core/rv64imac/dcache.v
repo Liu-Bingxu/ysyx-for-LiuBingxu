@@ -166,6 +166,8 @@ wire                	    mmu_fifo_empty;
 wire [64:0] 	            mmu_fifo_rdata;
 
 wire                        out_mmu_hit;
+wire                        out_lsu_write_error;
+wire                        out_lsu_read_error;
 wire                        out_lsu_read_hit;
 wire                        out_mmu_no_hit;
 wire                        out_lsu_hit_write;
@@ -1499,21 +1501,25 @@ assign lsu_fifo_wdata                       = (lsu_arvalid & lsu_arready) ? {8'h
 assign mmu_fifo_wdata                       = (lsu_arvalid & lsu_arready) ? {1'b1, lsu_araddr} : {1'b0, lsu_awaddr};
 assign out_fifo_ren                         = (lsu_rvalid & lsu_rready) | (lsu_bvalid & lsu_bready) | (mmu_rvalid & mmu_rready);
 assign out_mmu_hit                          = (dcache_fsm == IDLE) & (first_stage_mmu_valid & (|sram_way_sel_mmu));
-assign out_lsu_read_hit                     = (dcache_fsm == IDLE) & (first_stage_valid & paddr_valid & ((|sram_way_sel) | paddr_error) & first_stage_read_flag & (!first_stage_lock_flag) & (!first_stage_mmu_valid));
+assign out_lsu_write_error                  = (dcache_fsm == IDLE) & first_stage_valid & (!first_stage_mmu_valid) & paddr_valid & (!first_stage_read_flag) & paddr_error;
+assign out_lsu_read_error                   = (dcache_fsm == IDLE) & first_stage_valid & (!first_stage_mmu_valid) & paddr_valid &   first_stage_read_flag  & paddr_error;
+assign out_lsu_read_hit                     = (dcache_fsm == IDLE) & first_stage_valid & paddr_valid & (|sram_way_sel) & first_stage_read_flag & (!first_stage_lock_flag) & (!first_stage_mmu_valid) & (!paddr_error);
 assign out_mmu_no_hit                       = (dcache_fsm == SEND_DATA) & dcache_mmu_flag;
 assign out_lsu_hit_write                    = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & (!first_stage_read_flag) & (|sram_way_sel);
 assign out_lsu_hit_write_cacheable          = (dcache_fsm == WRITE_CACHE) & (!first_stage_read_flag) & (|sram_way_sel) & (!dcache_mmu_flag);
 assign out_lsu_no_hit_read_cacheable        = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & first_stage_read_flag & (!((paddr > PMEM_END) | (paddr < PMEM_START) | first_stage_lock_flag));
 assign out_lsu_no_hit_read_not_cacheable    = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & first_stage_read_flag & (  (paddr > PMEM_END) | (paddr < PMEM_START) | first_stage_lock_flag);
 assign out_lsu_no_hit_write                 = (dcache_fsm == SEND_DATA) & (!dcache_mmu_flag) & (!first_stage_read_flag) & (!(|sram_way_sel));
-assign out_fifo_wen                         = (out_mmu_hit | out_lsu_read_hit | 
+assign out_fifo_wen                         = (out_mmu_hit | out_lsu_write_error | out_lsu_read_error | out_lsu_read_hit | 
                                                 out_mmu_no_hit | out_lsu_hit_write | out_lsu_hit_write_cacheable |
                                                 out_lsu_no_hit_read_cacheable | out_lsu_no_hit_read_not_cacheable | 
                                                 out_lsu_no_hit_write) & (out_fifo_cnt != 3'h7);
 assign out_fifo_wdata       =   ({68{out_mmu_hit                        &   dcache_line_waddr_mmu[3]  }} & {1'b1, 1'b1, 2'h0,              sram_data_sel_mmu[127:64]   }) |
                                 ({68{out_mmu_hit                        & (!dcache_line_waddr_mmu[3]) }} & {1'b1, 1'b1, 2'h0,              sram_data_sel_mmu[63:0]     }) |
-                                ({68{out_lsu_read_hit                   &   dcache_line_waddr[3]      }} & {1'b0, 1'b1, paddr_error, 1'b0, sram_data_sel[127:64]       }) |
-                                ({68{out_lsu_read_hit                   & (!dcache_line_waddr[3])     }} & {1'b0, 1'b1, paddr_error, 1'b0, sram_data_sel[63:0]         }) |
+                                ({68{out_lsu_write_error                                              }} & {1'b0, 1'b0, 2'h3,              sram_data_sel_mmu[63:0]     }) |
+                                ({68{out_lsu_read_error                                               }} & {1'b0, 1'b1, 2'h3,              sram_data_sel_mmu[63:0]     }) |
+                                ({68{out_lsu_read_hit                   &   dcache_line_waddr[3]      }} & {1'b0, 1'b1, 2'h0,              sram_data_sel[127:64]       }) |
+                                ({68{out_lsu_read_hit                   & (!dcache_line_waddr[3])     }} & {1'b0, 1'b1, 2'h0,              sram_data_sel[63:0]         }) |
                                 ({68{out_mmu_no_hit                     &   dcache_line_waddr_mmu[3]  }} & {1'b1, 1'b1, dcache_resp_reg,   sram_data_wdata[127:64]     }) |
                                 ({68{out_mmu_no_hit                     & (!dcache_line_waddr_mmu[3]) }} & {1'b1, 1'b1, dcache_resp_reg,   sram_data_wdata[63:0]       }) |
                                 ({68{out_lsu_hit_write                  &   dcache_line_waddr[3]      }} & {1'b0, 1'b0, dcache_resp_reg,   sram_data_sel[127:64]       }) |
