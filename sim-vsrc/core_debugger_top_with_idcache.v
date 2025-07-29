@@ -373,15 +373,6 @@ always @(posedge tck or negedge rst_n) begin
     end
 end
 
-wire test_mmu_bit  = u_core_top_with_i_dcache.u_dcache.lsu_awaddr[63:0] == 64'hffffffc6febfe018;
-wire test_mmu_bit2 = (u_core_top_with_i_dcache.u_dcache.sram_data_wen[1][0] == 1'b0) & (u_core_top_with_i_dcache.u_dcache.sram_addr[5:0] == 6'h3D);
-wire test_mmu_bit3 = (u_core_top_with_i_dcache.u_dcache.sram_data_wen[1][1] == 1'b0) & (u_core_top_with_i_dcache.u_dcache.sram_addr[5:0] == 6'h3D);
-wire test_mmu_bit4 = (u_core_top_with_i_dcache.u_dcache.sram_data_cen[0] == 1'b0) & (u_core_top_with_i_dcache.u_dcache.sram_addr[5:0] == 6'h3D);
-
-wire test_mmu_bit5 = (u_core_top_with_i_dcache.u_dcache.dcache_awaddr[63:4] == 60'h8002_900) & u_core_top_with_i_dcache.u_dcache.dcache_awvalid;
-wire test_mmu_bit6 = (u_core_top_with_i_dcache.u_dcache.lsu_awaddr[63:4] == 60'h0002_900) & u_core_top_with_i_dcache.u_dcache.lsu_awvalid;
-wire test_mmu_bit7 = (u_core_top_with_i_dcache.u_dcache.lsu_araddr[63:4] == 60'h0002_900) & u_core_top_with_i_dcache.u_dcache.lsu_arvalid;
-
 core_top_with_i_dcache #(
     .MHARTID      	(0              ),
     .RST_PC       	(64'h8000_0000  ),
@@ -393,7 +384,7 @@ core_top_with_i_dcache #(
     .ICACHE_WAY   	(2              ),
     .ICACHE_GROUP 	(2              ),
     .DCACHE_WAY   	(2              ),
-    .DCACHE_GROUP 	(4              ),
+    .DCACHE_GROUP 	(2              ),
     .MMU_WAY      	(2              ),
     .MMU_GROUP    	(1              ),
     .PMEM_START   	(64'h8000_0000  ),
@@ -421,7 +412,7 @@ u_core_top_with_i_dcache(
     .icache_rdata   	(slv0_rdata      ),
     .icache_rlast   	(slv0_rlast      ),
     .icache_rid     	(slv0_rid        ),
-    .dcache_arready 	(slv0_arready    ),
+    .dcache_arready 	(slv1_arready    ),
     .dcache_arvalid 	(dcache_arvalid  ),
     .dcache_araddr  	(dcache_araddr   ),
     .dcache_arid    	(dcache_arid     ),
@@ -1214,6 +1205,40 @@ DifftestArchIntRegState u_DifftestArchIntRegState(
     .io_value_31 	(u_core_top_with_i_dcache.u_wbu.u_gpr.riscv_reg[31]   )
 );
 
+DifftestPerformRegState u_DifftestPerformRegState(
+    .io_value_0  	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[1]    ),
+    .io_value_1  	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[2]    ),
+    .io_value_3  	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[3]    ),
+    .io_value_4  	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[4]    ),
+    .io_value_5  	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[5]    ),
+    .io_value_6  	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[6]    ),
+    .io_value_7  	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[7]    ),
+    .io_value_8  	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[8]    ),
+    .io_value_9  	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[9]    ),
+    .io_value_10 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[10]   ),
+    .io_value_11 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[11]   ),
+    .io_value_12 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[12]   ),
+    .io_value_13 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[13]   ),
+    .io_value_14 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[14]   ),
+    .io_value_15 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[15]   ),
+    .io_value_16 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[16]   ),
+    .io_value_17 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[17]   ),
+    .io_value_18 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[18]   ),
+    .io_value_19 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[19]   ),
+    .io_value_20 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[20]   ),
+    .io_value_21 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[21]   ),
+    .io_value_22 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[22]   ),
+    .io_value_23 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[23]   ),
+    .io_value_24 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[24]   ),
+    .io_value_25 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[25]   ),
+    .io_value_26 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[26]   ),
+    .io_value_27 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[27]   ),
+    .io_value_28 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[28]   ),
+    .io_value_29 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[29]   ),
+    .io_value_30 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[30]   ),
+    .io_value_31 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[31]   )
+);
+
 DifftestCSRState u_DifftestCSRState(
     .io_privilegeMode 	({{62{1'b0}},u_core_top_with_i_dcache.u_wbu.u_csr.current_priv_status}),
     .io_mstatus       	(u_core_top_with_i_dcache.u_wbu.u_csr.mstatus                         ),
@@ -1235,10 +1260,35 @@ DifftestCSRState u_DifftestCSRState(
     .io_medeleg       	(u_core_top_with_i_dcache.u_wbu.u_csr.medeleg                         )
 );
 
+reg  io_ls_flag_reg;
+wire io_load_addr_flag  = ((u_core_top_with_i_dcache.dcache_araddr >= 64'h1000_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h1000_0020)) | 
+                            ((u_core_top_with_i_dcache.dcache_araddr >= 64'h1010_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h1010_0020)) |
+                            ((u_core_top_with_i_dcache.dcache_araddr >= 64'h0c00_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h0c21_0000)) | 
+                            ((u_core_top_with_i_dcache.dcache_araddr >= 64'h0200_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h0201_0000));
+wire io_store_addr_flag = ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h1000_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h1000_0020)) | 
+                            ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h1010_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h1010_0020)) | 
+                            ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h0c00_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h0c21_0000)) | 
+                            ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h0200_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h0201_0000));
+wire io_load_flag  = u_core_top_with_i_dcache.dcache_arvalid & u_core_top_with_i_dcache.dcache_arready & io_load_addr_flag;
+wire io_store_flag = u_core_top_with_i_dcache.dcache_awvalid & u_core_top_with_i_dcache.dcache_awready & io_store_addr_flag;
+always @(posedge clock or negedge rst_n) begin
+    if(!rst_n)begin
+        io_ls_flag_reg  <= 1'b0;
+    end
+    else if((!io_ls_flag_reg) & (io_load_flag | io_store_flag))begin
+        io_ls_flag_reg  <= 1'b1;
+    end
+    else if(u_core_top_with_i_dcache.u_lsu.LS_EX_execute_ready)begin
+        io_ls_flag_reg  <= 1'b0;
+    end
+end
+wire skip_flag;
+FF_D_without_asyn_rst #(1) u_skip_flag (clock,u_core_top_with_i_dcache.u_lsu.LS_EX_execute_ready,io_ls_flag_reg,skip_flag);
+
 DifftestInstrCommit u_DifftestInstrCommit(
     .clock      	(clk                                                  ),
     .io_valid   	(u_core_top_with_i_dcache.u_wbu.LS_WB_reg_ls_valid    ),
-    .io_skip    	(1'b0                                                 ),
+    .io_skip    	(skip_flag                                            ),
     //todo 暂不支持查询是否压缩指令
     .io_isRVC   	(1'b0                                                 ),
 
