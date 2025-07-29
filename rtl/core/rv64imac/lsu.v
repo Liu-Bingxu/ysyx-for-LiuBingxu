@@ -510,7 +510,10 @@ always @(posedge clk or negedge rst_n) begin
                     atomic_state         <= ATOMIC_WAIT_OUT_READY;
                     atomic_finish        <= 1'b1;
                 end
-                if(lsu_bready & lsu_bvalid & (lsu_bresp != 2'h1) & EX_LS_reg_atomic_sc)begin
+                if(lsu_bready & lsu_bvalid & (lsu_bresp == 2'h2) & EX_LS_reg_atomic_sc)begin
+                    atomic_store_page_error    <= 1'b1;
+                end
+                if(lsu_bready & lsu_bvalid & ((lsu_bresp == 2'h3) | ((lsu_bresp == 2'h0))) & EX_LS_reg_atomic_sc)begin
                     atomic_data_reg       <= 64'h1;
                 end
                 if(lsu_bready & lsu_bvalid & (lsu_bresp == 2'h1) & EX_LS_reg_atomic_sc)begin
