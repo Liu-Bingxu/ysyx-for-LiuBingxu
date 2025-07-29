@@ -1516,8 +1516,8 @@ assign out_fifo_wen                         = (out_mmu_hit | out_lsu_write_error
                                                 out_lsu_no_hit_write) & (out_fifo_cnt != 3'h7);
 assign out_fifo_wdata       =   ({68{out_mmu_hit                        &   dcache_line_waddr_mmu[3]  }} & {1'b1, 1'b1, 2'h0,              sram_data_sel_mmu[127:64]   }) |
                                 ({68{out_mmu_hit                        & (!dcache_line_waddr_mmu[3]) }} & {1'b1, 1'b1, 2'h0,              sram_data_sel_mmu[63:0]     }) |
-                                ({68{out_lsu_write_error                                              }} & {1'b0, 1'b0, 2'h3,              sram_data_sel_mmu[63:0]     }) |
-                                ({68{out_lsu_read_error                                               }} & {1'b0, 1'b1, 2'h3,              sram_data_sel_mmu[63:0]     }) |
+                                ({68{out_lsu_write_error                                              }} & {1'b0, 1'b0, 2'h2,              sram_data_sel_mmu[63:0]     }) |
+                                ({68{out_lsu_read_error                                               }} & {1'b0, 1'b1, 2'h2,              sram_data_sel_mmu[63:0]     }) |
                                 ({68{out_lsu_read_hit                   &   dcache_line_waddr[3]      }} & {1'b0, 1'b1, 2'h0,              sram_data_sel[127:64]       }) |
                                 ({68{out_lsu_read_hit                   & (!dcache_line_waddr[3])     }} & {1'b0, 1'b1, 2'h0,              sram_data_sel[63:0]         }) |
                                 ({68{out_mmu_no_hit                     &   dcache_line_waddr_mmu[3]  }} & {1'b1, 1'b1, dcache_resp_reg,   sram_data_wdata[127:64]     }) |
