@@ -271,7 +271,7 @@ always @(*) begin
     else if((rs2 == LS_WB_reg_rd) & LS_WB_reg_ls_valid & (rs2 != 5'h0) & LS_WB_reg_dest_wen)begin
         store_data = LS_WB_reg_data;
     end
-    else if(src2_valid & ID_EX_reg_store_valid)begin
+    else if(src2_valid)begin
         store_data = src2;
     end
     else begin
