@@ -122,6 +122,7 @@ wire        	IF_ID_reg_inst_compress_flag;
 wire [1:0]  	IF_ID_reg_rresp;
 wire [15:0] 	IF_ID_reg_inst_compress;
 wire [31:0] 	IF_ID_reg_inst;
+wire [63:0] 	IF_ID_reg_tval;
 wire [63:0] 	IF_ID_reg_PC;
 
 // idu outports wire
@@ -372,6 +373,7 @@ ifu #(RST_PC)u_ifu(
     .IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
     .IF_ID_reg_inst_compress      	( IF_ID_reg_inst_compress       ),
     .IF_ID_reg_inst               	( IF_ID_reg_inst                ),
+    .IF_ID_reg_tval                 ( IF_ID_reg_tval                ),
     .IF_ID_reg_PC                 	( IF_ID_reg_PC                  )
 );
 
@@ -383,6 +385,7 @@ idu u_idu(
     .IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
     .IF_ID_reg_inst_compress      	( IF_ID_reg_inst_compress       ),
     .IF_ID_reg_inst               	( IF_ID_reg_inst                ),
+    .IF_ID_reg_tval                 ( IF_ID_reg_tval                ),
     .IF_ID_reg_PC                 	( IF_ID_reg_PC                  ),
     .IF_ID_reg_inst_valid         	( IF_ID_reg_inst_valid          ),
     .IF_ID_reg_inst_compress_flag 	( IF_ID_reg_inst_compress_flag  ),

@@ -28,6 +28,7 @@ module idu(
     input  [15:0]           IF_ID_reg_inst_compress,
     input  [31:0]           IF_ID_reg_inst,
     input  [63:0]           IF_ID_reg_PC,
+    input  [63:0]           IF_ID_reg_tval,
     input                   IF_ID_reg_inst_valid,
     input                   IF_ID_reg_inst_compress_flag,
     output                  ID_IF_inst_ready,
@@ -734,10 +735,11 @@ assign trap_cause       = ((IF_ID_reg_rresp == 2'h2) ? 64'hC : (
                                 )
                             ) 
                         ));
-assign trap_tval        = (((IF_ID_reg_rresp != 2'h0) | (ebreak)) ? IF_ID_reg_PC : (
-                            (illegal_instruction & IF_ID_reg_inst_compress_flag) ? {48'h0, IF_ID_reg_inst_compress} :(
-                                (illegal_instruction & (!IF_ID_reg_inst_compress_flag)) ? {32'h0, IF_ID_reg_inst} : 64'h0
-                            ) 
+assign trap_tval        = ((IF_ID_reg_rresp != 2'h0) ? IF_ID_reg_tval :
+                            ((ebreak) ? IF_ID_reg_PC : (
+                                (illegal_instruction & IF_ID_reg_inst_compress_flag) ? {48'h0, IF_ID_reg_inst_compress} :(
+                                    (illegal_instruction & (!IF_ID_reg_inst_compress_flag)) ? {32'h0, IF_ID_reg_inst} : 64'h0
+                                ))
                         ));
 //operand
 assign operand1         = 64'h0 | 

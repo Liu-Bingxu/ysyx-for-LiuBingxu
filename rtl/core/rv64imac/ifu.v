@@ -50,6 +50,7 @@ module ifu#(parameter RST_PC=64'h0)(
     output [1:0]            IF_ID_reg_rresp,
     output [15:0]           IF_ID_reg_inst_compress,
     output [31:0]           IF_ID_reg_inst,
+    output [63:0]           IF_ID_reg_tval,
     output [63:0]           IF_ID_reg_PC
 );
 
@@ -92,6 +93,7 @@ reg  [31:0]         inst_rdata_reg_get;
 wire [31:0]         inst_rdata_reg_tran;
 wire [31:0]         inst_to_idu;
 reg  [1:0]          rresp_to_idu;
+reg  [63:0]         tval_to_idu;
 
 wire                inst_compress_flag;
 
@@ -118,6 +120,7 @@ wire [1:0]            IF_ID_reg_rresp_1;
 wire [15:0]           IF_ID_reg_inst_compress_1;
 wire [31:0]           IF_ID_reg_inst_1;
 wire [63:0]           IF_ID_reg_PC_1;
+wire [63:0]           IF_ID_reg_tval_1;
 
 wire                  reg2_can_cover_flag;
 wire                  reg2_can_change_flag;
@@ -127,6 +130,7 @@ wire [1:0]            IF_ID_reg_rresp_2;
 wire [15:0]           IF_ID_reg_inst_compress_2;
 wire [31:0]           IF_ID_reg_inst_2;
 wire [63:0]           IF_ID_reg_PC_2;
+wire [63:0]           IF_ID_reg_tval_2;
 
 wire                  IF_ID_reg_sel_reg;
 
@@ -469,6 +473,7 @@ FF_D_without_asyn_rst #(2)u_rresp_1             (.clk(clk),.wen(reg1_can_change_
 FF_D_without_asyn_rst #(32)u_inst_1             (.clk(clk),.wen(reg1_can_change_flag),.data_in(inst_to_idu),             .data_out(IF_ID_reg_inst_1));
 FF_D_without_asyn_rst #(16)u_inst_compress_1    (.clk(clk),.wen(reg1_can_change_flag),.data_in(inst_rdata_reg_get[15:0]),.data_out(IF_ID_reg_inst_compress_1));
 FF_D_without_asyn_rst #(64)u_PC_1               (.clk(clk),.wen(reg1_can_change_flag),.data_in(my_reg_PC_reg),           .data_out(IF_ID_reg_PC_1));
+FF_D_without_asyn_rst #(64)u_tval_1             (.clk(clk),.wen(reg1_can_change_flag),.data_in(tval_to_idu),             .data_out(IF_ID_reg_tval_1));
 FF_D_without_asyn_rst #(1)u_inst_compress_flag_1(.clk(clk),.wen(reg1_can_change_flag),.data_in(inst_compress_flag),      .data_out(IF_ID_reg_inst_compress_flag_1));
 assign reg1_can_cover_flag  = ((!IF_ID_reg_inst_valid_1) | ((!IF_ID_reg_sel_reg) & ID_IF_inst_ready));
 assign reg1_can_change_flag = (reg_can_change_flag & (((!IF_ID_reg_sel_reg) & (!IF_ID_reg_inst_valid_1)) | (IF_ID_reg_sel_reg & IF_ID_reg_inst_valid_2)));
@@ -490,6 +495,7 @@ FF_D_without_asyn_rst #(2)u_rresp_2             (.clk(clk),.wen(reg2_can_change_
 FF_D_without_asyn_rst #(32)u_inst_2             (.clk(clk),.wen(reg2_can_change_flag),.data_in(inst_to_idu),.data_out(IF_ID_reg_inst_2));
 FF_D_without_asyn_rst #(16)u_inst_compress_2    (.clk(clk),.wen(reg2_can_change_flag),.data_in(inst_rdata_reg_get[15:0]),.data_out(IF_ID_reg_inst_compress_2));
 FF_D_without_asyn_rst #(64)u_PC_2               (.clk(clk),.wen(reg2_can_change_flag),.data_in(my_reg_PC_reg),.data_out(IF_ID_reg_PC_2));
+FF_D_without_asyn_rst #(64)u_tval_2             (.clk(clk),.wen(reg2_can_change_flag),.data_in(tval_to_idu), .data_out(IF_ID_reg_tval_2));
 FF_D_without_asyn_rst #(1)u_inst_compress_flag_2(.clk(clk),.wen(reg2_can_change_flag),.data_in(inst_compress_flag),.data_out(IF_ID_reg_inst_compress_flag_2));
 assign reg2_can_cover_flag  = ((!IF_ID_reg_inst_valid_2) | (IF_ID_reg_sel_reg & ID_IF_inst_ready));
 assign reg2_can_change_flag = (reg_can_change_flag & (((!IF_ID_reg_sel_reg) & IF_ID_reg_inst_valid_1) | (IF_ID_reg_sel_reg & (!IF_ID_reg_inst_valid_2))));
@@ -513,6 +519,7 @@ assign IF_ID_reg_rresp                      =   (!IF_ID_reg_sel_reg) ?  IF_ID_re
 assign IF_ID_reg_inst_compress              =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_inst_compress_1 : IF_ID_reg_inst_compress_2;
 assign IF_ID_reg_inst                       =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_inst_1 : IF_ID_reg_inst_2;
 assign IF_ID_reg_PC                         =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_PC_1 : IF_ID_reg_PC_2;
+assign IF_ID_reg_tval                       =   (!IF_ID_reg_sel_reg) ?  IF_ID_reg_tval_1 : IF_ID_reg_tval_2;
 
 assign status1_can_conver_flag              =   (status == STATUS1) & (reg_can_cover_flag) & (!inst_empty);
 assign status2_can_conver_flag              =   (status == STATUS2) & (reg_can_cover_flag) & (!inst_empty);
@@ -541,6 +548,25 @@ always @(*) begin
         end
         default: begin
             rresp_to_idu = 2'h0;
+        end
+    endcase
+end
+
+always @(*) begin
+    case (status)
+        STATUS1, STATUS2, STATUS3: begin
+            tval_to_idu = my_reg_PC_reg;
+        end
+        STATUS4: begin
+            if(inst_rdata_reg_get[1:0] != 2'b11)begin
+                tval_to_idu = my_reg_PC_reg;
+            end
+            else begin
+                tval_to_idu = (rresp_rdata_reg != 2'b00) ? my_reg_PC_reg : (my_reg_PC_reg + 64'h2);
+            end
+        end
+        default: begin
+            tval_to_idu = 64'h0;
         end
     endcase
 end
