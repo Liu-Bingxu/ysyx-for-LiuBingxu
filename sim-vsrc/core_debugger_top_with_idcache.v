@@ -1238,7 +1238,7 @@ DifftestPerformRegState u_DifftestPerformRegState(
     .io_value_30 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[30]   ),
     .io_value_31 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[31]   )
 );
-
+warp u_warp;
 DifftestCSRState u_DifftestCSRState(
     .io_privilegeMode 	({{62{1'b0}},u_core_top_with_i_dcache.u_wbu.u_csr.current_priv_status}),
     .io_mstatus       	(u_core_top_with_i_dcache.u_wbu.u_csr.mstatus                         ),
@@ -1329,3 +1329,56 @@ DifftestTrapEvent u_DifftestTrapEvent(
 
 
 endmodule //core_debugger_top_with_idcache
+
+module warp;
+always begin
+    // 中断
+    assign core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[3] = 
+        core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_exu.WB_EX_interrupt_flag;
+    // load
+    assign core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[4] = 
+        core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.EX_LS_reg_execute_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
+        (core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.EX_LS_reg_load_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.read_finish));
+    // store
+    assign core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[5] = 
+        core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.EX_LS_reg_execute_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
+        (core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.EX_LS_reg_store_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.write_finish));
+    // atomic
+    assign core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[6] = 
+        core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.EX_LS_reg_execute_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
+        (core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.EX_LS_reg_atomic_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.atomic_finish));
+    // mux
+    assign core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[7] = 
+        core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_exu.ID_EX_reg_decode_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[4]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[5]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[6]) &
+        core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_exu.ID_EX_reg_mul_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_exu.o_valid);
+    // div
+    assign core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[8] = 
+        core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_exu.ID_EX_reg_decode_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[4]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[5]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[6]) &
+        core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_exu.ID_EX_reg_div_valid & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_exu.o_valid);
+    // no inst
+    assign core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[9] = 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_idu.IF_ID_reg_inst_valid) & 
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[4]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[5]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[6]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[7]) &
+        (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[8]);
+end
+endmodule
