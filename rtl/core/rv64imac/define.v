@@ -29,7 +29,7 @@
 // `define SIM
 // `define DPI_C
 // `define ADD_USE_ADD_BASE
-// `define use_booth_mul
+`define use_booth_mul
 `define PRV_M   2'h3
 `define PRV_S   2'h1
 `define PRV_U   2'h0
