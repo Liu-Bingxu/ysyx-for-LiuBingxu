@@ -1262,11 +1262,11 @@ DifftestCSRState u_DifftestCSRState(
 
 reg  io_ls_flag_reg;
 wire io_load_addr_flag  = ((u_core_top_with_i_dcache.dcache_araddr >= 64'h1000_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h1000_0020)) | 
-                            ((u_core_top_with_i_dcache.dcache_araddr >= 64'h1010_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h1010_0020)) |
+                            ((u_core_top_with_i_dcache.dcache_araddr >= 64'h1010_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h1010_0030)) |
                             ((u_core_top_with_i_dcache.dcache_araddr >= 64'h0c00_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h0c21_0000)) | 
                             ((u_core_top_with_i_dcache.dcache_araddr >= 64'h0200_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h0201_0000));
 wire io_store_addr_flag = ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h1000_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h1000_0020)) | 
-                            ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h1010_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h1010_0020)) | 
+                            ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h1010_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h1010_0030)) | 
                             ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h0c00_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h0c21_0000)) | 
                             ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h0200_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h0201_0000));
 wire io_load_flag  = u_core_top_with_i_dcache.dcache_arvalid & u_core_top_with_i_dcache.dcache_arready & io_load_addr_flag;
