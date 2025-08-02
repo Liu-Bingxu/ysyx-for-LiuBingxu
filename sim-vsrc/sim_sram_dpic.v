@@ -63,6 +63,9 @@ module sim_sram_dpic#(
     output                          mst_rlast
 );
 
+import "DPI-C" function void Log_mem_read(longint addr);
+import "DPI-C" function void Log_mem_wirte(longint addr, longint data,byte wmask);
+
 reg [AXI_ID_W      -1:0]     mst_id;
 reg [AXI_ADDR_W    -1:0]     mst_awaddr_reg;
 reg [8             -1:0]     mst_awlen_reg;
@@ -158,6 +161,7 @@ always @(posedge aclk or negedge arst_n) begin
                     state               <= READ;
                     mst_rvalid_reg      <= 1'b1;
                     sim_sram_read(mst_araddr, mst_rdata_reg);
+                    Log_mem_read(mst_araddr);
                     reservation_valid   <= 1'b1;
                     reservation_addr    <= mst_araddr;
                     reservation_size    <= mst_arsize;
@@ -167,6 +171,7 @@ always @(posedge aclk or negedge arst_n) begin
                     state           <= READ;
                     mst_rvalid_reg  <= 1'b1;
                     sim_sram_read(mst_araddr, mst_rdata_reg);
+                    Log_mem_read(mst_araddr);
                     mst_resp_reg    <= 2'h0;
                 end
             end
@@ -178,12 +183,14 @@ always @(posedge aclk or negedge arst_n) begin
                     end
                     else begin
                         sim_sram_read(mst_araddr_reg, mst_rdata_reg);
+                        Log_mem_read(mst_araddr_reg);
                     end
                 end
             end
             WRITE: begin
                 if(mst_wvalid & mst_wready)begin
                     sim_sram_write(mst_awaddr_reg, mst_wdata, mst_wstrb);
+                    Log_mem_wirte(mst_awaddr_reg, mst_wdata, mst_wstrb);
                     if(mst_wlast)begin
                         state           <= WBACK;
                         mst_bvalid_reg  <= 1'b1;
