@@ -74,6 +74,8 @@ module core_top#(parameter MHARTID = 0,RST_PC=64'h0)(
     input  [1:0]            lsu_bresp
 );
 
+wire            flush_i_ready = 1'b1;
+
 wire            jump_flag;
 wire [63:0]     jump_addr;
 
@@ -97,6 +99,7 @@ wire [63:0] 	ID_EX_reg_next_PC;
 wire [31:0] 	ID_EX_reg_inst;
 wire [4:0]  	ID_EX_reg_rd;
 wire            ID_EX_reg_sflush_valid;
+wire            ID_EX_reg_fence_i_valid;
 wire        	ID_EX_reg_dest_wen;
 wire        	ID_EX_reg_sub;
 wire        	ID_EX_reg_word;
@@ -181,6 +184,7 @@ wire [31:0] 	EX_LS_reg_inst;
 wire [4:0]  	EX_LS_reg_rd;
 wire        	EX_LS_reg_dest_wen;
 wire            EX_LS_reg_sflush_valid;
+wire            EX_LS_reg_fence_i_valid;
 wire        	EX_LS_reg_load_valid;
 wire        	EX_LS_reg_load_signed;
 wire        	EX_LS_reg_load_byte;
@@ -309,6 +313,7 @@ idu u_idu(
     .ID_EX_reg_rd                 	( ID_EX_reg_rd                  ),
     .ID_EX_reg_dest_wen           	( ID_EX_reg_dest_wen            ),
     .ID_EX_reg_sflush_valid         ( ID_EX_reg_sflush_valid        ),
+    .ID_EX_reg_fence_i_valid        ( ID_EX_reg_fence_i_valid       ),
     .ID_EX_reg_sub                	( ID_EX_reg_sub                 ),
     .ID_EX_reg_word               	( ID_EX_reg_word                ),
     .ID_EX_reg_logic_valid        	( ID_EX_reg_logic_valid         ),
@@ -405,6 +410,7 @@ exu u_exu(
     .ID_EX_reg_rd            	( ID_EX_reg_rd             ),
     .ID_EX_reg_dest_wen      	( ID_EX_reg_dest_wen       ),
     .ID_EX_reg_sflush_valid     ( ID_EX_reg_sflush_valid   ),
+    .ID_EX_reg_fence_i_valid    ( ID_EX_reg_fence_i_valid  ),
     .ID_EX_reg_sub           	( ID_EX_reg_sub            ),
     .ID_EX_reg_word          	( ID_EX_reg_word           ),
     .ID_EX_reg_logic_valid   	( ID_EX_reg_logic_valid    ),
@@ -483,6 +489,7 @@ exu u_exu(
     .EX_LS_reg_rd            	( EX_LS_reg_rd             ),
     .EX_LS_reg_dest_wen      	( EX_LS_reg_dest_wen       ),
     .EX_LS_reg_sflush_valid     ( EX_LS_reg_sflush_valid   ),
+    .EX_LS_reg_fence_i_valid    ( EX_LS_reg_fence_i_valid  ),
     .EX_LS_reg_load_valid    	( EX_LS_reg_load_valid     ),
     .EX_LS_reg_load_signed   	( EX_LS_reg_load_signed    ),
     .EX_LS_reg_load_byte     	( EX_LS_reg_load_byte      ),
@@ -529,6 +536,7 @@ exu u_exu(
 lsu u_lsu(
     .clk                     	( clk                      ),
     .rst_n                   	( rst_n                    ),
+    .flush_i_ready              ( flush_i_ready            ),
     .lsu_arvalid             	( lsu_arvalid              ),
     .lsu_arready             	( lsu_arready              ),
     .lsu_arlock              	( lsu_arlock               ),
@@ -559,6 +567,7 @@ lsu u_lsu(
     .EX_LS_reg_rd            	( EX_LS_reg_rd             ),
     .EX_LS_reg_dest_wen      	( EX_LS_reg_dest_wen       ),
     .EX_LS_reg_sflush_valid     ( EX_LS_reg_sflush_valid   ),
+    .EX_LS_reg_fence_i_valid    ( EX_LS_reg_fence_i_valid  ),
     .EX_LS_reg_load_valid    	( EX_LS_reg_load_valid     ),
     .EX_LS_reg_load_signed   	( EX_LS_reg_load_signed    ),
     .EX_LS_reg_load_byte     	( EX_LS_reg_load_byte      ),
