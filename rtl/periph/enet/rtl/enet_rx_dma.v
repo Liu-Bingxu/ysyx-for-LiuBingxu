@@ -117,7 +117,8 @@ wire                    dma_read_stop_flag   = (rx_data_fifo_data_cnt <= raem);
 reg                     wrap;
 reg  [AXI_ADDR_W -1:0]  rx_buf_point;
 reg  [15:0]             rx_buf_offset;
-reg  [AXI_ADDR_W -1:0]  rx_bd_point_offset;
+reg  [AXI_ADDR_W -1:0]  rx_bd_point_offset_read;
+reg  [AXI_ADDR_W -1:0]  rx_bd_point_offset_write;
 
 wire                    Vlan;
 wire                    frame_error;
@@ -283,7 +284,7 @@ assign eir_babr  = (dma_status == DMA_REPORT_EIR) & LG_reg;
 assign eir_rxf   = (dma_status == DMA_REPORT_EIR) ? 1'b1 : 1'b0;
 assign eir_plr   = (dma_status == DMA_REPORT_EIR) & PLR_reg;
 assign eir_eberr = (dma_status == DMA_ERROR_REPORT);
-assign slv_awddr = (dma_status == DMA_S_DESC) ? (rdsr + rx_bd_point_offset) : (rx_buf_point + {16'h0, rx_buf_offset});
+assign slv_awddr = (dma_status == DMA_S_DESC) ? (rdsr + rx_bd_point_offset_write) : (rx_buf_point + {16'h0, rx_buf_offset});
 
 assign rx_data_fifo_Rready = ((slv_wvalid & slv_wready) | ((dma_status == DMA_R_DATA)));
 
@@ -586,17 +587,31 @@ end
 
 always @(posedge rx_clk or negedge rst_n) begin
     if(!rst_n)begin
-        rx_bd_point_offset <= 32'h0;
+        rx_bd_point_offset_read <= 32'h0;
     end
     else if(!ether_en)begin
-        rx_bd_point_offset <= 32'h0;
+        rx_bd_point_offset_read <= 32'h0;
     end
     else if(dma_status == DMA_R_RXBD)begin
         if(slv_rvalid & slv_rready & slv_rlast & (slv_rid == AXI_ID_SB) & slv_rdata[31] & slv_rdata[29])begin
-            rx_bd_point_offset <= 32'h0;
+            rx_bd_point_offset_read <= 32'h0;
         end
         else if(slv_rvalid & slv_rready & slv_rlast & (slv_rid == AXI_ID_SB) & slv_rdata[31])begin
-            rx_bd_point_offset <= rx_bd_point_offset + 32'h8;
+            rx_bd_point_offset_read <= rx_bd_point_offset_read + 32'h8;
+        end
+    end
+end
+
+always @(posedge rx_clk or negedge rst_n) begin
+    if(!rst_n)begin
+        rx_bd_point_offset_write <= 32'h0;
+    end
+    else if(!ether_en)begin
+        rx_bd_point_offset_write <= 32'h0;
+    end
+    else if(dma_status == DMA_S_DESC)begin
+        if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB))begin
+            rx_bd_point_offset_write <= rx_bd_point_offset_read;
         end
     end
 end
@@ -635,7 +650,7 @@ assign slv_wdata    = ((dma_status == DMA_S_DATA) | (dma_status == DMA_S_DATA_TH
 assign slv_wstrb    = ((dma_status == DMA_S_DATA) | (dma_status == DMA_S_DATA_THROUGH)) ? 8'hFF : 8'hF;
 assign slv_bready   = 1'b1;
 assign slv_arvalid  = slv_arvalid_reg;
-assign slv_araddr   = (rdsr + rx_bd_point_offset);
+assign slv_araddr   = (rdsr + rx_bd_point_offset_read);
 assign slv_arlen    = 8'h0;
 assign slv_arsize   = 3'h3;
 assign slv_arburst  = 2'h1;
