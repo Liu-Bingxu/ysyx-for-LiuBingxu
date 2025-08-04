@@ -133,7 +133,7 @@ crc32 u_crc32(
     .crc_out      	(crc_out       )
 );
 
-assign crc_check = (crc_out_next == 32'h0) ? 1'b1 : 1'b0;
+assign crc_check = (crc_out == {gmii_rxd_r[3], gmii_rxd_r[2], gmii_rxd_r[1], gmii_rxd_r[0]}) ? 1'b1 : 1'b0;
 
 assign rx_unicast_check_success = (!gmii_rx_Da[0][0]) & 
                     (({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {palr, paur}) |
@@ -144,7 +144,7 @@ assign rx_multicast_check_success = gmii_rx_Da[0][0] &
                     ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {pause_DA}) |
                     (gaur[crc_out_next[4:0]] & crc_out_next[5]) | (galr[crc_out_next[4:0]] & (!crc_out_next[5])));
 
-assign gmii_rxd_use = (mii_select) ? gmii_rxd_r[0] : gmii_rxd;
+assign gmii_rxd_use = gmii_rxd_r[3];
 
 assign vlan_flag    = (gmii_rx_type_len == 16'h8100);
 assign MC_flag      = gmii_rx_Da[0][0];
@@ -152,7 +152,7 @@ assign BC_flag      = ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[
 assign plr_flag     = (nlc & (rx_status == RX_RECV_NORMAL) & (gmii_rx_type_len < 16'h600) & (rx_status_cnt != {gmii_rx_type_len + 16'h12}));
 assign pause_flag   = ((gmii_rx_type_len == 16'h8808) & (gmii_rx_opcode == 16'h0001));
 
-assign crc_en       = (rx_status != RX_IDLE) & ((!mii_select) | mii_odd);
+assign crc_en       = (rx_status != RX_IDLE) & ((!mii_select) | mii_odd) & gmii_rxd_dv[3];
 assign crc_flush    = (rx_status == RX_IDLE);
 
 always @(posedge rx_clk or negedge rst_n) begin
@@ -167,7 +167,7 @@ always @(posedge rx_clk or negedge rst_n) begin
     else begin
         case (rx_status)
             RX_IDLE:begin
-                if((gmii_rxd_use == 8'hD5) & (!gmii_rx_er) & gmii_rx_dv & ((!mii_select) | (gmii_rxd_dv[0] & (!gmii_rxd_er[0]))))begin
+                if((gmii_rxd_use == 8'hD5) & (!gmii_rx_er) & gmii_rx_dv & ((!mii_select) | (gmii_rxd_dv[3] & (!gmii_rxd_er[3]))))begin
                     rx_status       <= RX_START_DA;
                     rx_status_cnt   <= 16'h0;
                     gmii_rx_opcode  <= 16'h0;
@@ -390,7 +390,7 @@ always @(posedge rx_clk or negedge rst_n) begin
     else if((!ether_en) | rdar_rst)begin
         mii_odd <= 1'b0;
     end
-    else if(mii_select & gmii_rx_dv & gmii_rxd_dv[0] & (rx_status == RX_IDLE) & (gmii_rxd_r[0] == 8'hD5))begin
+    else if(mii_select & gmii_rx_dv & gmii_rxd_dv[3] & (rx_status == RX_IDLE) & (gmii_rxd_r[3] == 8'hD5))begin
         mii_odd <= 1'b0;
     end
     else if(mii_select)begin
@@ -408,8 +408,8 @@ always @(posedge rx_clk or negedge rst_n) begin
     else if((!ether_en) | rdar_rst)begin
         rx_data_cnt <= 4'h0;
     end
-    else if((rx_status == RX_IDLE) & (gmii_rxd_use == 8'hD5) & (!gmii_rx_er) & gmii_rx_dv & ((!mii_select) | (gmii_rxd_dv[0] & (!gmii_rxd_er[0]))))begin
-        rx_data_cnt <= 4'h0;
+    else if((rx_status == RX_IDLE) & (gmii_rxd_use == 8'hD5) & (!gmii_rx_er) & gmii_rx_dv & ((!mii_select) | (gmii_rxd_dv[3] & (!gmii_rxd_er[3]))))begin
+        rx_data_cnt <= 4'h3;
     end
     else if(( (paden | crcfwd)) & (rx_data_cnt == 4'hB) & gmii_rx_dv & ((!mii_select) | mii_odd))begin
         rx_data_cnt <= 4'h4;
@@ -507,12 +507,30 @@ assign rx_frame_fifo_wdata = {vlan_flag, recv_normal_error_er | recv_control_err
 //?send data to data fifo
 
 assign rx_data_fifo_Wready = (recv_normal_end | (recv_control_end & (rx_data_out_cnt != 16'h0)) | 
-                                ((rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hE)) | 
-                                ((rx_status == RX_RECV_NORMAL) & rx_data_finish_flag) | 
-                                ((rx_status == RX_RECV_CONTROL) & pause_flag & paufwd & (rx_status_cnt == 16'h10)) | 
-                                ((rx_status == RX_RECV_CONTROL) & pause_flag & paufwd & rx_data_finish_flag) | 
-                                ((rx_status == RX_RECV_CONTROL) & (!pause_flag) & (!cfen) & (rx_status_cnt == 16'h10)) | 
-                                ((rx_status == RX_RECV_CONTROL) & (!pause_flag) & (!cfen) & rx_data_finish_flag));
+                                (((!mii_select) | mii_odd) & (rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hE)) | 
+                                (((!mii_select) | mii_odd) & (rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hF) & (!(paden | crcfwd))) | 
+                                (((!mii_select) | mii_odd) & (rx_status == RX_RECV_NORMAL) & rx_data_finish_flag) | 
+                                (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & pause_flag & paufwd & (rx_status_cnt == 16'h10)) | 
+                                (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & pause_flag & paufwd & rx_data_finish_flag) | 
+                                (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & (!pause_flag) & (!cfen) & (rx_status_cnt == 16'h10)) | 
+                                (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & (!pause_flag) & (!cfen) & rx_data_finish_flag));
+
+wire [3:0]  end_data_shamt;
+wire [63:0] end_data_temp;
+wire [63:0] end_data;
+assign end_data_shamt = 4'h8 - rx_data_add_cnt;
+assign end_data_temp = (paden | crcfwd) ? 
+    {gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], gmii_rxd_r[7], 
+                            gmii_rxd_r[8], gmii_rxd_r[9], gmii_rxd_r[10], gmii_rxd_r[11]} :
+    {gmii_rxd_r[0], gmii_rxd_r[1], gmii_rxd_r[2], gmii_rxd_r[3], 
+                            gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], gmii_rxd_r[7]};
+buck_shift #(64,6)u_buck_shift(
+    .LR       	(1'b0                       ),
+    .AL       	(1'b0                       ),
+    .shamt    	({end_data_shamt[2:0], 3'h0}),
+    .data_in  	(end_data_temp              ),
+    .data_out 	(end_data                   )
+);
 
 assign rx_data_fifo_wdata = 
     (((rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hE)) | 
@@ -520,6 +538,10 @@ assign rx_data_fifo_wdata =
     ((rx_status == RX_RECV_CONTROL) & (!pause_flag) & (!cfen) & (rx_status_cnt == 16'h10))) ?
     {gmii_rx_Sa[1], gmii_rx_Sa[0], gmii_rx_Da[5], gmii_rx_Da[4], 
                             gmii_rx_Da[3], gmii_rx_Da[2], gmii_rx_Da[1], gmii_rx_Da[0]} : 
+    (recv_normal_end | (recv_control_end & (rx_data_out_cnt != 16'h0))) ? end_data :
+    ((rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hF) & (!(paden | crcfwd))) ? 
+    {gmii_rxd_r[3], gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], 
+                            gmii_rxd_r[7], gmii_rxd_r[8], gmii_rxd_r[9], gmii_rxd_r[10]} :
     (paden | crcfwd) ? 
     {gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], gmii_rxd_r[7], 
                             gmii_rxd_r[8], gmii_rxd_r[9], gmii_rxd_r[10], gmii_rxd_r[11]} :
