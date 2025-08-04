@@ -286,7 +286,7 @@ assign eir_plr   = (dma_status == DMA_REPORT_EIR) & PLR_reg;
 assign eir_eberr = (dma_status == DMA_ERROR_REPORT);
 assign slv_awddr = (dma_status == DMA_S_DESC) ? (rdsr + rx_bd_point_offset_write) : (rx_buf_point + {16'h0, rx_buf_offset});
 
-assign rx_data_fifo_Rready = ((slv_wvalid & slv_wready) | ((dma_status == DMA_R_DATA)));
+assign rx_data_fifo_Rready = ((slv_wvalid & slv_wready & (dma_status != DMA_S_DESC)) | ((dma_status == DMA_R_DATA)));
 
 assign rx_frame_fifo_Rready = ((dma_status == DMA_R_FRAME) & (|rx_frame_fifo_data_cnt)) | 
     ((dma_status == DMA_S_DATA_THROUGH) & slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & 
