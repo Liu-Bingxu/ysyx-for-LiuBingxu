@@ -627,7 +627,7 @@ for(csr_MPerformance_Monitor_index = 1 ; csr_MPerformance_Monitor_index < 32; cs
     end
     else begin
         assign csr_MPerformance_Monitor_wen[csr_MPerformance_Monitor_index] = LS_WB_reg_ls_valid & LS_WB_reg_csr_wen & (!(trap_m_mode_valid | trap_s_mode_valid)) & (LS_WB_reg_csr_addr == (12'hB00 + csr_MPerformance_Monitor_index));
-        assign MPerformance_Monitor_inc[csr_MPerformance_Monitor_index]     = 1'b0;
+        // assign MPerformance_Monitor_inc[csr_MPerformance_Monitor_index]     = 1'b0;
     end
 end
 endgenerate
