@@ -490,10 +490,6 @@ always @(posedge rx_clk or negedge rst_n) begin
                     slv_wlast_reg       <= 1'b0;
                     slv_wlast_cnt_reg   <= 2'h0;
                 end
-                else if(rx_frame_fifo_Rready)begin
-                    slv_wlast_reg       <= 1'b1;
-                    slv_wlast_cnt_reg   <= 2'h0;
-                end
                 else if(dma_read_though_flag)begin
                     slv_wlast_reg       <= 1'b1;
                     slv_wlast_cnt_reg   <= 2'h0;
@@ -518,8 +514,14 @@ always @(posedge rx_clk or negedge rst_n) begin
                     end
                 end
             end
+            DMA_R_DATA: begin
+                if(data_quene_r_len < 16'h9)begin
+                    slv_wlast_reg       <= 1'b1;
+                end
+            end
             default: begin
-                slv_wlast_reg  <= 1'b0;
+                slv_wlast_reg       <= 1'b0;
+                slv_wlast_cnt_reg   <= 2'h0;
             end
         endcase
     end
