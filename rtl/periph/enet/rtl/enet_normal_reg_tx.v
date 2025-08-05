@@ -108,10 +108,10 @@ u_tsem(
     .data_out 	(tsem           )
 );
 
-wire [7:0] tafl_wdata = (reg_wdata[7:0] > 8'd120) ? 8'd120 : reg_wdata[7:0];
+wire [7:0] tafl_wdata = (reg_wdata[7:0] > 8'd240) ? 8'd240 : reg_wdata[7:0];
 FF_D_with_wen #(
     .DATA_LEN 	(8       ),
-    .RST_DATA 	(8'd120  ))
+    .RST_DATA 	(8'd240  ))
 u_tafl(
     .clk      	(tx_clk     ),
     .rst_n    	(rst_n      ),

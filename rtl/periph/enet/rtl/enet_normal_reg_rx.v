@@ -142,10 +142,10 @@ u_rsem_rx(
     .data_out 	(rsem_rx            )
 );
 
-wire [7:0] rafl_wdata = (reg_wdata[7:0] > 8'd124) ? 8'd124 : reg_wdata[7:0];
+wire [7:0] rafl_wdata = (reg_wdata[7:0] > 8'd251) ? 8'd251 : reg_wdata[7:0];
 FF_D_with_wen #(
     .DATA_LEN 	(8       ),
-    .RST_DATA 	(8'd124  ))
+    .RST_DATA 	(8'd251  ))
 u_rafl(
     .clk      	(rx_clk      ),
     .rst_n    	(rst_n       ),

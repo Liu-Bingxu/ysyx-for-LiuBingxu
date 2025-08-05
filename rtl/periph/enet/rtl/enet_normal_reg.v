@@ -523,10 +523,10 @@ u_rsem_rx(
 );
 assign {rsem[31:21], rsem[15:8]} = 19'h0;
 
-wire [7:0] rafl_wdata = (reg_wdata[7:0] > 8'd124) ? 8'd124 : reg_wdata[7:0];
+wire [7:0] rafl_wdata = (reg_wdata[7:0] > 8'd251) ? 8'd251 : reg_wdata[7:0];
 FF_D_with_wen #(
     .DATA_LEN 	(8       ),
-    .RST_DATA 	(8'd124  ))
+    .RST_DATA 	(8'd251  ))
 u_rafl(
     .clk      	(clk                ),
     .rst_n    	(rst_n              ),
@@ -583,10 +583,10 @@ u_tsem(
 );
 assign tsem[31:8] = 24'h0;
 
-wire [7:0] tafl_wdata = (reg_wdata[7:0] > 8'd120) ? 8'd120 : reg_wdata[7:0];
+wire [7:0] tafl_wdata = (reg_wdata[7:0] > 8'd240) ? 8'd240 : reg_wdata[7:0];
 FF_D_with_wen #(
     .DATA_LEN 	(8       ),
-    .RST_DATA 	(8'd120  ))
+    .RST_DATA 	(8'd240  ))
 u_tafl(
     .clk      	(clk                ),
     .rst_n    	(rst_n              ),
