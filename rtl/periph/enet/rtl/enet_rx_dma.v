@@ -236,11 +236,11 @@ always @(posedge rx_clk or negedge rst_n) begin
                 end
             end
             DMA_S_DATA: begin
-                if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (data_quene_b_len < 16'h33) & ((slv_bresp != 2'h0) | dma_w_er))begin
+                if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (data_quene_b_len < 16'd33) & ((slv_bresp != 2'h0) | dma_w_er))begin
                     dma_status      <= DMA_ERROR_REPORT;
                     dma_w_er        <= 1'b0;
                 end
-                else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (data_quene_b_len < 16'h33) & (slv_bresp == 2'h0))begin
+                else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (data_quene_b_len < 16'd33) & (slv_bresp == 2'h0))begin
                     dma_status      <= DMA_S_DESC;
                 end
                 else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp != 2'h0))begin
@@ -380,7 +380,7 @@ always @(posedge rx_clk or negedge rst_n) begin
                 if(slv_awvalid & slv_awready & (data_quene_aw_len < 16'd33))begin
                     slv_awvalid_reg <= 1'b0;
                 end
-                else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (data_quene_b_len < 16'h33) & (slv_bresp == 2'h0) & (!dma_w_er))begin
+                else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (data_quene_b_len < 16'd33) & (slv_bresp == 2'h0) & (!dma_w_er))begin
                     slv_awvalid_reg <= 1'b1;
                 end
             end
@@ -453,7 +453,7 @@ always @(posedge rx_clk or negedge rst_n) begin
                 if(slv_wvalid & slv_wready & (data_quene_w_len < 16'd9))begin
                     slv_wvalid_reg <= 1'b0;
                 end
-                else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (data_quene_b_len < 16'h33) & (slv_bresp == 2'h0) & (!dma_w_er))begin
+                else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (data_quene_b_len < 16'd33) & (slv_bresp == 2'h0) & (!dma_w_er))begin
                     slv_wvalid_reg <= 1'b1;
                 end
             end
