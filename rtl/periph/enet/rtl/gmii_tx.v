@@ -367,6 +367,9 @@ always @(posedge tx_clk or negedge rst_n) begin
                 if(mii_select)begin
                     tx_mii_odd  <= 1'b1;
                 end
+                if(tx_clk_cnt == 16'd8) begin
+                    crc_en      <= 1'b1;
+                end
                 if(tx_clk_cnt < 16'd7) begin
                     txd         <= 8'h55;
                     tx_clk_cnt  <= tx_clk_cnt + 1'b1;
@@ -416,7 +419,13 @@ always @(posedge tx_clk or negedge rst_n) begin
                     else begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                     end
-                    txd                     <= crc_out_next[31:24];
+                    if(!mii_select) begin
+                        txd         <= crc_out_next[31:24];
+                    end
+                    else begin
+                        txd         <= crc_out[31:24];
+                    end
+                    crc_en                  <= 1'b0;
                     tx_data_cnt             <= 3'h0;
                     tx_clk_cnt              <= 16'h0;
                     tx_status               <= TX_SEND_CRC;
@@ -464,6 +473,9 @@ always @(posedge tx_clk or negedge rst_n) begin
                 tx_en       <= 1'b1;
                 if(mii_select)begin
                     tx_mii_odd  <= 1'b1;
+                end
+                if(tx_clk_cnt == 16'd8) begin
+                    crc_en      <= 1'b1;
                 end
                 if(tx_clk_cnt < 16'd7) begin
                     txd         <= 8'h55;
@@ -519,7 +531,13 @@ always @(posedge tx_clk or negedge rst_n) begin
                     else begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                     end
-                    txd                     <= crc_out_next[31:24];
+                    if(!mii_select) begin
+                        txd         <= crc_out_next[31:24];
+                    end
+                    else begin
+                        txd         <= crc_out[31:24];
+                    end
+                    crc_en                  <= 1'b0;
                     tx_data_cnt             <= 3'h0;
                     tx_clk_cnt              <= 16'h0;
                     tx_status               <= TX_SEND_CRC;
@@ -613,23 +631,15 @@ always @(posedge tx_clk or negedge rst_n) begin
                 if(mii_select)begin
                     tx_mii_odd  <= 1'b1;
                 end 
-                if((tx_clk_cnt == 16'd0) & (!mii_select)) begin
-                    txd         <= crc_out_next[31:24];
-                    tx_clk_cnt  <= tx_clk_cnt + 1'b1;
-                end
-                else if((tx_clk_cnt == 16'd0) & mii_select) begin
-                    txd         <= crc_out[31:24];
-                    tx_clk_cnt  <= tx_clk_cnt + 1'b1;
-                end
-                else if(tx_clk_cnt == 16'd1) begin
+                if(tx_clk_cnt == 16'd0) begin
                     txd         <= crc_out[23:16];
                     tx_clk_cnt  <= tx_clk_cnt + 1'b1;
                 end 
-                else if(tx_clk_cnt == 16'd2) begin
+                else if(tx_clk_cnt == 16'd1) begin
                     txd         <= crc_out[15:8];
                     tx_clk_cnt  <= tx_clk_cnt + 1'b1;
                 end
-                else if(tx_clk_cnt == 16'd3) begin
+                else if(tx_clk_cnt == 16'd2) begin
                     txd         <= crc_out[7:0];
                     tx_clk_cnt  <= 16'h1;
                     tx_status   <= TX_WAIT_IPG;
