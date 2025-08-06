@@ -391,71 +391,25 @@ always @(posedge tx_clk or negedge rst_n) begin
                     tx_clk_cnt              <= tx_clk_cnt + 16'h1;
                 end
                 else if((tx_clk_cnt == frame_rdata[15:0]) & (crcfwd | frame_rdata[16])) begin
-                    if(tx_data_cnt == 3'h0)begin
-                        txd         <= tx_data_fifo_rdata[7:0];
-                    end
-                    else if(tx_data_cnt == 3'h1)begin
-                        txd         <= tx_data_fifo_rdata[15:8];
-                    end
-                    else if(tx_data_cnt == 3'h2)begin
-                        txd         <= tx_data_fifo_rdata[23:16];
-                    end
-                    else if(tx_data_cnt == 3'h3)begin
-                        txd         <= tx_data_fifo_rdata[31:24];
-                    end
-                    else if(tx_data_cnt == 3'h4)begin
-                        txd         <= tx_data_fifo_rdata[39:32];
-                    end
-                    else if(tx_data_cnt == 3'h5)begin
-                        txd         <= tx_data_fifo_rdata[47:40];
-                    end
-                    else if(tx_data_cnt == 3'h6)begin
-                        txd         <= tx_data_fifo_rdata[55:48];
-                    end
-                    else if(tx_data_cnt == 3'h7)begin
-                        txd         <= tx_data_fifo_rdata[63:56];
-                    end
                     if(tx_data_cnt != 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b1;
                     end
                     else begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                     end
+                    tx_en                   <= 1'b0;
                     tx_data_cnt             <= 3'h0;
                     tx_clk_cnt              <= 16'h1;
                     tx_status               <= TX_WAIT_IPG;
                 end
                 else if((tx_clk_cnt == frame_rdata[15:0])) begin
-                    if(tx_data_cnt == 3'h0)begin
-                        txd         <= tx_data_fifo_rdata[7:0];
-                    end
-                    else if(tx_data_cnt == 3'h1)begin
-                        txd         <= tx_data_fifo_rdata[15:8];
-                    end
-                    else if(tx_data_cnt == 3'h2)begin
-                        txd         <= tx_data_fifo_rdata[23:16];
-                    end
-                    else if(tx_data_cnt == 3'h3)begin
-                        txd         <= tx_data_fifo_rdata[31:24];
-                    end
-                    else if(tx_data_cnt == 3'h4)begin
-                        txd         <= tx_data_fifo_rdata[39:32];
-                    end
-                    else if(tx_data_cnt == 3'h5)begin
-                        txd         <= tx_data_fifo_rdata[47:40];
-                    end
-                    else if(tx_data_cnt == 3'h6)begin
-                        txd         <= tx_data_fifo_rdata[55:48];
-                    end
-                    else if(tx_data_cnt == 3'h7)begin
-                        txd         <= tx_data_fifo_rdata[63:56];
-                    end
                     if(tx_data_cnt != 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b1;
                     end
                     else begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                     end
+                    txd                     <= crc_out_next[31:24];
                     tx_data_cnt             <= 3'h0;
                     tx_clk_cnt              <= 16'h0;
                     tx_status               <= TX_SEND_CRC;
@@ -540,71 +494,25 @@ always @(posedge tx_clk or negedge rst_n) begin
                     tx_clk_cnt              <= tx_clk_cnt + 16'h1;
                 end
                 else if((|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]) & (crcfwd | frame_rdata[16])) begin
-                    if(tx_data_cnt == 3'h0)begin
-                        txd         <= tx_data_fifo_rdata[7:0];
-                    end
-                    else if(tx_data_cnt == 3'h1)begin
-                        txd         <= tx_data_fifo_rdata[15:8];
-                    end
-                    else if(tx_data_cnt == 3'h2)begin
-                        txd         <= tx_data_fifo_rdata[23:16];
-                    end
-                    else if(tx_data_cnt == 3'h3)begin
-                        txd         <= tx_data_fifo_rdata[31:24];
-                    end
-                    else if(tx_data_cnt == 3'h4)begin
-                        txd         <= tx_data_fifo_rdata[39:32];
-                    end
-                    else if(tx_data_cnt == 3'h5)begin
-                        txd         <= tx_data_fifo_rdata[47:40];
-                    end
-                    else if(tx_data_cnt == 3'h6)begin
-                        txd         <= tx_data_fifo_rdata[55:48];
-                    end
-                    else if(tx_data_cnt == 3'h7)begin
-                        txd         <= tx_data_fifo_rdata[63:56];
-                    end
                     if(tx_data_cnt != 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b1;
                     end
                     else begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                     end
+                    tx_en                   <= 1'b0;
                     tx_data_cnt             <= 3'h0;
                     tx_clk_cnt              <= 16'h1;
                     tx_status               <= TX_WAIT_IPG;
                 end
                 else if((|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0])) begin
-                    if(tx_data_cnt == 3'h0)begin
-                        txd         <= tx_data_fifo_rdata[7:0];
-                    end
-                    else if(tx_data_cnt == 3'h1)begin
-                        txd         <= tx_data_fifo_rdata[15:8];
-                    end
-                    else if(tx_data_cnt == 3'h2)begin
-                        txd         <= tx_data_fifo_rdata[23:16];
-                    end
-                    else if(tx_data_cnt == 3'h3)begin
-                        txd         <= tx_data_fifo_rdata[31:24];
-                    end
-                    else if(tx_data_cnt == 3'h4)begin
-                        txd         <= tx_data_fifo_rdata[39:32];
-                    end
-                    else if(tx_data_cnt == 3'h5)begin
-                        txd         <= tx_data_fifo_rdata[47:40];
-                    end
-                    else if(tx_data_cnt == 3'h6)begin
-                        txd         <= tx_data_fifo_rdata[55:48];
-                    end
-                    else if(tx_data_cnt == 3'h7)begin
-                        txd         <= tx_data_fifo_rdata[63:56];
-                    end
                     if(tx_data_cnt != 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b1;
                     end
                     else begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                     end
+                    txd                     <= crc_out_next[31:24];
                     tx_data_cnt             <= 3'h0;
                     tx_clk_cnt              <= 16'h0;
                     tx_status               <= TX_SEND_CRC;
