@@ -175,16 +175,16 @@ u_frame_fifo(
 
 always @(posedge tx_clk or negedge rst_n) begin
     if(!rst_n)begin
-        frame_data_len <= 16'h7;
+        frame_data_len <= 16'h8;
         frame_desc_len <= 6'h0;
     end
     else if(!ether_en)begin
-        frame_data_len <= 16'h7;
+        frame_data_len <= 16'h8;
         frame_desc_len <= 6'h0;
     end
     else begin
         if(tx_frame_fifo_o_Rready & tx_frame_fifo_o_rdata[17])begin
-            frame_data_len <= 16'h7;
+            frame_data_len <= 16'h8;
             frame_desc_len <= 6'h0;
         end
         else if(tx_frame_fifo_o_Rready)begin
