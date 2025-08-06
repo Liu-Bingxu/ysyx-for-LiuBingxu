@@ -226,6 +226,12 @@ always @(posedge tx_clk or negedge rst_n) begin
         frame_desc_cnt      <= 6'h1;
         frame_data_len_reg  <= frame_rdata[15:0];
     end
+    else if((tx_status == TX_THROUGH) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]))begin
+        underrun            <= 1'b0;
+        frame_desc_len_reg  <= frame_rdata[22:17];
+        frame_desc_cnt      <= 6'h1;
+        frame_data_len_reg  <= frame_rdata[15:0];
+    end
     else if((tx_status == TX_UNDERRUN) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]))begin
         underrun            <= 1'b1;
         frame_desc_len_reg  <= frame_rdata[22:17];
@@ -238,6 +244,7 @@ assign tx_frame_fifo_i_Wready = (frame_desc_len_reg != 6'h0);
 assign tx_frame_fifo_i_wdata  = {rdata, 1'b0/* lc */, 1'b0/* rl */, underrun, (frame_data_len_reg > {2'b0, max_fl})};
 
 assign frame_Rready           = ((tx_status == TX_STRFWD) & (tx_clk_cnt == frame_rdata[15:0])) | 
+                                ((tx_status == TX_THROUGH) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0])) | 
                                 ((tx_status == TX_UNDERRUN) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]));
 
 always @(posedge tx_clk or negedge rst_n) begin
