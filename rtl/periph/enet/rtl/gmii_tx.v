@@ -398,7 +398,7 @@ always @(posedge tx_clk or negedge rst_n) begin
                     tx_clk_cnt              <= tx_clk_cnt + 16'h1;
                 end
                 else if((tx_clk_cnt == frame_rdata[15:0]) & (crcfwd | frame_rdata[16])) begin
-                    if(tx_data_cnt != 3'h7)begin
+                    if((tx_data_cnt != 3'h0) & (tx_data_cnt != 3'h7))begin
                         tx_data_fifo_Rready_reg <= 1'b1;
                     end
                     else begin
@@ -410,7 +410,7 @@ always @(posedge tx_clk or negedge rst_n) begin
                     tx_status               <= TX_WAIT_IPG;
                 end
                 else if((tx_clk_cnt == frame_rdata[15:0])) begin
-                    if(tx_data_cnt != 3'h7)begin
+                    if((tx_data_cnt != 3'h0) & (tx_data_cnt != 3'h7))begin
                         tx_data_fifo_Rready_reg <= 1'b1;
                     end
                     else begin
@@ -501,7 +501,7 @@ always @(posedge tx_clk or negedge rst_n) begin
                     tx_clk_cnt              <= tx_clk_cnt + 16'h1;
                 end
                 else if((|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]) & (crcfwd | frame_rdata[16])) begin
-                    if(tx_data_cnt != 3'h7)begin
+                    if((tx_data_cnt != 3'h0) & (tx_data_cnt != 3'h7))begin
                         tx_data_fifo_Rready_reg <= 1'b1;
                     end
                     else begin
@@ -513,7 +513,7 @@ always @(posedge tx_clk or negedge rst_n) begin
                     tx_status               <= TX_WAIT_IPG;
                 end
                 else if((|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0])) begin
-                    if(tx_data_cnt != 3'h7)begin
+                    if((tx_data_cnt != 3'h0) & (tx_data_cnt != 3'h7))begin
                         tx_data_fifo_Rready_reg <= 1'b1;
                     end
                     else begin
@@ -566,7 +566,7 @@ always @(posedge tx_clk or negedge rst_n) begin
                 tx_en       <= 1'b0;
                 tx_er       <= 1'b0;
                 if((|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0])) begin
-                    if(tx_data_cnt != 3'h7)begin
+                    if((tx_data_cnt != 3'h0) & (tx_data_cnt != 3'h7))begin
                         tx_data_fifo_Rready_reg <= 1'b1;
                     end
                     else begin
