@@ -196,7 +196,7 @@ end
 assign frame_Wready = tx_frame_fifo_o_Rready & tx_frame_fifo_o_rdata[17];
 assign frame_wdata  = {(frame_desc_len + 6'h1), tx_frame_fifo_o_rdata[16], (frame_data_len + tx_frame_fifo_o_rdata[15:0])};
 
-assign tx_frame_fifo_o_Rready   = (|tx_frame_fifo_o_data_cnt) & (data_cnt != 6'h3f);
+assign tx_frame_fifo_o_Rready   = (|tx_frame_fifo_o_data_cnt) & (data_cnt != 6'h3f) & (frame_data_cnt != 3'h7);
 
 always @(posedge tx_clk or negedge rst_n) begin
     if(!rst_n)begin
