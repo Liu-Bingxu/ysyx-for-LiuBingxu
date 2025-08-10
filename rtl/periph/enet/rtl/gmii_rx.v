@@ -506,7 +506,7 @@ assign rx_frame_fifo_wdata = {vlan_flag, recv_normal_error_er | recv_control_err
 
 //?send data to data fifo
 
-assign rx_data_fifo_Wready = (recv_normal_end | (recv_control_end & (rx_data_out_cnt != 16'h0)) | 
+assign rx_data_fifo_Wready = (recv_normal_end | recv_remove_pad_end | (recv_control_end & (rx_data_out_cnt != 16'h0)) | 
                                 (((!mii_select) | mii_odd) & (rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hE)) | 
                                 (((!mii_select) | mii_odd) & (rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hF) & (!(paden | crcfwd))) | 
                                 (((!mii_select) | mii_odd) & (rx_status == RX_RECV_NORMAL) & rx_data_finish_flag) | 
@@ -517,13 +517,16 @@ assign rx_data_fifo_Wready = (recv_normal_end | (recv_control_end & (rx_data_out
 
 wire [3:0]  end_data_shamt;
 wire [63:0] end_data_temp;
+wire [3:0]  end_data_shamt_remove_pad;
+wire [63:0] end_data_temp_remove_pad;
 wire [63:0] end_data;
-assign end_data_shamt = 4'h8 - rx_data_add_cnt;
-assign end_data_temp = (paden | crcfwd) ? 
+assign end_data_shamt = (rx_status == RX_ROMVE_PAD) ? end_data_shamt_remove_pad : (4'h8 - rx_data_add_cnt);
+assign end_data_temp = (rx_status == RX_ROMVE_PAD) ? end_data_temp_remove_pad : 
+    ((paden | crcfwd) ? 
     {gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], gmii_rxd_r[7], 
                             gmii_rxd_r[8], gmii_rxd_r[9], gmii_rxd_r[10], gmii_rxd_r[11]} :
     {gmii_rxd_r[0], gmii_rxd_r[1], gmii_rxd_r[2], gmii_rxd_r[3], 
-                            gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], gmii_rxd_r[7]};
+                            gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], gmii_rxd_r[7]});
 buck_shift #(64,6)u_buck_shift(
     .LR       	(1'b0                       ),
     .AL       	(1'b0                       ),
@@ -531,6 +534,14 @@ buck_shift #(64,6)u_buck_shift(
     .data_in  	(end_data_temp              ),
     .data_out 	(end_data                   )
 );
+wire        enter_remov_pad_flag =  (((!mii_select) | mii_odd) & (rx_status == RX_RECV_NORMAL) & paden & (gmii_rx_type_len < 16'h600) & (rx_status_cnt == {gmii_rx_type_len + 16'hD}));
+wire [3:0]  end_data_shamt_remove_pad_data;
+wire [63:0] end_data_temp_remove_pad_data;
+assign end_data_shamt_remove_pad_data = (4'h7 - rx_data_add_cnt);
+assign end_data_temp_remove_pad_data  = {gmii_rxd_r[3], gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], 
+                            gmii_rxd_r[7], gmii_rxd_r[8], gmii_rxd_r[9], gmii_rxd_r[10]};
+FF_D_without_asyn_rst #( 4)   u_end_data_shamt_remove_pad      (rx_clk,enter_remov_pad_flag,end_data_shamt_remove_pad_data,end_data_shamt_remove_pad);
+FF_D_without_asyn_rst #(64)   u_end_data_temp_remove_pad       (rx_clk,enter_remov_pad_flag,end_data_temp_remove_pad_data,end_data_temp_remove_pad);
 
 assign rx_data_fifo_wdata = 
     (((rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hE)) | 
@@ -538,7 +549,7 @@ assign rx_data_fifo_wdata =
     ((rx_status == RX_RECV_CONTROL) & (!pause_flag) & (!cfen) & (rx_status_cnt == 16'h10))) ?
     {gmii_rx_Sa[1], gmii_rx_Sa[0], gmii_rx_Da[5], gmii_rx_Da[4], 
                             gmii_rx_Da[3], gmii_rx_Da[2], gmii_rx_Da[1], gmii_rx_Da[0]} : 
-    (recv_normal_end | (recv_control_end & (rx_data_out_cnt != 16'h0))) ? end_data :
+    (recv_normal_end | recv_remove_pad_end | (recv_control_end & (rx_data_out_cnt != 16'h0))) ? end_data :
     ((rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hF) & (!(paden | crcfwd))) ? 
     {gmii_rxd_r[3], gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], 
                             gmii_rxd_r[7], gmii_rxd_r[8], gmii_rxd_r[9], gmii_rxd_r[10]} :
