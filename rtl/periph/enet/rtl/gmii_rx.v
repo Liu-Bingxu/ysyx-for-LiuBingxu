@@ -391,7 +391,7 @@ always @(posedge rx_clk or negedge rst_n) begin
         mii_odd <= 1'b0;
     end
     else if(mii_select & gmii_rx_dv & gmii_rxd_dv[3] & (rx_status == RX_IDLE) & (gmii_rxd_r[3] == 8'hD5))begin
-        mii_odd <= 1'b0;
+        mii_odd <= 1'b1;
     end
     else if(mii_select)begin
         mii_odd <= ~mii_odd;
