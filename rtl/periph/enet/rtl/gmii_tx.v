@@ -226,13 +226,13 @@ always @(posedge tx_clk or negedge rst_n) begin
         frame_desc_cnt      <= 6'h1;
         frame_data_len_reg  <= frame_rdata[15:0];
     end
-    else if((tx_status == TX_THROUGH) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]))begin
+    else if((tx_status == TX_THROUGH) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]) & ((!tx_mii_odd) | (!mii_select)))begin
         underrun            <= 1'b0;
         frame_desc_len_reg  <= frame_rdata[22:17];
         frame_desc_cnt      <= 6'h1;
         frame_data_len_reg  <= frame_rdata[15:0];
     end
-    else if((tx_status == TX_UNDERRUN) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]))begin
+    else if((tx_status == TX_UNDERRUN) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]) & ((!tx_mii_odd) | (!mii_select)))begin
         underrun            <= 1'b1;
         frame_desc_len_reg  <= frame_rdata[22:17];
         frame_desc_cnt      <= 6'h1;
@@ -243,9 +243,9 @@ assign tx_frame_fifo_i_Wready = (frame_desc_len_reg != 6'h0);
 //TODO half duplex
 assign tx_frame_fifo_i_wdata  = {rdata, 1'b0/* lc */, 1'b0/* rl */, underrun, (frame_data_len_reg > {2'b0, max_fl})};
 
-assign frame_Rready           = ((tx_status == TX_STRFWD) & (tx_clk_cnt == frame_rdata[15:0])) | 
-                                ((tx_status == TX_THROUGH) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0])) | 
-                                ((tx_status == TX_UNDERRUN) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]));
+assign frame_Rready           = ((tx_status == TX_STRFWD)    & ((!tx_mii_odd) | (!mii_select)) & (tx_clk_cnt == frame_rdata[15:0])) | 
+                                ((tx_status == TX_THROUGH)   & ((!tx_mii_odd) | (!mii_select)) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0])) | 
+                                ((tx_status == TX_UNDERRUN)  & ((!tx_mii_odd) | (!mii_select)) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]));
 
 always @(posedge tx_clk or negedge rst_n) begin
     if(!rst_n)begin
@@ -273,10 +273,15 @@ always @(posedge tx_clk or negedge rst_n) begin
         tx_clk_cnt              <= 16'h0;
     end
     else if(tx_mii_odd)begin
-        txd[3:0]                <= txd[7:4];
-        tx_mii_odd              <= 1'b0;
-        tx_data_fifo_Rready_reg <= 1'b0;
-        crc_en                  <= 1'b0;
+        if(tx_data_cnt == 3'h7)begin
+            tx_data_fifo_Rready_reg <= 1'b1;
+        end
+        else begin
+            tx_data_fifo_Rready_reg <= 1'b0;
+        end
+        txd[3:0]                    <= txd[7:4];
+        tx_mii_odd                  <= 1'b0;
+        crc_en                      <= 1'b0;
     end
     else begin
         case (tx_status)
@@ -392,7 +397,8 @@ always @(posedge tx_clk or negedge rst_n) begin
                 else if((tx_clk_cnt < 16'd20) & (tx_clk_cnt > 16'd13) & addins) begin
                     crc_en          <= 1'b1;
                     if(tx_clk_cnt == 16'd14)begin
-                        tx_data_fifo_Rready_reg <= 1'b1;
+                        if(!mii_select)
+                            tx_data_fifo_Rready_reg <= 1'b1;
                         txd         <= palr[31:24];
                     end
                     else if(tx_clk_cnt == 16'd15)begin
@@ -471,9 +477,10 @@ always @(posedge tx_clk or negedge rst_n) begin
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h6)begin
-                        tx_data_fifo_Rready_reg <= 1'b1;
-                        txd                     <= tx_data_fifo_rdata[55:48];
-                        tx_data_cnt             <= tx_data_cnt + 1'b1;
+                        if(!mii_select)
+                            tx_data_fifo_Rready_reg <= 1'b1;
+                        txd                         <= tx_data_fifo_rdata[55:48];
+                        tx_data_cnt                 <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b0;
@@ -505,7 +512,8 @@ always @(posedge tx_clk or negedge rst_n) begin
                 else if((tx_clk_cnt < 16'd20) & (tx_clk_cnt > 16'd13) & addins) begin
                     crc_en          <= 1'b1;
                     if(tx_clk_cnt == 16'd14)begin
-                        tx_data_fifo_Rready_reg <= 1'b1;
+                        if(!mii_select)
+                            tx_data_fifo_Rready_reg <= 1'b1;
                         txd         <= palr[31:24];
                     end
                     else if(tx_clk_cnt == 16'd15)begin
@@ -584,9 +592,10 @@ always @(posedge tx_clk or negedge rst_n) begin
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h6)begin
-                        tx_data_fifo_Rready_reg <= 1'b1;
-                        txd                     <= tx_data_fifo_rdata[55:48];
-                        tx_data_cnt             <= tx_data_cnt + 1'b1;
+                        if(!mii_select)
+                            tx_data_fifo_Rready_reg <= 1'b1;
+                        txd                         <= tx_data_fifo_rdata[55:48];
+                        tx_data_cnt                 <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b0;
