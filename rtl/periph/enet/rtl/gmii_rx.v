@@ -119,6 +119,7 @@ assign frame_rsem_flag = ((rx_frame_fifo_data_cnt >= {1'b0, rsem_stat}) & (rsem_
 // output declaration of module crc32
 wire [31:0]     crc_out_next;
 wire [31:0]     crc_out;
+wire [31:0]     crc_out_reg;
 wire            crc_en;
 wire            crc_flush;
 wire            crc_check;
@@ -132,8 +133,9 @@ crc32 u_crc32(
     .crc_out_next 	(crc_out_next  ),
     .crc_out      	(crc_out       )
 );
+FF_D_without_asyn_rst #(32)   u_crc_out_reg     (rx_clk,1'b1,crc_out,crc_out_reg);
 
-assign crc_check = (crc_out == {gmii_rxd_r[3], gmii_rxd_r[2], gmii_rxd_r[1], gmii_rxd_r[0]}) ? 1'b1 : 1'b0;
+assign crc_check = (mii_select) ? ((crc_out_reg == {gmii_rxd_r[3], gmii_rxd_r[2], gmii_rxd_r[1], gmii_rxd_r[0]}) ? 1'b1 : 1'b0) : ((crc_out == {gmii_rxd_r[3], gmii_rxd_r[2], gmii_rxd_r[1], gmii_rxd_r[0]}) ? 1'b1 : 1'b0);
 
 assign rx_unicast_check_success = (!gmii_rx_Da[0][0]) & 
                     (({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {palr, paur}) |
@@ -152,7 +154,7 @@ assign BC_flag      = ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[
 assign plr_flag     = (nlc & (rx_status == RX_RECV_NORMAL) & (gmii_rx_type_len < 16'h600) & (rx_status_cnt != {gmii_rx_type_len + 16'h12}));
 assign pause_flag   = ((gmii_rx_type_len == 16'h8808) & (gmii_rx_opcode == 16'h0001));
 
-assign crc_en       = (rx_status != RX_IDLE) & ((!mii_select) | mii_odd) & gmii_rxd_dv[3];
+assign crc_en       = (rx_status != RX_IDLE) & ((!mii_select) | (!mii_odd)) & gmii_rxd_dv[3];
 assign crc_flush    = (rx_status == RX_IDLE);
 
 always @(posedge rx_clk or negedge rst_n) begin
@@ -167,7 +169,7 @@ always @(posedge rx_clk or negedge rst_n) begin
     else begin
         case (rx_status)
             RX_IDLE:begin
-                if((gmii_rxd_use == 8'hD5) & (!gmii_rx_er) & gmii_rx_dv & ((!mii_select) | (gmii_rxd_dv[3] & (!gmii_rxd_er[3]))))begin
+                if((gmii_rxd_use == 8'hD5) & (!gmii_rx_er) & gmii_rx_dv & (((!mii_select) | mii_odd) & (gmii_rxd_dv[3] & (!gmii_rxd_er[3]))))begin
                     rx_status       <= RX_START_DA;
                     rx_status_cnt   <= 16'h0;
                     gmii_rx_opcode  <= 16'h0;
@@ -383,11 +385,23 @@ generate
     end
 endgenerate
 
+wire gmii_rx_dv_reg;
+reg  rx_odd_flag;
+FF_D_without_asyn_rst #(1)   u_gmii_rx_dv_reg     (rx_clk,1'b1,gmii_rx_dv,gmii_rx_dv_reg);
 always @(posedge rx_clk or negedge rst_n) begin
     if(!rst_n)begin
-        mii_odd <= 1'b0;
+        mii_odd     <= 1'b0;
+        rx_odd_flag <= 1'b0;
     end
-    else if((!ether_en) | rdar_rst)begin
+    else if((!ether_en) | rdar_rst | (!gmii_rx_dv) | (!mii_select))begin
+        mii_odd     <= 1'b0;
+        rx_odd_flag <= 1'b0;
+    end
+    else if(gmii_rx_dv_reg & (!rx_odd_flag))begin
+        mii_odd     <= 1'b1;
+        rx_odd_flag <= 1'b1;
+    end
+    else if(mii_odd)begin
         mii_odd <= 1'b0;
     end
     else if(mii_select & gmii_rx_dv & gmii_rxd_dv[3] & (rx_status == RX_IDLE) & (gmii_rxd_r[3] == 8'hD5))begin
@@ -395,9 +409,6 @@ always @(posedge rx_clk or negedge rst_n) begin
     end
     else if(mii_select)begin
         mii_odd <= ~mii_odd;
-    end
-    else if(!mii_select)begin
-        mii_odd <= 1'b0;
     end
 end
 
