@@ -139,12 +139,13 @@ assign crc_check = (mii_select) ? ((crc_out_reg == {gmii_rxd_r[3], gmii_rxd_r[2]
 
 assign rx_unicast_check_success = (!gmii_rx_Da[0][0]) & 
                     (({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {palr, paur}) |
-                    (iaur[crc_out_next[4:0]] & crc_out_next[5]) | (ialr[crc_out_next[4:0]] & (!crc_out_next[5])));
+                    (ialr[crc_out_next[6:2]] & crc_out_next[7]) | (iaur[crc_out_next[6:2]] & (!crc_out_next[7])));
 
 assign rx_multicast_check_success = gmii_rx_Da[0][0] & 
                     ((({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {48{1'b1}}) & (!bc_rej)) |
                     ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {pause_DA}) |
-                    (gaur[crc_out_next[4:0]] & crc_out_next[5]) | (galr[crc_out_next[4:0]] & (!crc_out_next[5])));
+                    (galr[crc_out_next[6:2]] & crc_out_next[7] & ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} != {48{1'b1}})) | 
+                    (gaur[crc_out_next[6:2]] & (!crc_out_next[7]) & ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} != {48{1'b1}})));
 
 assign gmii_rxd_use = gmii_rxd_r[3];
 
