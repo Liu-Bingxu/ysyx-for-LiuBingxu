@@ -1,26 +1,26 @@
 module enet_rgmii_to_gmii#(
     // target ("SIM", "GENERIC", "XILINX", "ALTERA")
     parameter TARGET = "GENERIC",
-    //ÊäÈëÊý¾ÝIOÑÓÊ±(Èç¹ûÎªn,±íÊ¾ÑÓÊ±n*78ps) 
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IOï¿½ï¿½Ê±(ï¿½ï¿½ï¿½Îªn,ï¿½ï¿½Ê¾ï¿½ï¿½Ê±n*78ps) 
     parameter IDELAY_VALUE = 0
 )(
-    input              idelay_clk  , //IDELAYÊ±ÖÓ
-    //ÒÔÌ«ÍøGMII½Ó¿Ú
-    output             gmii_rx_clk , //GMII½ÓÊÕÊ±ÖÓ
-    output             gmii_rx_dv  , //GMII½ÓÊÕÊý¾ÝÓÐÐ§ÐÅºÅ
-    output             gmii_rx_er  , //GMII½ÓÊÕÊý¾Ý´íÎóÐÅºÅ
-    output      [7:0]  gmii_rxd    , //GMII½ÓÊÕÊý¾Ý
-    output             gmii_tx_clk , //GMII·¢ËÍÊ±ÖÓ
-    input              gmii_tx_en  , //GMII·¢ËÍÊý¾ÝÊ¹ÄÜÐÅºÅ
-    input              gmii_tx_er  , //GMII·¢ËÍÊý¾Ý´íÎóÐÅºÅ
-    input       [7:0]  gmii_txd    , //GMII·¢ËÍÊý¾Ý            
-    //ÒÔÌ«ÍøRGMII½Ó¿Ú   
-    input              rgmii_rxc   , //RGMII½ÓÊÕÊ±ÖÓ
-    input              rgmii_rx_ctl, //RGMII½ÓÊÕÊý¾Ý¿ØÖÆÐÅºÅ
-    input       [3:0]  rgmii_rxd   , //RGMII½ÓÊÕÊý¾Ý
-    output             rgmii_txc   , //RGMII·¢ËÍÊ±ÖÓ    
-    output             rgmii_tx_ctl, //RGMII·¢ËÍÊý¾Ý¿ØÖÆÐÅºÅ
-    output      [3:0]  rgmii_txd     //RGMII·¢ËÍÊý¾Ý          
+    input              idelay_clk  , //IDELAYÊ±ï¿½ï¿½
+    //ï¿½ï¿½Ì«ï¿½ï¿½GMIIï¿½Ó¿ï¿½
+    output             gmii_rx_clk , //GMIIï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
+    output             gmii_rx_dv  , //GMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½Åºï¿½
+    output             gmii_rx_er  , //GMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½ï¿½Åºï¿½
+    output      [7:0]  gmii_rxd    , //GMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    output             gmii_tx_clk , //GMIIï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
+    input              gmii_tx_en  , //GMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½Åºï¿½
+    input              gmii_tx_er  , //GMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý´ï¿½ï¿½ï¿½ï¿½Åºï¿½
+    input       [7:0]  gmii_txd    , //GMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½            
+    //ï¿½ï¿½Ì«ï¿½ï¿½RGMIIï¿½Ó¿ï¿½   
+    input              rgmii_rxc   , //RGMIIï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
+    input              rgmii_rx_ctl, //RGMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½Åºï¿½
+    input       [3:0]  rgmii_rxd   , //RGMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    output             rgmii_txc   , //RGMIIï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½    
+    output             rgmii_tx_ctl, //RGMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½Åºï¿½
+    output      [3:0]  rgmii_txd     //RGMIIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½          
 );
 
 if(TARGET == "XILINX") begin
@@ -49,7 +49,29 @@ else if (TARGET == "ALTERA") begin
     //ALTERA FPGA
     enet_rgmii_to_gmii_dummy #(
         .IDELAY_VALUE 	(IDELAY_VALUE  ))
-    u_enet_rgmii_to_gmii_xlinx(
+    u_enet_rgmii_to_gmii_dummy(
+        .idelay_clk   	(idelay_clk    ),
+        .gmii_rx_clk  	(gmii_rx_clk   ),
+        .gmii_rx_dv   	(gmii_rx_dv    ),
+        .gmii_rx_er   	(gmii_rx_er    ),
+        .gmii_rxd     	(gmii_rxd      ),
+        .gmii_tx_clk  	(gmii_tx_clk   ),
+        .gmii_tx_en   	(gmii_tx_en    ),
+        .gmii_tx_er   	(gmii_tx_er    ),
+        .gmii_txd     	(gmii_txd      ),
+        .rgmii_rxc    	(rgmii_rxc     ),
+        .rgmii_rx_ctl 	(rgmii_rx_ctl  ),
+        .rgmii_rxd    	(rgmii_rxd     ),
+        .rgmii_txc    	(rgmii_txc     ),
+        .rgmii_tx_ctl 	(rgmii_tx_ctl  ),
+        .rgmii_txd    	(rgmii_txd     )
+    );
+end 
+else if (TARGET == "SIM") begin
+    //ALTERA FPGA
+    enet_rgmii_to_gmii_sim #(
+        .IDELAY_VALUE 	(IDELAY_VALUE  ))
+    u_enet_rgmii_to_gmii_sim(
         .idelay_clk   	(idelay_clk    ),
         .gmii_rx_clk  	(gmii_rx_clk   ),
         .gmii_rx_dv   	(gmii_rx_dv    ),
@@ -71,7 +93,7 @@ else begin
     //GENERIC
     enet_rgmii_to_gmii_dummy #(
         .IDELAY_VALUE 	(IDELAY_VALUE  ))
-    u_enet_rgmii_to_gmii_xlinx(
+    u_enet_rgmii_to_gmii_dummy(
         .idelay_clk   	(idelay_clk    ),
         .gmii_rx_clk  	(gmii_rx_clk   ),
         .gmii_rx_dv   	(gmii_rx_dv    ),

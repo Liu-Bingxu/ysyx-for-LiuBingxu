@@ -522,7 +522,7 @@ enet_rmii_to_mii u_enet_rmii_to_mii(
 enet_rgmii_to_gmii #(
     .TARGET        	(TARGET         ),
     .IDELAY_VALUE 	(IDELAY_VALUE   ))
-u_enet_rgmii_to_gmii_xlinx(
+u_enet_rgmii_to_gmii(
     .idelay_clk   	(clk_200m               ),
     .gmii_rx_clk  	(rgmii_rx_clk           ),
     .gmii_rx_dv   	(rgmii_rx_dv            ),
