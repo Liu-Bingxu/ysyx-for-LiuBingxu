@@ -362,7 +362,7 @@ FF_D_with_wen #(
 u_eir_plr(
     .clk      	(clk                    ),
     .rst_n    	(rst_n                  ),
-    .wen      	(t_eir_wen_u | eir_wen  ),
+    .wen      	(r_eir_wen_u | eir_wen  ),
     .data_in  	(plr_in                 ),
     .data_out 	(plr                    )
 );

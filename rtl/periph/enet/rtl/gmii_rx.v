@@ -152,7 +152,7 @@ assign gmii_rxd_use = gmii_rxd_r[3];
 assign vlan_flag    = (gmii_rx_type_len == 16'h8100);
 assign MC_flag      = gmii_rx_Da[0][0];
 assign BC_flag      = ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rx_Da[5]} == {48{1'b1}});
-assign plr_flag     = (nlc & (rx_status == RX_RECV_NORMAL) & (gmii_rx_type_len < 16'h600) & (rx_status_cnt != {gmii_rx_type_len + 16'h12}));
+assign plr_flag     = (nlc & (rx_status == RX_RECV_NORMAL) & (gmii_rx_type_len < 16'h600) & (rx_status_cnt != {gmii_rx_type_len + 16'hE}));
 assign pause_flag   = ((gmii_rx_type_len == 16'h8808) & (gmii_rx_opcode == 16'h0001));
 
 assign crc_en       = (rx_status != RX_IDLE) & ((!mii_select) | (!mii_odd)) & gmii_rxd_dv[3];
