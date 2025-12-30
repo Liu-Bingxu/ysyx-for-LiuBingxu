@@ -241,7 +241,7 @@ always @(posedge tx_clk or negedge rst_n) begin
 end
 assign tx_frame_fifo_i_Wready = (frame_desc_len_reg != 6'h0);
 //TODO half duplex
-assign tx_frame_fifo_i_wdata  = {rdata, 1'b0/* lc */, 1'b0/* rl */, underrun, (frame_data_len_reg > {2'b0, max_fl})};
+assign tx_frame_fifo_i_wdata  = {rdata, 1'b0/* lc */, 1'b0/* rl */, underrun, (frame_data_len_reg > ({2'b0, max_fl} + 16'h8))};
 
 assign frame_Rready           = ((tx_status == TX_STRFWD)    & ((!tx_mii_odd) | (!mii_select)) & (tx_clk_cnt == frame_rdata[15:0])) | 
                                 ((tx_status == TX_THROUGH)   & ((!tx_mii_odd) | (!mii_select)) & (|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0])) | 

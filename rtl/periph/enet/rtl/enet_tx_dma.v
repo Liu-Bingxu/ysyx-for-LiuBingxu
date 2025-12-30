@@ -374,6 +374,9 @@ always @(posedge tx_clk or negedge rst_n) begin
                 if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp == 2'h0) & report_intr)begin
                     dma_report_status <= DMA_REPORT_S_EIR;
                 end
+                else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp == 2'h0) & report_babt)begin
+                    dma_report_status <= DMA_REPORT_S_EIR;
+                end
                 else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp == 2'h0) & report_lc)begin
                     dma_report_status <= DMA_REPORT_S_EIR;
                 end
@@ -410,7 +413,7 @@ always @(posedge tx_clk or negedge rst_n) begin
     end
 end
 assign dma_report_eberr       = (dma_report_status == DMA_REPORT_ERROR_REPORT);
-assign tx_frame_fifo_i_Rready = ((dma_report_status == DMA_REPORT_UPDATE) & slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp == 2'h0) & (!(report_intr | report_lc | report_rl | report_un))) | 
+assign tx_frame_fifo_i_Rready = ((dma_report_status == DMA_REPORT_UPDATE) & slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp == 2'h0) & (!(report_intr | report_babt | report_lc | report_rl | report_un))) | 
                                 ((dma_report_status == DMA_REPORT_S_EIR) & eir_vld & eir_rdy);
 
 always @(posedge tx_clk or negedge rst_n) begin
