@@ -495,6 +495,9 @@ always @(posedge rx_clk or negedge rst_n) begin
                     slv_wlast_cnt_reg   <= 2'h0;
                 end
             end
+            DMA_S_DATA_THROUGH: begin
+                slv_wlast_reg <= 1'b1;
+            end
             DMA_S_DATA: begin
                 if(slv_wvalid & slv_wready & (data_quene_w_len < 16'd17))begin
                     slv_wlast_reg <= 1'b1;
@@ -517,6 +520,11 @@ always @(posedge rx_clk or negedge rst_n) begin
             DMA_R_DATA: begin
                 if(data_quene_r_len < 16'h9)begin
                     slv_wlast_reg       <= 1'b1;
+                end
+            end
+            DMA_S_DESC: begin
+                if(slv_wvalid & slv_wready)begin
+                    slv_wlast_reg       <= 1'b0;
                 end
             end
             default: begin
