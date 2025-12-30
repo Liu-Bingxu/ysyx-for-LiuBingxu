@@ -92,9 +92,9 @@ reg  [15:0]     gmii_rx_type_len;
 
 wire [7:0]      gmii_rxd_use;
 
-reg  [7:0]      gmii_rxd_r[11:0];
-reg             gmii_rxd_dv[11:0];
-reg             gmii_rxd_er[11:0];
+reg  [7:0]      gmii_rxd_r[12:0];
+reg             gmii_rxd_dv[12:0];
+reg             gmii_rxd_er[12:0];
 
 wire            vlan_flag;
 reg             M_flag;
@@ -329,7 +329,7 @@ assign LG_flag = (lg_flag | (gmii_rx_dv & ((!mii_select) | mii_odd) & (rx_status
 
 genvar i;
 generate
-    for(i = 0; i < 12; i = i + 1)begin: gmii_rxd_reg
+    for(i = 0; i < 13; i = i + 1)begin: gmii_rxd_reg
         if(i == 0)begin: gen_rxd_0
             always @(posedge rx_clk or negedge rst_n) begin
                 if(!rst_n)begin
@@ -523,8 +523,10 @@ assign rx_data_fifo_Wready = (recv_normal_end | recv_remove_pad_end | (recv_cont
                                 (((!mii_select) | mii_odd) & (rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hF) & (!(paden | crcfwd))) | 
                                 (((!mii_select) | mii_odd) & (rx_status == RX_RECV_NORMAL) & rx_data_finish_flag) | 
                                 (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & pause_flag & paufwd & (rx_status_cnt == 16'h10)) | 
+                                (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & pause_flag & paufwd & (rx_status_cnt == 16'h11) & (!(paden | crcfwd))) | 
                                 (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & pause_flag & paufwd & rx_data_finish_flag) | 
                                 (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & (!pause_flag) & (!cfen) & (rx_status_cnt == 16'h10)) | 
+                                (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & (!pause_flag) & (!cfen) & (rx_status_cnt == 16'h11) & (!(paden | crcfwd))) | 
                                 (((!mii_select) | mii_odd) & (rx_status == RX_RECV_CONTROL) & (!pause_flag) & (!cfen) & rx_data_finish_flag));
 
 wire [3:0]  end_data_shamt;
@@ -565,6 +567,9 @@ assign rx_data_fifo_wdata =
     ((rx_status == RX_RECV_NORMAL) & (rx_status_cnt == 16'hF) & (!(paden | crcfwd))) ? 
     {gmii_rxd_r[3], gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], 
                             gmii_rxd_r[7], gmii_rxd_r[8], gmii_rxd_r[9], gmii_rxd_r[10]} :
+    ((rx_status == RX_RECV_CONTROL) & ((pause_flag & paufwd) | ((!pause_flag) & (!cfen))) & (rx_status_cnt == 16'h11) & (!(paden | crcfwd))) ? 
+    {gmii_rxd_r[5], gmii_rxd_r[6], gmii_rxd_r[7], gmii_rxd_r[8], 
+                            gmii_rxd_r[9], gmii_rxd_r[10], gmii_rxd_r[11], gmii_rxd_r[12]} :
     (paden | crcfwd) ? 
     {gmii_rxd_r[4], gmii_rxd_r[5], gmii_rxd_r[6], gmii_rxd_r[7], 
                             gmii_rxd_r[8], gmii_rxd_r[9], gmii_rxd_r[10], gmii_rxd_r[11]} :
