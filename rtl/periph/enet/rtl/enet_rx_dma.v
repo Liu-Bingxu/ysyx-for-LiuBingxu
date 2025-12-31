@@ -213,7 +213,7 @@ always @(posedge rx_clk or negedge rst_n) begin
                 end
             end
             DMA_R_FRAME: begin
-                if(rx_frame_fifo_Rready & (LG | NO | CR | OV | TR))begin
+                if(rx_frame_fifo_Rready & (frame_error | LG | NO | CR | OV | TR))begin
                     dma_status      <= DMA_R_DATA;
                 end
                 else if(rx_frame_fifo_Rready)begin
@@ -339,7 +339,7 @@ always @(posedge rx_clk or negedge rst_n) begin
     else begin
         case (dma_status)
             DMA_R_FRAME: begin
-                if(rx_frame_fifo_Rready & (!LG) & (!NO) & (!CR) & (!OV) & (!TR))begin
+                if(rx_frame_fifo_Rready & (!frame_error) & (!LG) & (!NO) & (!CR) & (!OV) & (!TR))begin
                     slv_awvalid_reg     <= 1'b1;
                 end
                 else if(dma_read_though_flag)begin
@@ -415,7 +415,7 @@ always @(posedge rx_clk or negedge rst_n) begin
     else begin
         case (dma_status)
             DMA_R_FRAME: begin
-                if(rx_frame_fifo_Rready & (!LG) & (!NO) & (!CR) & (!OV) & (!TR))begin
+                if(rx_frame_fifo_Rready & (!frame_error) & (!LG) & (!NO) & (!CR) & (!OV) & (!TR))begin
                     slv_wvalid_reg <= 1'b1;
                 end
                 else if(dma_read_though_flag)begin
@@ -486,7 +486,7 @@ always @(posedge rx_clk or negedge rst_n) begin
     else begin
         case (dma_status)
             DMA_R_FRAME: begin
-                if(rx_frame_fifo_Rready & (!LG) & (!NO) & (!CR) & (!OV) & (!TR))begin
+                if(rx_frame_fifo_Rready & (!frame_error) & (!LG) & (!NO) & (!CR) & (!OV) & (!TR))begin
                     slv_wlast_reg       <= 1'b0;
                     slv_wlast_cnt_reg   <= 2'h0;
                 end
