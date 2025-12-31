@@ -250,7 +250,7 @@ always @(posedge rx_clk or negedge rst_n) begin
                 end
                 else if(gmii_rx_dv & ((!mii_select) | mii_odd))begin
                     //! frame data too long
-                    if((rx_status_cnt == {2'h0, ftrl}))begin
+                    if(((rx_status_cnt + 16'h4) == {2'h0, ftrl}))begin
                         rx_status               <= RX_WAIT_END;
                     end
                     //! remove the pad
@@ -295,7 +295,7 @@ always @(posedge rx_clk or negedge rst_n) begin
                         rx_status_cnt           <= rx_status_cnt + 1'b1;
                     end
                     //! frame data too long
-                    else if((rx_status_cnt == {2'h0, ftrl}))begin
+                    else if(((rx_status_cnt + 16'h4)  == {2'h0, ftrl}))begin
                         rx_status               <= RX_WAIT_END;
                     end
                     else begin
@@ -315,17 +315,17 @@ always @(posedge rx_clk) begin
         lg_flag         <= 1'b0;
     end
     else if((rx_status == RX_RECV_NORMAL) & gmii_rx_dv & ((!mii_select) | mii_odd))begin
-        if((rx_status_cnt == {2'h0, max_fl}))begin
+        if(((rx_status_cnt + 16'h4)  == {2'h0, max_fl}))begin
             lg_flag         <= 1'b1;
         end
     end
-    if((rx_status == RX_RECV_CONTROL) & gmii_rx_dv & ((!mii_select) | mii_odd))begin
-        if((rx_status_cnt == {2'h0, max_fl}))begin
+    else if((rx_status == RX_RECV_CONTROL) & gmii_rx_dv & ((!mii_select) | mii_odd))begin
+        if(((rx_status_cnt + 16'h4)  == {2'h0, max_fl}))begin
             lg_flag         <= 1'b1;
         end
     end
 end
-assign LG_flag = (lg_flag | (gmii_rx_dv & ((!mii_select) | mii_odd) & (rx_status_cnt == {2'h0, max_fl}) & ((rx_status == RX_RECV_NORMAL) | (rx_status == RX_RECV_CONTROL))));
+assign LG_flag = (lg_flag | (gmii_rx_dv & ((!mii_select) | mii_odd) & ((rx_status_cnt + 16'h4)  == {2'h0, max_fl}) & ((rx_status == RX_RECV_NORMAL) | (rx_status == RX_RECV_CONTROL))));
 
 genvar i;
 generate
@@ -484,7 +484,7 @@ assign recv_normal_error            =   recv_normal_error_fifo | recv_normal_err
                                         recv_remove_pad_error_no;
 assign recv_normal_error_fifo       = (rx_status == RX_RECV_NORMAL) & data_fifo_w_protect;
 assign recv_normal_error_er         = (rx_status == RX_RECV_NORMAL) & gmii_rx_er;
-assign recv_normal_error_too_long   = (rx_status == RX_RECV_NORMAL) & gmii_rx_dv & ((!mii_select) | mii_odd) & (rx_status_cnt == {2'h0, ftrl});
+assign recv_normal_error_too_long   = (rx_status == RX_RECV_NORMAL) & gmii_rx_dv & ((!mii_select) | mii_odd) & ((rx_status_cnt + 16'h4)  == {2'h0, ftrl});
 assign recv_normal_error_crc        = (rx_status == RX_RECV_NORMAL) & (!gmii_rx_dv) & (!crc_check);
 assign recv_remove_pad_error_crc    = (rx_status == RX_ROMVE_PAD) & (!gmii_rx_dv) & (!crc_check);
 assign recv_normal_error_no         = (rx_status == RX_RECV_NORMAL) & (!gmii_rx_dv) & (!((!mii_select) | mii_odd));
@@ -502,7 +502,7 @@ assign recv_control_error           =   recv_control_error_fifo | recv_control_e
                                         recv_control_error_crc | recv_control_error_no;
 assign recv_control_error_fifo      = (rx_status == RX_RECV_CONTROL) & data_fifo_w_protect;
 assign recv_control_error_er        = (rx_status == RX_RECV_CONTROL) & gmii_rx_er;
-assign recv_control_error_too_long  = (rx_status == RX_RECV_CONTROL) & gmii_rx_dv & ((!mii_select) | mii_odd) & (rx_status_cnt == {2'h0, ftrl});
+assign recv_control_error_too_long  = (rx_status == RX_RECV_CONTROL) & gmii_rx_dv & ((!mii_select) | mii_odd) & ((rx_status_cnt + 16'h4)  == {2'h0, ftrl});
 assign recv_control_error_crc       = (rx_status == RX_RECV_CONTROL) & (!gmii_rx_dv) & (!crc_check);
 assign recv_control_error_no        = (rx_status == RX_RECV_CONTROL) & (!gmii_rx_dv) & (!((!mii_select) | mii_odd));
 
