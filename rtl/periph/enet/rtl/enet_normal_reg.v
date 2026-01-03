@@ -93,6 +93,8 @@ module enet_normal_reg(
     output [31:0]       ftrl
 );
 
+wire read_done_flag;//self use to update the tcr,rcr,tdar & rdar
+
 wire tdar_wen_s = tdar_wen & (!Tx_out_full);
 wire rdar_wen_s = rdar_wen & (!Rx_out_full);
 wire ecr_wen_s  = ecr_wen  & (!Tx_out_full) & (!Rx_out_full);
@@ -367,10 +369,19 @@ u_eir_plr(
     .data_out 	(plr                    )
 );
 
-assign read_done =  (tdar_ren & tdar_wen_u ) | 
-                    (tcr_ren  & tcr_wen_u  ) |
-                    (rdar_ren & rdar_wen_u ) |
-                    (rcr_ren  & rcr_wen_u  );
+assign read_done_flag = (tdar_ren & tdar_wen_u ) | 
+                        (tcr_ren  & tcr_wen_u  ) |
+                        (rdar_ren & rdar_wen_u ) |
+                        (rcr_ren  & rcr_wen_u  );
+FF_D_without_wen #(
+    .DATA_LEN 	(1  ),
+    .RST_DATA 	(0  ))
+u_read_done(
+    .clk      	(clk            ),
+    .rst_n    	(rst_n          ),
+    .data_in  	(read_done_flag ),
+    .data_out 	(read_done      )
+);
 
 FF_D_with_wen #(
     .DATA_LEN 	(32 ),
