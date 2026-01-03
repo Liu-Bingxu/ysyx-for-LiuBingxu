@@ -45,6 +45,10 @@ wire cdc_rdy_clr;
 wire cdc_rdy_wen;
 wire cdc_rdy_nxt;
 
+wire cdc_handle_out;
+wire cdc_handle_out_r;
+wire cdc_handle_out_pos;
+
 wire req_out_set;
 wire req_out_clr;
 wire req_out_wen;
@@ -81,7 +85,7 @@ assign rdy_in_wen = (rdy_in_set | rdy_in_clr);
 assign rdy_in_nxt = (rdy_in_set | (!rdy_in_clr));
 FF_D_with_wen #(
     .DATA_LEN 	(1  ),
-    .RST_DATA 	(0  ))
+    .RST_DATA 	(1  ))
 u_rdy(
     .clk      	(clk_in             ),
     .rst_n    	(rst_n_in           ),
@@ -162,7 +166,19 @@ u_cdc_rdy_sync_r(
 );
 assign cdc_rdy_sync_neg = (cdc_rdy_sync_r & (!cdc_rdy_sync));
 
-assign req_out_set = cdc_req_sync & cdc_rdy;
+assign cdc_handle_out = cdc_req_sync & cdc_rdy;
+FF_D_without_wen #(
+    .DATA_LEN 	(1  ),
+    .RST_DATA 	(0  ))
+u_cdc_handle_out_r(
+    .clk      	(clk_out            ),
+    .rst_n    	(rst_n_out          ),
+    .data_in  	(cdc_handle_out     ),
+    .data_out 	(cdc_handle_out_r   )
+);
+assign cdc_handle_out_pos = ((!cdc_handle_out_r) & cdc_handle_out);
+
+assign req_out_set = cdc_handle_out_pos;
 assign req_out_clr = req_out & rdy_out;
 assign req_out_wen = (req_out_set | req_out_clr);
 assign req_out_nxt = (req_out_set | (!req_out_clr));
