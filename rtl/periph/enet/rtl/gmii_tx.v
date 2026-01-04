@@ -114,16 +114,17 @@ wire         frame_through_start = (tfwr == 8'h0) ? (tx_data_fifo_data_cnt > 8'h
 wire         frame_through_un    = (tx_data_fifo_data_cnt == taem) & (!(|frame_data_cnt));
 
 // transmit fsm status
-localparam TX_IDLE          = 3'h0;
-localparam TX_STRFWD        = 3'h1;
-localparam TX_THROUGH       = 3'h2;
-localparam TX_UNDERRUN      = 3'h3;
-localparam TX_SEND_PAUSE    = 3'h4;
-localparam TX_SEND_ZERO     = 3'h5;
-localparam TX_SEND_CRC      = 3'h6;
-localparam TX_WAIT_IPG      = 3'h7;
+localparam TX_IDLE          = 4'h0;
+localparam TX_STRFWD        = 4'h1;
+localparam TX_THROUGH       = 4'h2;
+localparam TX_UNDERRUN      = 4'h3;
+localparam TX_PAYLOAD_PAD   = 4'h4;
+localparam TX_SEND_PAUSE    = 4'h5;
+localparam TX_SEND_ZERO     = 4'h6;
+localparam TX_SEND_CRC      = 4'h7;
+localparam TX_WAIT_IPG      = 4'h8;
 
-reg  [2:0]      tx_status;
+reg  [3:0]      tx_status;
 reg  [7:0]      txd;
 reg             tx_en;
 reg             tx_er;
@@ -432,6 +433,19 @@ always @(posedge tx_clk or negedge rst_n) begin
                     tx_clk_cnt              <= 16'h1;
                     tx_status               <= TX_WAIT_IPG;
                 end
+                else if((tx_clk_cnt == frame_rdata[15:0]) & (tx_clk_cnt <= 16'd67)) begin
+                    if((tx_data_cnt != 3'h0) & (tx_data_cnt != 3'h7))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
+                    end
+                    else begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                    end
+                    txd                     <= 8'h0;
+                    crc_en                  <= 1'b1;
+                    tx_data_cnt             <= 3'h0;
+                    tx_clk_cnt              <= tx_clk_cnt + 16'h1;
+                    tx_status               <= TX_PAYLOAD_PAD;
+                end
                 else if((tx_clk_cnt == frame_rdata[15:0])) begin
                     if((tx_data_cnt != 3'h0) & (tx_data_cnt != 3'h7))begin
                         tx_data_fifo_Rready_reg <= 1'b1;
@@ -547,6 +561,19 @@ always @(posedge tx_clk or negedge rst_n) begin
                     tx_clk_cnt              <= 16'h1;
                     tx_status               <= TX_WAIT_IPG;
                 end
+                else if((|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]) & (tx_clk_cnt <= 16'd67)) begin
+                    if((tx_data_cnt != 3'h0) & (tx_data_cnt != 3'h7))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
+                    end
+                    else begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                    end
+                    txd                     <= 8'h0;
+                    crc_en                  <= 1'b1;
+                    tx_data_cnt             <= 3'h0;
+                    tx_clk_cnt              <= tx_clk_cnt + 16'h1;
+                    tx_status               <= TX_PAYLOAD_PAD;
+                end
                 else if((|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0])) begin
                     if((tx_data_cnt != 3'h0) & (tx_data_cnt != 3'h7))begin
                         tx_data_fifo_Rready_reg <= 1'b1;
@@ -603,6 +630,27 @@ always @(posedge tx_clk or negedge rst_n) begin
                         tx_data_cnt             <= 3'h0;
                     end
                     tx_clk_cnt  <= tx_clk_cnt + 1'b1;
+                end
+            end
+            TX_PAYLOAD_PAD: begin
+                tx_data_fifo_Rready_reg <= 1'b0;
+                if(tx_clk_cnt == 16'd68)begin
+                    crc_en          <= 1'b0;
+                    if(!mii_select) begin
+                        txd         <= crc_out_next[31:24];
+                    end
+                    else begin
+                        txd         <= crc_out[31:24];
+                    end
+                    crc_en          <= 1'b0;
+                    tx_data_cnt     <= 3'h0;
+                    tx_clk_cnt      <= 16'h0;
+                    tx_status       <= TX_SEND_CRC;
+                end
+                else begin
+                    crc_en          <= 1'b1;
+                    txd             <= 8'h0;
+                    tx_clk_cnt      <= tx_clk_cnt + 16'h1;
                 end
             end
             TX_UNDERRUN: begin
