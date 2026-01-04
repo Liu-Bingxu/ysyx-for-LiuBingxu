@@ -96,12 +96,14 @@ initial begin
 end
 
 // dma send fsm status
-localparam DMA_SEND_IDLE           = 3'h0;
-localparam DMA_SEND_R_TXBD         = 3'h1;
-localparam DMA_SEND_R_DATA         = 3'h3;
-localparam DMA_SEND_S_FRAME        = 3'h2;
-localparam DMA_SEND_ERROR_REPORT   = 3'h4;
-localparam DMA_SEND_ERROR          = 3'h5;
+localparam DMA_SEND_IDLE                = 3'h0;
+localparam DMA_SEND_R_TXBD              = 3'h1;
+localparam DMA_SEND_R_DATA              = 3'h3;
+localparam DMA_SEND_S_FRAME             = 3'h2;
+localparam DMA_SEND_UPDATE_DESC_TEMP    = 3'h7;
+localparam DMA_SEND_UPDATE_DESC         = 3'h6;
+localparam DMA_SEND_ERROR_REPORT        = 3'h4;
+localparam DMA_SEND_ERROR               = 3'h5;
 
 reg  [2:0]              dma_send_status;
 
@@ -118,6 +120,7 @@ reg  [AXI_ADDR_W -1:0]  tx_buf_point;
 reg  [15:0]             tx_buf_offset;
 reg                     tx_buf_done;
 reg  [AXI_ADDR_W -1:0]  tx_bd_point_offset;
+reg  [AXI_ADDR_W -1:0]  tx_bd_update_point_offset;
 
 reg                     slv_arvalid_reg;
 wire [AXI_ADDR_W -1:0]  slv_arddr;
@@ -134,13 +137,18 @@ wire                    report_lc;
 wire                    report_rl;
 wire                    report_un;
 
+reg                     send_slv_awvalid_reg;
+reg                     send_slv_wvalid_reg;
+wire [AXI_ADDR_W -1:0]  send_slv_awddr;
+
 wire                    data_fifo_w_protect  = ((tx_data_fifo_data_cnt + send_cnt)  >  tafl  );
 wire                    frame_fifo_w_protect = (tx_frame_fifo_o_data_cnt == 6'h3f );
 
 // dma report fsm
 localparam DMA_REPORT_IDLE          = 3'h0;
-localparam DMA_REPORT_UPDATE        = 3'h1;
-localparam DMA_REPORT_S_EIR         = 3'h3;
+localparam DMA_REPORT_UPDATA_TEMP   = 3'h1;
+localparam DMA_REPORT_UPDATE        = 3'h3;
+localparam DMA_REPORT_S_EIR         = 3'h2;
 localparam DMA_REPORT_ERROR_REPORT  = 3'h5;
 localparam DMA_REPORT_ERROR         = 3'h4;
 
@@ -150,9 +158,9 @@ wire                    dma_report_eberr;
 
 reg  [AXI_ADDR_W -1:0]  tx_bd_point_report_offset;
 
-reg                     slv_awvalid_reg;
-reg                     slv_wvalid_reg;
-wire [AXI_ADDR_W -1:0]  slv_awddr;
+reg                     report_slv_awvalid_reg;
+reg                     report_slv_wvalid_reg;
+wire [AXI_ADDR_W -1:0]  report_slv_awddr;
 
 wire tdar_set   = tdar_wen;
 wire tdar_clr   = (dma_send_status == DMA_SEND_R_TXBD) & slv_rvalid & slv_rready & slv_rlast & (slv_rid == AXI_ID_SB) & ((!slv_rdata[31]) | (slv_rresp != 2'h0));
@@ -204,11 +212,27 @@ always @(posedge tx_clk or negedge rst_n) begin
                 end
             end
             DMA_SEND_S_FRAME: begin
-                if(tx_frame_fifo_o_Wready & (!tdar))begin
-                    dma_send_status <= DMA_SEND_IDLE;
+                if(tx_frame_fifo_o_Wready & (dma_report_status != DMA_REPORT_UPDATE))begin
+                    dma_send_status <= DMA_SEND_UPDATE_DESC;
                 end
                 else if(tx_frame_fifo_o_Wready)begin
+                    dma_send_status <= DMA_SEND_UPDATE_DESC_TEMP;
+                end
+            end
+            DMA_SEND_UPDATE_DESC_TEMP: begin
+                if(dma_report_status != DMA_REPORT_UPDATE)begin
+                    dma_send_status <= DMA_SEND_UPDATE_DESC;
+                end
+            end
+            DMA_SEND_UPDATE_DESC: begin
+                if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp == 2'h0) & (!tdar))begin
+                    dma_send_status <= DMA_SEND_IDLE;
+                end
+                else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp == 2'h0))begin
                     dma_send_status <= DMA_SEND_R_TXBD;
+                end
+                else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp != 2'h0))begin
+                    dma_send_status <= DMA_SEND_ERROR_REPORT;
                 end
             end
             DMA_SEND_ERROR_REPORT: begin
@@ -286,7 +310,9 @@ always @(posedge tx_clk or negedge rst_n) begin
             end
             DMA_SEND_S_FRAME: begin
                 tx_buf_done     <= 1'b0;
-                if(tx_frame_fifo_o_Wready & tdar)begin
+            end
+            DMA_SEND_UPDATE_DESC: begin
+                if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & (slv_bresp == 2'h0) & tdar)begin
                     slv_arvalid_reg <= 1'b1;
                 end
             end
@@ -355,6 +381,66 @@ always @(posedge tx_clk or negedge rst_n) begin
     end
 end
 
+assign send_slv_awddr = (tdsr + tx_bd_update_point_offset);
+always @(posedge tx_clk or negedge rst_n) begin
+    if(!rst_n)begin
+        tx_bd_update_point_offset <= 32'h0;
+    end
+    else if(!ether_en)begin
+        tx_bd_update_point_offset <= 32'h0;
+    end
+    else if(dma_send_status == DMA_SEND_UPDATE_DESC)begin
+        if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB) & wrap)begin
+            tx_bd_update_point_offset <= 32'h0;
+        end
+        else if(slv_bvalid & slv_bready & (slv_bid == AXI_ID_SB))begin
+            tx_bd_update_point_offset <= tx_bd_update_point_offset + 32'h8;
+        end
+    end
+end
+always @(posedge tx_clk or negedge rst_n) begin
+    if(!rst_n)begin
+        send_slv_awvalid_reg <= 1'b0;
+        send_slv_wvalid_reg  <= 1'b0;
+    end
+    else if(!ether_en)begin
+        send_slv_awvalid_reg <= 1'b0;
+        send_slv_wvalid_reg  <= 1'b0;
+    end
+    else begin
+        case (dma_send_status)
+            DMA_SEND_S_FRAME: begin
+                if(tx_frame_fifo_o_Wready & (dma_report_status != DMA_REPORT_UPDATE))begin
+                    send_slv_awvalid_reg <= 1'b1;
+                    send_slv_wvalid_reg  <= 1'b1;
+                end
+            end
+            DMA_SEND_UPDATE_DESC_TEMP: begin
+                if(dma_report_status != DMA_REPORT_UPDATE)begin
+                    send_slv_awvalid_reg <= 1'b1;
+                    send_slv_wvalid_reg  <= 1'b1;
+                end
+            end
+            DMA_SEND_UPDATE_DESC: begin
+                if(slv_awvalid & slv_awready & slv_wvalid & slv_wready)begin
+                    send_slv_awvalid_reg <= 1'b0;
+                    send_slv_wvalid_reg  <= 1'b0;
+                end
+                else if(slv_awvalid & slv_awready)begin
+                    send_slv_awvalid_reg <= 1'b0;
+                end
+                else if(slv_wvalid & slv_wready)begin
+                    send_slv_wvalid_reg  <= 1'b0;
+                end
+            end
+            default: begin
+                send_slv_awvalid_reg <= 1'b0;
+                send_slv_wvalid_reg  <= 1'b0;
+            end
+        endcase
+    end
+end
+
 //? report fsm
 always @(posedge tx_clk or negedge rst_n) begin
     if(!rst_n)begin
@@ -366,7 +452,15 @@ always @(posedge tx_clk or negedge rst_n) begin
     else begin
         case (dma_report_status)
             DMA_REPORT_IDLE: begin
-                if(|tx_frame_fifo_i_data_cnt)begin
+                if((|tx_frame_fifo_i_data_cnt) & (!tx_frame_fifo_o_Wready) & (dma_send_status != DMA_SEND_UPDATE_DESC))begin
+                    dma_report_status <= DMA_REPORT_UPDATE;
+                end
+                else if(|tx_frame_fifo_i_data_cnt)begin
+                    dma_report_status <= DMA_REPORT_UPDATA_TEMP;
+                end
+            end
+            DMA_REPORT_UPDATA_TEMP: begin
+                if(dma_send_status != DMA_SEND_UPDATE_DESC)begin
                     dma_report_status <= DMA_REPORT_UPDATE;
                 end
             end
@@ -418,41 +512,47 @@ assign tx_frame_fifo_i_Rready = ((dma_report_status == DMA_REPORT_UPDATE) & slv_
 
 always @(posedge tx_clk or negedge rst_n) begin
     if(!rst_n)begin
-        slv_awvalid_reg <= 1'b0;
-        slv_wvalid_reg  <= 1'b0;
+        report_slv_awvalid_reg <= 1'b0;
+        report_slv_wvalid_reg  <= 1'b0;
     end
     else if(!ether_en)begin
-        slv_awvalid_reg <= 1'b0;
-        slv_wvalid_reg  <= 1'b0;
+        report_slv_awvalid_reg <= 1'b0;
+        report_slv_wvalid_reg  <= 1'b0;
     end
     else begin
         case (dma_report_status)
             DMA_REPORT_IDLE: begin
-                if(|tx_frame_fifo_i_data_cnt)begin
-                    slv_awvalid_reg <= 1'b1;
-                    slv_wvalid_reg  <= 1'b1;
+                if((|tx_frame_fifo_i_data_cnt) & (!tx_frame_fifo_o_Wready) & (dma_send_status != DMA_SEND_UPDATE_DESC))begin
+                    report_slv_awvalid_reg <= 1'b1;
+                    report_slv_wvalid_reg  <= 1'b1;
+                end
+            end
+            DMA_REPORT_UPDATA_TEMP: begin
+                if(dma_send_status != DMA_SEND_UPDATE_DESC)begin
+                    report_slv_awvalid_reg <= 1'b1;
+                    report_slv_wvalid_reg  <= 1'b1;
                 end
             end
             DMA_REPORT_UPDATE: begin
                 if(slv_awvalid & slv_awready & slv_wvalid & slv_wready)begin
-                    slv_awvalid_reg <= 1'b0;
-                    slv_wvalid_reg  <= 1'b0;
+                    report_slv_awvalid_reg <= 1'b0;
+                    report_slv_wvalid_reg  <= 1'b0;
                 end
                 else if(slv_awvalid & slv_awready)begin
-                    slv_awvalid_reg <= 1'b0;
+                    report_slv_awvalid_reg <= 1'b0;
                 end
                 else if(slv_wvalid & slv_wready)begin
-                    slv_wvalid_reg  <= 1'b0;
+                    report_slv_wvalid_reg  <= 1'b0;
                 end
             end
             default: begin
-                slv_awvalid_reg <= 1'b0;
-                slv_wvalid_reg  <= 1'b0;
+                report_slv_awvalid_reg <= 1'b0;
+                report_slv_wvalid_reg  <= 1'b0;
             end
         endcase
     end
 end
-assign slv_awddr = (tdsr + tx_bd_point_report_offset);
+assign report_slv_awddr = (tdsr + tx_bd_point_report_offset);
 always @(posedge tx_clk or negedge rst_n) begin
     if(!rst_n)begin
         tx_bd_point_report_offset <= 32'h0;
@@ -480,8 +580,8 @@ assign eir_eberr    = dma_send_eberr | dma_report_eberr;
 
 assign eir_vld      = eir_babt | eir_txf | eir_eberr | eir_lc | eir_rl | eir_un;
 
-assign slv_awvalid  = slv_awvalid_reg;
-assign slv_awaddr   = slv_awddr;
+assign slv_awvalid  = report_slv_awvalid_reg | send_slv_awvalid_reg;
+assign slv_awaddr   = (dma_send_status == DMA_SEND_UPDATE_DESC) ? send_slv_awddr : report_slv_awddr;
 assign slv_awlen    = 8'h0;
 assign slv_awsize   = 3'h3;
 assign slv_awburst  = 2'h1;
@@ -491,12 +591,13 @@ assign slv_awprot   = 3'h0;
 assign slv_awqos    = 4'h0;
 assign slv_awregion = 4'h0;
 assign slv_awid     = AXI_ID_SB;
-assign slv_wvalid   = slv_wvalid_reg;
+assign slv_wvalid   = report_slv_wvalid_reg | send_slv_wvalid_reg;
 assign slv_wlast    = 1'b1;
 assign {report_intr, report_wrap, report_last, report_tc, report_lc, report_rl, report_un, report_babt} = tx_frame_fifo_i_rdata;
-assign slv_wdata    = {32'h0, 1'b0,/* R */ 1'b0, /* TO1 */ report_wrap, report_intr, /* intr */ report_last, report_tc, 2'h0, 
+assign slv_wdata    = (dma_send_status == DMA_SEND_UPDATE_DESC) ? {32'h0, 1'b0,/* R */ 1'b0, /* TO1 */ wrap, intr, /* intr */ last, tc, 2'h0, 24'h0} : 
+                        {32'h0, 1'b0,/* R */ 1'b0, /* TO1 */ report_wrap, report_intr, /* intr */ report_last, report_tc, 2'h0, 
                         report_lc, report_rl, 4'h0, report_un, 1'b0, 16'h0};
-assign slv_wstrb    = 8'hC;
+assign slv_wstrb    = (dma_send_status == DMA_SEND_UPDATE_DESC) ? 8'h8 : 8'hC;
 assign slv_bready   = 1'b1;
 assign slv_arvalid  = slv_arvalid_reg;
 assign slv_araddr   = slv_arddr;

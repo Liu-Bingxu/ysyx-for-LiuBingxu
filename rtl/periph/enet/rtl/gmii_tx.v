@@ -94,6 +94,13 @@ wire [5:0] data_cnt;
 //intr warp last tc
 wire [3:0] rdata;
 
+// signal of module sgdma_fifo
+wire        sgdma_Rready;
+wire [5:0]  sgdma_data_cnt;
+wire [16:0] sgdma_wdata;
+wire        sgdma_1bit_flag;
+wire [15:0] sgdma_rdata;
+
 // output declaration of module frame_fifo
 wire [2:0]   frame_data_cnt;
 //desc_num: 22-17 tc: 16 data_len: 15-0
@@ -159,6 +166,22 @@ u_net_fifo_temp(
     .data_cnt 	(data_cnt                       ),
     .rdata    	(rdata                          )
 );
+
+net_fifo #(
+    .DATA_WIDTH 	(17          ),
+    .ADDR_WIDTH 	(6           ))
+u_sgdma_fifo(
+    .clk      	(tx_clk                         ),
+    .rst_n    	(rst_n                          ),
+    .Wready   	(tx_frame_fifo_o_Rready         ),
+    .Rready   	(sgdma_Rready                   ),
+    .flush    	(!ether_en                      ),
+    .wdata    	(sgdma_wdata                    ),
+    .data_cnt 	(sgdma_data_cnt                 ),
+    .rdata    	({sgdma_1bit_flag,sgdma_rdata}  )
+);
+assign sgdma_Rready = (tx_clk_cnt == sgdma_rdata) & ((!tx_mii_odd) | (!mii_select)) & (|sgdma_data_cnt);
+assign sgdma_wdata  = {(tx_frame_fifo_o_rdata[15:0] == 16'h1), (frame_data_len + tx_frame_fifo_o_rdata[15:0] - 16'h1)};
 
 net_fifo #(
     .DATA_WIDTH 	(23          ),
@@ -274,7 +297,7 @@ always @(posedge tx_clk or negedge rst_n) begin
         tx_clk_cnt              <= 16'h0;
     end
     else if(tx_mii_odd)begin
-        if(tx_data_cnt == 3'h7)begin
+        if((tx_data_cnt == 3'h7) | ((tx_clk_cnt == sgdma_rdata) &  & (|sgdma_data_cnt)))begin
             tx_data_fifo_Rready_reg <= 1'b1;
         end
         else begin
@@ -397,13 +420,31 @@ always @(posedge tx_clk or negedge rst_n) begin
                 end 
                 else if((tx_clk_cnt < 16'd20) & (tx_clk_cnt > 16'd13) & addins) begin
                     crc_en          <= 1'b1;
-                    if(tx_clk_cnt == 16'd14)begin
+                    if((tx_clk_cnt == sgdma_rdata) & (|sgdma_data_cnt))begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                        tx_data_cnt             <= 3'h0;
+                    end
+                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt))begin
                         if(!mii_select)
                             tx_data_fifo_Rready_reg <= 1'b1;
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    else if(tx_data_cnt == 3'h7)begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                        tx_data_cnt             <= 3'h0;
+                    end
+                    else if(tx_data_cnt == 3'h6)begin
+                        if(!mii_select)
+                            tx_data_fifo_Rready_reg <= 1'b1;
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    else begin
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    if(tx_clk_cnt == 16'd14)begin
                         txd         <= palr[31:24];
                     end
                     else if(tx_clk_cnt == 16'd15)begin
-                        tx_data_fifo_Rready_reg <= 1'b0;
                         txd         <= palr[23:16];
                     end
                     else if(tx_clk_cnt == 16'd16)begin
@@ -418,7 +459,6 @@ always @(posedge tx_clk or negedge rst_n) begin
                     else if(tx_clk_cnt == 16'd19)begin
                         txd         <= paur[23:16];
                     end
-                    tx_data_cnt             <= tx_data_cnt + 1'b1;
                     tx_clk_cnt              <= tx_clk_cnt + 16'h1;
                 end
                 else if((tx_clk_cnt == frame_rdata[15:0]) & (crcfwd | frame_rdata[16])) begin
@@ -466,40 +506,50 @@ always @(posedge tx_clk or negedge rst_n) begin
                 end
                 else begin
                     crc_en          <= 1'b1;
-                    if(tx_data_cnt == 3'h0)begin
-                        txd         <= tx_data_fifo_rdata[7:0];
+                    if((tx_clk_cnt == sgdma_rdata) & (|sgdma_data_cnt))begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                        tx_data_cnt             <= 3'h0;
+                    end
+                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt))begin
+                        if(!mii_select)
+                            tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
-                    else if(tx_data_cnt == 3'h1)begin
-                        txd         <= tx_data_fifo_rdata[15:8];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
-                    end
-                    else if(tx_data_cnt == 3'h2)begin
-                        txd         <= tx_data_fifo_rdata[23:16];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
-                    end
-                    else if(tx_data_cnt == 3'h3)begin
-                        txd         <= tx_data_fifo_rdata[31:24];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
-                    end
-                    else if(tx_data_cnt == 3'h4)begin
-                        txd         <= tx_data_fifo_rdata[39:32];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
-                    end
-                    else if(tx_data_cnt == 3'h5)begin
-                        txd         <= tx_data_fifo_rdata[47:40];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    else if(tx_data_cnt == 3'h7)begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                        tx_data_cnt             <= 3'h0;
                     end
                     else if(tx_data_cnt == 3'h6)begin
                         if(!mii_select)
                             tx_data_fifo_Rready_reg <= 1'b1;
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    else begin
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    if(tx_data_cnt == 3'h0)begin
+                        txd         <= tx_data_fifo_rdata[7:0];
+                    end
+                    else if(tx_data_cnt == 3'h1)begin
+                        txd         <= tx_data_fifo_rdata[15:8];
+                    end
+                    else if(tx_data_cnt == 3'h2)begin
+                        txd         <= tx_data_fifo_rdata[23:16];
+                    end
+                    else if(tx_data_cnt == 3'h3)begin
+                        txd         <= tx_data_fifo_rdata[31:24];
+                    end
+                    else if(tx_data_cnt == 3'h4)begin
+                        txd         <= tx_data_fifo_rdata[39:32];
+                    end
+                    else if(tx_data_cnt == 3'h5)begin
+                        txd         <= tx_data_fifo_rdata[47:40];
+                    end
+                    else if(tx_data_cnt == 3'h6)begin
                         txd                         <= tx_data_fifo_rdata[55:48];
-                        tx_data_cnt                 <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h7)begin
-                        tx_data_fifo_Rready_reg <= 1'b0;
                         txd                     <= tx_data_fifo_rdata[63:56];
-                        tx_data_cnt             <= 3'h0;
                     end
                     tx_clk_cnt  <= tx_clk_cnt + 1'b1;
                 end
@@ -525,9 +575,28 @@ always @(posedge tx_clk or negedge rst_n) begin
                 end
                 else if((tx_clk_cnt < 16'd20) & (tx_clk_cnt > 16'd13) & addins) begin
                     crc_en          <= 1'b1;
-                    if(tx_clk_cnt == 16'd14)begin
+                    if((tx_clk_cnt == sgdma_rdata) & (|sgdma_data_cnt))begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                        tx_data_cnt             <= 3'h0;
+                    end
+                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt))begin
                         if(!mii_select)
                             tx_data_fifo_Rready_reg <= 1'b1;
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    else if(tx_data_cnt == 3'h7)begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                        tx_data_cnt             <= 3'h0;
+                    end
+                    else if(tx_data_cnt == 3'h6)begin
+                        if(!mii_select)
+                            tx_data_fifo_Rready_reg <= 1'b1;
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    else begin
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    if(tx_clk_cnt == 16'd14)begin
                         txd         <= palr[31:24];
                     end
                     else if(tx_clk_cnt == 16'd15)begin
@@ -546,7 +615,6 @@ always @(posedge tx_clk or negedge rst_n) begin
                     else if(tx_clk_cnt == 16'd19)begin
                         txd         <= paur[23:16];
                     end
-                    tx_data_cnt             <= tx_data_cnt + 1'b1;
                     tx_clk_cnt              <= tx_clk_cnt + 16'h1;
                 end
                 else if((|frame_data_cnt) & (tx_clk_cnt == frame_rdata[15:0]) & (crcfwd | frame_rdata[16])) begin
@@ -594,40 +662,50 @@ always @(posedge tx_clk or negedge rst_n) begin
                 end
                 else begin
                     crc_en          <= 1'b1;
-                    if(tx_data_cnt == 3'h0)begin
-                        txd         <= tx_data_fifo_rdata[7:0];
+                    if((tx_clk_cnt == sgdma_rdata) & (|sgdma_data_cnt))begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                        tx_data_cnt             <= 3'h0;
+                    end
+                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt))begin
+                        if(!mii_select)
+                            tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
-                    else if(tx_data_cnt == 3'h1)begin
-                        txd         <= tx_data_fifo_rdata[15:8];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
-                    end
-                    else if(tx_data_cnt == 3'h2)begin
-                        txd         <= tx_data_fifo_rdata[23:16];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
-                    end
-                    else if(tx_data_cnt == 3'h3)begin
-                        txd         <= tx_data_fifo_rdata[31:24];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
-                    end
-                    else if(tx_data_cnt == 3'h4)begin
-                        txd         <= tx_data_fifo_rdata[39:32];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
-                    end
-                    else if(tx_data_cnt == 3'h5)begin
-                        txd         <= tx_data_fifo_rdata[47:40];
-                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    else if(tx_data_cnt == 3'h7)begin
+                        tx_data_fifo_Rready_reg <= 1'b0;
+                        tx_data_cnt             <= 3'h0;
                     end
                     else if(tx_data_cnt == 3'h6)begin
                         if(!mii_select)
                             tx_data_fifo_Rready_reg <= 1'b1;
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    else begin
+                        tx_data_cnt <= tx_data_cnt + 1'b1;
+                    end
+                    if(tx_data_cnt == 3'h0)begin
+                        txd         <= tx_data_fifo_rdata[7:0];
+                    end
+                    else if(tx_data_cnt == 3'h1)begin
+                        txd         <= tx_data_fifo_rdata[15:8];
+                    end
+                    else if(tx_data_cnt == 3'h2)begin
+                        txd         <= tx_data_fifo_rdata[23:16];
+                    end
+                    else if(tx_data_cnt == 3'h3)begin
+                        txd         <= tx_data_fifo_rdata[31:24];
+                    end
+                    else if(tx_data_cnt == 3'h4)begin
+                        txd         <= tx_data_fifo_rdata[39:32];
+                    end
+                    else if(tx_data_cnt == 3'h5)begin
+                        txd         <= tx_data_fifo_rdata[47:40];
+                    end
+                    else if(tx_data_cnt == 3'h6)begin
                         txd                         <= tx_data_fifo_rdata[55:48];
-                        tx_data_cnt                 <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h7)begin
-                        tx_data_fifo_Rready_reg <= 1'b0;
                         txd                     <= tx_data_fifo_rdata[63:56];
-                        tx_data_cnt             <= 3'h0;
                     end
                     tx_clk_cnt  <= tx_clk_cnt + 1'b1;
                 end
@@ -739,7 +817,7 @@ always @(posedge tx_clk or negedge rst_n) begin
         endcase
     end
 end
-assign tx_data_fifo_Rready  = tx_data_fifo_Rready_reg;
+assign tx_data_fifo_Rready  = (tx_data_fifo_Rready_reg | ((|sgdma_data_cnt) & (sgdma_1bit_flag) & (tx_clk_cnt == sgdma_rdata)));
 assign gmii_txd             = txd;
 assign gmii_tx_en           = tx_en;
 assign gmii_tx_er           = tx_er;
