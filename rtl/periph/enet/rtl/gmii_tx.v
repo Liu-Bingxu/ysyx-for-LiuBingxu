@@ -97,7 +97,8 @@ wire [3:0] rdata;
 // signal of module sgdma_fifo
 wire        sgdma_Rready;
 wire [5:0]  sgdma_data_cnt;
-wire [16:0] sgdma_wdata;
+wire [17:0] sgdma_wdata;
+wire        sgdma_last_flag;
 wire        sgdma_1bit_flag;
 wire [15:0] sgdma_rdata;
 
@@ -168,20 +169,21 @@ u_net_fifo_temp(
 );
 
 net_fifo #(
-    .DATA_WIDTH 	(17          ),
+    .DATA_WIDTH 	(18          ),
     .ADDR_WIDTH 	(6           ))
 u_sgdma_fifo(
-    .clk      	(tx_clk                         ),
-    .rst_n    	(rst_n                          ),
-    .Wready   	(tx_frame_fifo_o_Rready         ),
-    .Rready   	(sgdma_Rready                   ),
-    .flush    	(!ether_en                      ),
-    .wdata    	(sgdma_wdata                    ),
-    .data_cnt 	(sgdma_data_cnt                 ),
-    .rdata    	({sgdma_1bit_flag,sgdma_rdata}  )
+    .clk      	(tx_clk                                         ),
+    .rst_n    	(rst_n                                          ),
+    .Wready   	(tx_frame_fifo_o_Rready                         ),
+    .Rready   	(sgdma_Rready                                   ),
+    .flush    	(!ether_en                                      ),
+    .wdata    	(sgdma_wdata                                    ),
+    .data_cnt 	(sgdma_data_cnt                                 ),
+    .rdata    	({sgdma_last_flag, sgdma_1bit_flag,sgdma_rdata} )
 );
-assign sgdma_Rready = (tx_clk_cnt == sgdma_rdata) & ((!tx_mii_odd) | (!mii_select)) & (|sgdma_data_cnt);
-assign sgdma_wdata  = {(tx_frame_fifo_o_rdata[15:0] == 16'h1), (frame_data_len + tx_frame_fifo_o_rdata[15:0] - 16'h1)};
+assign sgdma_Rready = (((tx_clk_cnt == (sgdma_rdata + 16'h1)) & sgdma_last_flag) | ((tx_clk_cnt == sgdma_rdata) & (!sgdma_last_flag))) & 
+                        ((!tx_mii_odd) | (!mii_select)) & (|sgdma_data_cnt);
+assign sgdma_wdata  = {tx_frame_fifo_o_rdata[17], (tx_frame_fifo_o_rdata[15:0] == 16'h1), (frame_data_len + tx_frame_fifo_o_rdata[15:0] - 16'h1)};
 
 net_fifo #(
     .DATA_WIDTH 	(23          ),
