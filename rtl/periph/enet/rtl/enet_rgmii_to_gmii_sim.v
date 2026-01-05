@@ -60,7 +60,7 @@ end
 
 always @(posedge gmii_rx_clk) begin
     gmii_rx_dv <= rgmii_rx_ctl_d_reg_1;
-    gmii_rx_er <= rgmii_rx_ctl_d_reg_2;
+    gmii_rx_er <= rgmii_rx_ctl_d_reg_2 ^ rgmii_rx_ctl_d_reg_1;
 end
 
 reg [3:0] rgmii_rxd_d_reg_1;
@@ -82,7 +82,7 @@ assign rgmii_txc = gmii_tx_clk;
 reg  rgmii_tx_ctl_reg;
 always @(posedge gmii_tx_clk) begin
     rgmii_tx_ctl        <= gmii_tx_en;
-    rgmii_tx_ctl_reg    <= gmii_tx_er;
+    rgmii_tx_ctl_reg    <= gmii_tx_er ^ gmii_tx_en;
 end
 always @(negedge gmii_tx_clk) begin
     rgmii_tx_ctl <= rgmii_tx_ctl_reg;
