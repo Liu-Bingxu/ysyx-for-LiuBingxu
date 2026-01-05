@@ -426,18 +426,16 @@ always @(posedge tx_clk or negedge rst_n) begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                         tx_data_cnt             <= 3'h0;
                     end
-                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt))begin
-                        if(!mii_select)
-                            tx_data_fifo_Rready_reg <= 1'b1;
+                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt) & (!mii_select))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                         tx_data_cnt             <= 3'h0;
                     end
-                    else if(tx_data_cnt == 3'h6)begin
-                        if(!mii_select)
-                            tx_data_fifo_Rready_reg <= 1'b1;
+                    else if(tx_data_cnt == 3'h6 & (!mii_select))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else begin
@@ -512,18 +510,16 @@ always @(posedge tx_clk or negedge rst_n) begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                         tx_data_cnt             <= 3'h0;
                     end
-                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt))begin
-                        if(!mii_select)
-                            tx_data_fifo_Rready_reg <= 1'b1;
+                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt) & (!mii_select))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                         tx_data_cnt             <= 3'h0;
                     end
-                    else if(tx_data_cnt == 3'h6)begin
-                        if(!mii_select)
-                            tx_data_fifo_Rready_reg <= 1'b1;
+                    else if(tx_data_cnt == 3'h6 & (!mii_select))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else begin
@@ -581,18 +577,16 @@ always @(posedge tx_clk or negedge rst_n) begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                         tx_data_cnt             <= 3'h0;
                     end
-                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt))begin
-                        if(!mii_select)
-                            tx_data_fifo_Rready_reg <= 1'b1;
+                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt) & (!mii_select))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                         tx_data_cnt             <= 3'h0;
                     end
-                    else if(tx_data_cnt == 3'h6)begin
-                        if(!mii_select)
-                            tx_data_fifo_Rready_reg <= 1'b1;
+                    else if(tx_data_cnt == 3'h6 & (!mii_select))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else begin
@@ -668,18 +662,16 @@ always @(posedge tx_clk or negedge rst_n) begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                         tx_data_cnt             <= 3'h0;
                     end
-                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt))begin
-                        if(!mii_select)
-                            tx_data_fifo_Rready_reg <= 1'b1;
+                    else if((tx_clk_cnt == (sgdma_rdata - 16'h1)) & (|sgdma_data_cnt) & (!mii_select))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else if(tx_data_cnt == 3'h7)begin
                         tx_data_fifo_Rready_reg <= 1'b0;
                         tx_data_cnt             <= 3'h0;
                     end
-                    else if(tx_data_cnt == 3'h6)begin
-                        if(!mii_select)
-                            tx_data_fifo_Rready_reg <= 1'b1;
+                    else if(tx_data_cnt == 3'h6 & (!mii_select))begin
+                        tx_data_fifo_Rready_reg <= 1'b1;
                         tx_data_cnt <= tx_data_cnt + 1'b1;
                     end
                     else begin
