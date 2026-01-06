@@ -138,14 +138,17 @@ FF_D_without_asyn_rst #(32)   u_crc_out_reg     (rx_clk,1'b1,crc_out,crc_out_reg
 assign crc_check = (mii_select) ? ((crc_out_reg == {gmii_rxd_r[3], gmii_rxd_r[2], gmii_rxd_r[1], gmii_rxd_r[0]}) ? 1'b1 : 1'b0) : ((crc_out == {gmii_rxd_r[3], gmii_rxd_r[2], gmii_rxd_r[1], gmii_rxd_r[0]}) ? 1'b1 : 1'b0);
 
 assign rx_unicast_check_success = (!gmii_rx_Da[0][0]) & 
-                    (({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {palr, paur}) |
-                    (ialr[crc_out_next[6:2]] & crc_out_next[7]) | (iaur[crc_out_next[6:2]] & (!crc_out_next[7])));
+                    (({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {palr, paur}) | 
+                    (ialr[crc_out_next[6:2]] & crc_out_next[7] & (!mii_select)) | (iaur[crc_out_next[6:2]] & (!crc_out_next[7]) & (!mii_select)) | 
+                    (ialr[crc_out[6:2]] & crc_out[7] & mii_select) | (iaur[crc_out[6:2]] & (!crc_out[7]) & mii_select));
 
 assign rx_multicast_check_success = gmii_rx_Da[0][0] & 
                     ((({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {48{1'b1}}) & (!bc_rej)) |
                     ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} == {pause_DA}) |
-                    (galr[crc_out_next[6:2]] & crc_out_next[7] & ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} != {48{1'b1}})) | 
-                    (gaur[crc_out_next[6:2]] & (!crc_out_next[7]) & ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} != {48{1'b1}})));
+                    (galr[crc_out_next[6:2]] & (!mii_select) & crc_out_next[7] & ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} != {48{1'b1}})) | 
+                    (gaur[crc_out_next[6:2]] & (!mii_select) & (!crc_out_next[7]) & ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} != {48{1'b1}})) |
+                    (galr[crc_out[6:2]] & mii_select & crc_out[7] & ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} != {48{1'b1}})) | 
+                    (gaur[crc_out[6:2]] & mii_select & (!crc_out[7]) & ({gmii_rx_Da[0], gmii_rx_Da[1], gmii_rx_Da[2], gmii_rx_Da[3], gmii_rx_Da[4], gmii_rxd_use} != {48{1'b1}})));
 
 assign gmii_rxd_use = gmii_rxd_r[3];
 
