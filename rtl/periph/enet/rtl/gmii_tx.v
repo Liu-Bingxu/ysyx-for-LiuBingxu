@@ -706,6 +706,9 @@ always @(posedge tx_clk or negedge rst_n) begin
             end
             TX_PAYLOAD_PAD: begin
                 tx_data_fifo_Rready_reg <= 1'b0;
+                if(mii_select)begin
+                    tx_mii_odd  <= 1'b1;
+                end
                 if(tx_clk_cnt == 16'd68)begin
                     crc_en          <= 1'b0;
                     if(!mii_select) begin
