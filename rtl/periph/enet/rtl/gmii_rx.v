@@ -476,18 +476,20 @@ wire recv_remove_pad_end;
 assign recv_remove_pad_end          = (rx_status == RX_ROMVE_PAD) & (!gmii_rx_dv) & ((!mii_select) | mii_odd) & crc_check;
 wire recv_normal_error;
 wire recv_normal_error_fifo;
-wire recv_normal_error_er;
 wire recv_normal_error_too_long;
+wire recv_normal_error_er;
+wire recv_remove_pad_error_er;
 wire recv_normal_error_crc;
 wire recv_remove_pad_error_crc;
 wire recv_normal_error_no;
 wire recv_remove_pad_error_no;
 assign recv_normal_error            =   recv_normal_error_fifo | recv_normal_error_er | recv_normal_error_too_long |
                                         recv_normal_error_crc | recv_normal_error_no | recv_remove_pad_error_crc | 
-                                        recv_remove_pad_error_no;
+                                        recv_remove_pad_error_no | recv_remove_pad_error_er;
 assign recv_normal_error_fifo       = (rx_status == RX_RECV_NORMAL) & data_fifo_w_protect;
-assign recv_normal_error_er         = (rx_status == RX_RECV_NORMAL) & gmii_rx_er;
 assign recv_normal_error_too_long   = (rx_status == RX_RECV_NORMAL) & gmii_rx_dv & ((!mii_select) | mii_odd) & ((rx_status_cnt + 16'h4)  == {2'h0, ftrl});
+assign recv_normal_error_er         = (rx_status == RX_RECV_NORMAL) & gmii_rx_dv & gmii_rx_er;
+assign recv_remove_pad_error_er     = (rx_status == RX_ROMVE_PAD) & gmii_rx_dv & gmii_rx_er;
 assign recv_normal_error_crc        = (rx_status == RX_RECV_NORMAL) & (!gmii_rx_dv) & (!crc_check);
 assign recv_remove_pad_error_crc    = (rx_status == RX_ROMVE_PAD) & (!gmii_rx_dv) & (!crc_check);
 assign recv_normal_error_no         = (rx_status == RX_RECV_NORMAL) & (!gmii_rx_dv) & (!((!mii_select) | mii_odd));
@@ -504,7 +506,7 @@ wire recv_control_error_no;
 assign recv_control_error           =   recv_control_error_fifo | recv_control_error_er | recv_control_error_too_long |
                                         recv_control_error_crc | recv_control_error_no;
 assign recv_control_error_fifo      = (rx_status == RX_RECV_CONTROL) & data_fifo_w_protect;
-assign recv_control_error_er        = (rx_status == RX_RECV_CONTROL) & gmii_rx_er;
+assign recv_control_error_er        = (rx_status == RX_RECV_CONTROL) & gmii_rx_dv & gmii_rx_er;
 assign recv_control_error_too_long  = (rx_status == RX_RECV_CONTROL) & gmii_rx_dv & ((!mii_select) | mii_odd) & ((rx_status_cnt + 16'h4)  == {2'h0, ftrl});
 assign recv_control_error_crc       = (rx_status == RX_RECV_CONTROL) & (!gmii_rx_dv) & (!crc_check);
 assign recv_control_error_no        = (rx_status == RX_RECV_CONTROL) & (!gmii_rx_dv) & (!((!mii_select) | mii_odd));
@@ -512,7 +514,7 @@ assign recv_control_error_no        = (rx_status == RX_RECV_CONTROL) & (!gmii_rx
 assign rx_frame_fifo_Wready = ((recv_normal_end | recv_remove_pad_end | recv_normal_error | recv_control_end | recv_control_error) & 
                                 (rx_data_out_cnt != 16'h0)) ? 1'b1 : 1'b0;                  
 
-assign rx_frame_fifo_wdata = {vlan_flag, recv_normal_error_er | recv_control_error_er, M_flag, BC_flag, MC_flag, LG_flag, 
+assign rx_frame_fifo_wdata = {vlan_flag, recv_normal_error_er | recv_remove_pad_error_er | recv_control_error_er, M_flag, BC_flag, MC_flag, LG_flag, 
                                 recv_normal_error_no | recv_remove_pad_error_no | recv_control_error_no, 
                                 recv_normal_error_crc | recv_remove_pad_error_crc | recv_control_error_crc, 
                                 recv_normal_error_fifo | recv_control_error_fifo,
