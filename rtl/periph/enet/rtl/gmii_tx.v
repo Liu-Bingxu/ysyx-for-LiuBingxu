@@ -814,7 +814,7 @@ always @(posedge tx_clk or negedge rst_n) begin
         endcase
     end
 end
-assign tx_data_fifo_Rready  = (tx_data_fifo_Rready_reg | ((|sgdma_data_cnt) & (sgdma_1bit_flag) & (tx_clk_cnt == sgdma_rdata)));
+assign tx_data_fifo_Rready  = (tx_data_fifo_Rready_reg | ((|sgdma_data_cnt) & (sgdma_1bit_flag) & (tx_clk_cnt == sgdma_rdata) & ((!tx_mii_odd) | (!mii_select))));
 assign gmii_txd             = txd;
 assign gmii_tx_en           = tx_en;
 assign gmii_tx_er           = tx_er;
