@@ -37,6 +37,8 @@ module enet_core#(
     input                               enet_ref_clk,
     output [7:0]                        enet_txd,
     output                              enet_tx_en,
+    output [1:0]                        enet_rmii_txd,
+    output                              enet_rmii_tx_en,
     output                              enet_tx_er,
     input  [7:0]                        enet_rxd,
     input                               enet_rx_dv,
@@ -518,6 +520,8 @@ enet_rmii_to_mii u_enet_rmii_to_mii(
     .rmii_tx_en     	(rmii_tx_en       ),
     .rmii_txd       	(rmii_txd         )
 );
+assign enet_rmii_txd    = rmii_txd;
+assign enet_rmii_tx_en  = rmii_tx_en;
 
 enet_rgmii_to_gmii #(
     .TARGET        	(TARGET         ),
