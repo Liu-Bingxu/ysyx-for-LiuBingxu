@@ -226,6 +226,13 @@ always @(posedge tx_clk or negedge rst_n) begin
         pause_cnt       <= 16'h0;
         pause_time      <= 16'h0;
     end
+    else if(pause_req_out & pause_rdy_out & pause_data_out[17] & (pause_data_out[15:0] == 16'h0))begin
+        recv_stop       <= 1'b0;
+        mii_odd         <= 1'b0;
+        pause_8byte_cnt <= 6'h0;
+        pause_cnt       <= 16'h0;
+        pause_time      <= pause_data_out[15:0];
+    end
     else if(pause_req_out & pause_rdy_out & pause_data_out[17])begin
         recv_stop       <= 1'b1;
         mii_odd         <= 1'b0;
@@ -236,7 +243,7 @@ always @(posedge tx_clk or negedge rst_n) begin
     else if(mii_odd)begin
         mii_odd         <= 1'b0;
     end
-    else if((pause_cnt == pause_time) & (pause_8byte_cnt == 6'd63) & recv_stop)begin
+    else if((pause_cnt == pause_time) & (pause_8byte_cnt == 6'd0) & recv_stop)begin
         recv_stop       <= 1'b0;
         mii_odd         <= 1'b0;
         pause_8byte_cnt <= 6'h0;
