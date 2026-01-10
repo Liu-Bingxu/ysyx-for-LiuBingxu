@@ -21,7 +21,7 @@ module shift_mul(
     input               rst_n,
     input               mul_flush,
     input               mul_valid,
-    // output              mul_ready,
+    output              mul_ready,
     input   [1:0]       mul_signed,
     input   [63:0]      mul_a,
     input   [63:0]      mul_b,
@@ -68,7 +68,7 @@ always @(posedge clk or negedge rst_n) begin
         mul_b_reg <= 64'h0;
         mul_signed_reg <= 2'h0;
     end
-    else if(mul_valid)begin
+    else if(mul_valid & mul_ready)begin
         mul_a_reg <= mul_a;
         mul_b_reg <= mul_b;
         mul_signed_reg <= mul_signed;
@@ -113,7 +113,7 @@ always @(posedge clk or negedge rst_n) begin
                     mul_o_valid_reg <= 1'b0;
                     mul_result_reg <= 128'h0;
                 end
-                else if(mul_valid)begin
+                else if(mul_valid & mul_ready)begin
                     if((mul_a_reg == mul_a) & (mul_b_reg == mul_b) & (mul_signed_reg == mul_signed))begin
                         state <= OUT;
                         mul_o_valid_reg <= 1'b1;
@@ -186,7 +186,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 // assign mul_busy         = mul_busy_reg;
-// assign mul_ready        = mul_ready_reg;
+assign mul_ready        = (state == IDLE);
 assign mul_o_valid      = mul_o_valid_reg;
 
 assign mul_result_hi    = mul_result_reg[127:64];

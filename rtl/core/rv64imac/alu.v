@@ -107,6 +107,7 @@ wire [63:0]             mul_b;
 wire [63:0] 	        mul_result_hi;
 wire [63:0] 	        mul_result_lo;
 wire                    mul_valid;
+wire                    mul_ready;
 wire        	        mul_o_valid;
 
 //div
@@ -171,6 +172,7 @@ mulu u_mulu(
     .rst_n         	( rst_n                 ),
     .mul_flush     	( flush_flag            ),
     .mul_valid     	( mul_valid             ),
+    .mul_ready     	( mul_ready             ),
     .mul_signed    	( ID_EX_reg_mul_signed  ),
     .mul_a         	( mul_a                 ),
     .mul_b         	( mul_b                 ),
@@ -181,7 +183,19 @@ mulu u_mulu(
 );
 assign mul_a     = ID_EX_reg_operand1;
 assign mul_b     = ID_EX_reg_operand2;
-assign mul_valid = ID_EX_reg_mul_valid & ID_EX_reg_decode_valid & (!ID_EX_reg_trap_valid) & (!Data_Conflict);
+wire mul_temp;
+FF_D_with_syn_rst #(
+    .DATA_LEN(1 ),
+    .RST_DATA(1 )
+)u_mul_temp(
+    .clk        ( clk                                                   ),
+	.rst_n      ( rst_n                                                 ),
+    .syn_rst    ( ((!mul_temp) & mul_o_valid & ready_flag) | flush_flag ),
+	.wen        ( mul_temp    & mul_valid   & mul_ready                 ),
+	.data_in    ( 1'b0                                                  ),
+	.data_out   ( mul_temp                                              )
+);
+assign mul_valid = ID_EX_reg_mul_valid & ID_EX_reg_decode_valid & (!ID_EX_reg_trap_valid) & (!Data_Conflict) & mul_temp;
 
 //div
 divu u_divu(

@@ -21,7 +21,7 @@ module booth_mul(
     input               rst_n,
     input               mul_flush,
     input               mul_valid,
-    // output              mul_ready,
+    output              mul_ready,
     input   [1:0]       mul_signed,
     input   [63:0]      mul_a,
     input   [63:0]      mul_b,
@@ -31,6 +31,11 @@ module booth_mul(
     input               mul_o_ready,
     output              mul_o_valid
 );
+
+wire        pipeline1_valid;
+wire        pipeline1_ready;
+wire        pipeline2_valid;
+wire        pipeline2_ready;
 
 /*
 *   | 62'h0 | booth_code0  | 0'h0  |
@@ -293,19 +298,59 @@ compressor_32#(74) l2_compressor_32_5 ( .data0(l2_15), .data1(l2_16), .data2(l2_
 
 
 //! TODO pipeline
-wire [81:0] sum2_0_reg = sum2_0;
-wire [83:0] sum2_1_reg = sum2_1;
-wire [83:0] sum2_2_reg = sum2_2;
-wire [83:0] sum2_3_reg = sum2_3;
-wire [81:0] sum2_4_reg = sum2_4;
-wire [73:0] sum2_5_reg = sum2_5;
+// wire [81:0] sum2_0_reg = sum2_0;
+// wire [83:0] sum2_1_reg = sum2_1;
+// wire [83:0] sum2_2_reg = sum2_2;
+// wire [83:0] sum2_3_reg = sum2_3;
+// wire [81:0] sum2_4_reg = sum2_4;
+// wire [73:0] sum2_5_reg = sum2_5;
+wire [81:0] sum2_0_reg;
+wire [83:0] sum2_1_reg;
+wire [83:0] sum2_2_reg;
+wire [83:0] sum2_3_reg;
+wire [81:0] sum2_4_reg;
+wire [73:0] sum2_5_reg;
 
-wire [82:0] carry2_0_reg = carry2_0;
-wire [84:0] carry2_1_reg = carry2_1;
-wire [84:0] carry2_2_reg = carry2_2;
-wire [84:0] carry2_3_reg = carry2_3;
-wire [81:0] carry2_4_reg = carry2_4[81:0];
-wire [73:0] carry2_5_reg = carry2_5[73:0];
+// wire [82:0] carry2_0_reg = carry2_0;
+// wire [84:0] carry2_1_reg = carry2_1;
+// wire [84:0] carry2_2_reg = carry2_2;
+// wire [84:0] carry2_3_reg = carry2_3;
+// wire [81:0] carry2_4_reg = carry2_4[81:0];
+// wire [73:0] carry2_5_reg = carry2_5[73:0];
+wire [82:0] carry2_0_reg;
+wire [84:0] carry2_1_reg;
+wire [84:0] carry2_2_reg;
+wire [84:0] carry2_3_reg;
+wire [81:0] carry2_4_reg;
+wire [73:0] carry2_5_reg;
+wire pipeline1_wen = mul_ready;
+wire pipeline1_nxt = mul_valid;
+FF_D_with_syn_rst #(
+    .DATA_LEN(1 ),
+    .RST_DATA(0 )
+)u_pipeline1_valid(
+    .clk        ( clk               ),
+	.rst_n      ( rst_n             ),
+    .syn_rst    ( mul_flush         ),
+	.wen        ( pipeline1_wen     ),
+	.data_in    ( pipeline1_nxt     ),
+	.data_out   ( pipeline1_valid   )
+);
+FF_D_without_asyn_rst #(.DATA_LEN(82))u_sum2_0_reg(.clk(clk),.wen(pipeline1_wen),.data_in (sum2_0),.data_out(sum2_0_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(84))u_sum2_1_reg(.clk(clk),.wen(pipeline1_wen),.data_in (sum2_1),.data_out(sum2_1_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(84))u_sum2_2_reg(.clk(clk),.wen(pipeline1_wen),.data_in (sum2_2),.data_out(sum2_2_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(84))u_sum2_3_reg(.clk(clk),.wen(pipeline1_wen),.data_in (sum2_3),.data_out(sum2_3_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(82))u_sum2_4_reg(.clk(clk),.wen(pipeline1_wen),.data_in (sum2_4),.data_out(sum2_4_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(74))u_sum2_5_reg(.clk(clk),.wen(pipeline1_wen),.data_in (sum2_5),.data_out(sum2_5_reg));
+
+FF_D_without_asyn_rst #(.DATA_LEN(83))u_carry2_0_reg(.clk(clk),.wen(pipeline1_wen),.data_in (carry2_0),.data_out(carry2_0_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(85))u_carry2_1_reg(.clk(clk),.wen(pipeline1_wen),.data_in (carry2_1),.data_out(carry2_1_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(85))u_carry2_2_reg(.clk(clk),.wen(pipeline1_wen),.data_in (carry2_2),.data_out(carry2_2_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(85))u_carry2_3_reg(.clk(clk),.wen(pipeline1_wen),.data_in (carry2_3),.data_out(carry2_3_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(82))u_carry2_4_reg(.clk(clk),.wen(pipeline1_wen),.data_in (carry2_4[81:0]),.data_out(carry2_4_reg));
+FF_D_without_asyn_rst #(.DATA_LEN(74))u_carry2_5_reg(.clk(clk),.wen(pipeline1_wen),.data_in (carry2_5[73:0]),.data_out(carry2_5_reg));
+
+assign mul_ready = ((!pipeline1_valid) | pipeline1_ready);
 
 //? L3 compressor42 12 -> 6
 wire [90:0] l3_0,  l3_1,  l3_2, l3_3;
@@ -392,13 +437,34 @@ assign l5_3  = {carry4_1[105:0], 22'h0};
 compressor_42#(128) l5_compressor_42_0 ( .data0(l5_0 ), .data1(l5_1 ), .data2(l5_2 ), .data3(l5_3 ), .sum(sum5_0 ), .carry_o(carry5_0 ));
 
 //! TODO pipeline
-wire [127:0] sum5_0_reg = sum5_0;
-wire [127:0] carry5_0_reg = carry5_0[127:0];
+// wire [127:0] sum5_0_reg = sum5_0;
+// wire [127:0] carry5_0_reg = carry5_0[127:0];
+wire [127:0] sum5_0_reg;
+wire [127:0] carry5_0_reg;
+wire pipeline2_wen = pipeline1_ready;
+wire pipeline2_nxt = pipeline1_valid;
+FF_D_with_syn_rst #(
+    .DATA_LEN(1 ),
+    .RST_DATA(0 )
+)u_pipeline2_valid(
+    .clk        ( clk               ),
+	.rst_n      ( rst_n             ),
+    .syn_rst    ( mul_flush         ),
+	.wen        ( pipeline2_wen     ),
+	.data_in    ( pipeline2_nxt     ),
+	.data_out   ( pipeline2_valid   )
+);
+FF_D_without_asyn_rst #(.DATA_LEN(128))u_sum5_0_reg(.clk(clk),.wen(pipeline2_wen),.data_in (sum5_0),.data_out(sum5_0_reg));
+
+FF_D_without_asyn_rst #(.DATA_LEN(128))u_carry5_0_reg(.clk(clk),.wen(pipeline2_wen),.data_in (carry5_0[127:0]),.data_out(carry5_0_reg));
+
+assign pipeline1_ready = ((!pipeline2_valid) | pipeline2_ready);
+assign pipeline2_ready = mul_o_ready;
 
 wire [127:0] res = sum5_0_reg + carry5_0_reg;
 assign mul_result_hi = res[127:64];
 assign mul_result_lo = res[63:0];
 
-assign mul_o_valid = mul_valid;
+assign mul_o_valid = pipeline2_valid;
 
 endmodule //booth_mul
