@@ -1238,7 +1238,7 @@ DifftestPerformRegState u_DifftestPerformRegState(
     .io_value_30 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[30]   ),
     .io_value_31 	(u_core_top_with_i_dcache.u_wbu.u_csr.Performance_Monitor[31]   )
 );
-warp u_warp;
+warp u_warp();
 DifftestCSRState u_DifftestCSRState(
     .io_privilegeMode 	({{62{1'b0}},u_core_top_with_i_dcache.u_wbu.u_csr.current_priv_status}),
     .io_mstatus       	(u_core_top_with_i_dcache.u_wbu.u_csr.mstatus                         ),
@@ -1264,10 +1264,12 @@ reg  io_ls_flag_reg;
 wire io_load_addr_flag  = ((u_core_top_with_i_dcache.dcache_araddr >= 64'h1000_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h1000_0020)) | 
                             ((u_core_top_with_i_dcache.dcache_araddr >= 64'h1010_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h1010_0030)) |
                             ((u_core_top_with_i_dcache.dcache_araddr >= 64'h0c00_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h0c21_0000)) | 
+                            ((u_core_top_with_i_dcache.dcache_araddr >= 64'ha000_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'ha000_0200)) | 
                             ((u_core_top_with_i_dcache.dcache_araddr >= 64'h0200_0000) && (u_core_top_with_i_dcache.dcache_araddr < 64'h0201_0000));
 wire io_store_addr_flag = ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h1000_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h1000_0020)) | 
                             ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h1010_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h1010_0030)) | 
                             ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h0c00_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h0c21_0000)) | 
+                            ((u_core_top_with_i_dcache.dcache_awaddr >= 64'ha000_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'ha000_0200)) | 
                             ((u_core_top_with_i_dcache.dcache_awaddr >= 64'h0200_0000) && (u_core_top_with_i_dcache.dcache_awaddr < 64'h0201_0000));
 wire io_load_flag  = u_core_top_with_i_dcache.dcache_arvalid & u_core_top_with_i_dcache.dcache_arready & io_load_addr_flag;
 wire io_store_flag = u_core_top_with_i_dcache.dcache_awvalid & u_core_top_with_i_dcache.dcache_awready & io_store_addr_flag;
@@ -1353,7 +1355,7 @@ always begin
         (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
         (core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.EX_LS_reg_atomic_valid & 
         (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_lsu.atomic_finish));
-    // mux
+    // mul
     assign core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[7] = 
         core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_exu.ID_EX_reg_decode_valid & 
         (!core_debugger_top_with_idcache.u_core_top_with_i_dcache.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &

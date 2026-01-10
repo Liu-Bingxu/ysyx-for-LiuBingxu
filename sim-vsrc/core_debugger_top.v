@@ -1233,6 +1233,7 @@ u_dm_top(
 );
 assign tap_state = u_dm_top.u_dtm.jtag_tap_state;
 
+warp u_warp();
 
 DifftestArchIntRegState u_DifftestArchIntRegState(
     .io_value_0  	(64'h0                                  ),
@@ -1354,3 +1355,56 @@ DifftestTrapEvent u_DifftestTrapEvent(
 
 
 endmodule //core_debugger_top
+
+module warp;
+always begin
+    // 中断
+    assign core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[3] = 
+        core_debugger_top.u_core_top.u_exu.WB_EX_interrupt_flag;
+    // load
+    assign core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[4] = 
+        core_debugger_top.u_core_top.u_lsu.EX_LS_reg_execute_valid & 
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
+        (core_debugger_top.u_core_top.u_lsu.EX_LS_reg_load_valid & 
+        (!core_debugger_top.u_core_top.u_lsu.read_finish));
+    // store
+    assign core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[5] = 
+        core_debugger_top.u_core_top.u_lsu.EX_LS_reg_execute_valid & 
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
+        (core_debugger_top.u_core_top.u_lsu.EX_LS_reg_store_valid & 
+        (!core_debugger_top.u_core_top.u_lsu.write_finish));
+    // atomic
+    assign core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[6] = 
+        core_debugger_top.u_core_top.u_lsu.EX_LS_reg_execute_valid & 
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
+        (core_debugger_top.u_core_top.u_lsu.EX_LS_reg_atomic_valid & 
+        (!core_debugger_top.u_core_top.u_lsu.atomic_finish));
+    // mul
+    assign core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[7] = 
+        core_debugger_top.u_core_top.u_exu.ID_EX_reg_decode_valid & 
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[4]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[5]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[6]) &
+        core_debugger_top.u_core_top.u_exu.ID_EX_reg_mul_valid & 
+        (!core_debugger_top.u_core_top.u_exu.o_valid);
+    // div
+    assign core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[8] = 
+        core_debugger_top.u_core_top.u_exu.ID_EX_reg_decode_valid & 
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[4]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[5]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[6]) &
+        core_debugger_top.u_core_top.u_exu.ID_EX_reg_div_valid & 
+        (!core_debugger_top.u_core_top.u_exu.o_valid);
+    // no inst
+    assign core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[9] = 
+        (!core_debugger_top.u_core_top.u_idu.IF_ID_reg_inst_valid) & 
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[4]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[5]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[6]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[7]) &
+        (!core_debugger_top.u_core_top.u_wbu.u_csr.MPerformance_Monitor_inc[8]);
+end
+endmodule

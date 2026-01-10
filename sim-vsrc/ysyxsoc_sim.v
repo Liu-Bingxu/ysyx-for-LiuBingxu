@@ -57,6 +57,7 @@ ysyxSoCFull dut (
     .externalPins_uart_tx    (uart_tx       )
 );
 
+warp u_warp();
 
 DifftestArchIntRegState u_DifftestArchIntRegState(
     .io_value_0  	(64'h0                                        ),
@@ -218,3 +219,58 @@ DifftestTrapEvent u_DifftestTrapEvent(
 );
 
 endmodule //ysyxsoc_sim
+
+
+module warp;
+always begin
+    // 中断
+    assign ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[3] = 
+        ysyxsoc_sim.dut.asic.cpu.cpu.u_exu.WB_EX_interrupt_flag;
+    // load
+    assign ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[4] = 
+        ysyxsoc_sim.dut.asic.cpu.cpu.u_lsu.EX_LS_reg_execute_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
+        (ysyxsoc_sim.dut.asic.cpu.cpu.u_lsu.EX_LS_reg_load_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_lsu.read_finish));
+    // store
+    assign ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[5] = 
+        ysyxsoc_sim.dut.asic.cpu.cpu.u_lsu.EX_LS_reg_execute_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
+        (ysyxsoc_sim.dut.asic.cpu.cpu.u_lsu.EX_LS_reg_store_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_lsu.write_finish));
+    // atomic
+    assign ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[6] = 
+        ysyxsoc_sim.dut.asic.cpu.cpu.u_lsu.EX_LS_reg_execute_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[3]) & 
+        (ysyxsoc_sim.dut.asic.cpu.cpu.u_lsu.EX_LS_reg_atomic_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_lsu.atomic_finish));
+    // mul
+    assign ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[7] = 
+        ysyxsoc_sim.dut.asic.cpu.cpu.u_exu.ID_EX_reg_decode_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[4]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[5]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[6]) &
+        ysyxsoc_sim.dut.asic.cpu.cpu.u_exu.ID_EX_reg_mul_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_exu.o_valid);
+    // div
+    assign ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[8] = 
+        ysyxsoc_sim.dut.asic.cpu.cpu.u_exu.ID_EX_reg_decode_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[4]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[5]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[6]) &
+        ysyxsoc_sim.dut.asic.cpu.cpu.u_exu.ID_EX_reg_div_valid & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_exu.o_valid);
+    // no inst
+    assign ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[9] = 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_idu.IF_ID_reg_inst_valid) & 
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[3]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[4]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[5]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[6]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[7]) &
+        (!ysyxsoc_sim.dut.asic.cpu.cpu.u_wbu.u_csr.MPerformance_Monitor_inc[8]);
+end
+endmodule
+
