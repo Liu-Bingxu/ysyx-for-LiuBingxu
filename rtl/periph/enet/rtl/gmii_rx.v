@@ -340,7 +340,7 @@ generate
                     gmii_rxd_dv[i]    <= 1'b0;
                     gmii_rxd_er[i]    <= 1'b0;
                 end
-                else if((!ether_en) | rdar_rst)begin
+                else if((!ether_en) | rdar_rst | (!gmii_rx_dv))begin
                     gmii_rxd_r[i]     <= 8'h0;
                     gmii_rxd_dv[i]    <= 1'b0;
                     gmii_rxd_er[i]    <= 1'b0;
@@ -369,19 +369,19 @@ generate
                     gmii_rxd_dv[i]    <= 1'b0;
                     gmii_rxd_er[i]    <= 1'b0;
                 end
-                else if((!ether_en) | rdar_rst)begin
+                else if((!ether_en) | rdar_rst | (!gmii_rx_dv))begin
                     gmii_rxd_r[i]     <= 8'h0;
                     gmii_rxd_dv[i]    <= 1'b0;
                     gmii_rxd_er[i]    <= 1'b0;
                 end
                 else if(mii_select & mii_odd)begin
                     gmii_rxd_r[i]     <= gmii_rxd_r[i - 1];
-                    gmii_rxd_dv[i]    <= gmii_rxd_dv[i - 1] & gmii_rx_dv;
+                    gmii_rxd_dv[i]    <= gmii_rxd_dv[i - 1];
                     gmii_rxd_er[i]    <= gmii_rxd_er[i - 1];
                 end
                 else if(!mii_select)begin
                     gmii_rxd_r[i]     <= gmii_rxd_r[i - 1];
-                    gmii_rxd_dv[i]    <= gmii_rxd_dv[i - 1] & gmii_rx_dv;
+                    gmii_rxd_dv[i]    <= gmii_rxd_dv[i - 1];
                     gmii_rxd_er[i]    <= gmii_rxd_er[i - 1];
                 end
             end
