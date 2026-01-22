@@ -8,7 +8,6 @@ module dtm#(
     input				        tdi,
     output	reg			        tdo,
 
-    //TODO
     input                       dtm2dm_full,
     output                      dtm2dm_wen,
     output [ ABITS + 33 : 0 ]   dtm2dm_data_in,

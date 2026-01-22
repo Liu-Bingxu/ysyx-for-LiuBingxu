@@ -297,13 +297,6 @@ compressor_32#(82) l2_compressor_32_4 ( .data0(l2_12), .data1(l2_13), .data2(l2_
 compressor_32#(74) l2_compressor_32_5 ( .data0(l2_15), .data1(l2_16), .data2(l2_17), .sum(sum2_5 ), .carry_o(carry2_5 ));
 
 
-//! TODO pipeline
-// wire [81:0] sum2_0_reg = sum2_0;
-// wire [83:0] sum2_1_reg = sum2_1;
-// wire [83:0] sum2_2_reg = sum2_2;
-// wire [83:0] sum2_3_reg = sum2_3;
-// wire [81:0] sum2_4_reg = sum2_4;
-// wire [73:0] sum2_5_reg = sum2_5;
 wire [81:0] sum2_0_reg;
 wire [83:0] sum2_1_reg;
 wire [83:0] sum2_2_reg;
@@ -311,12 +304,6 @@ wire [83:0] sum2_3_reg;
 wire [81:0] sum2_4_reg;
 wire [73:0] sum2_5_reg;
 
-// wire [82:0] carry2_0_reg = carry2_0;
-// wire [84:0] carry2_1_reg = carry2_1;
-// wire [84:0] carry2_2_reg = carry2_2;
-// wire [84:0] carry2_3_reg = carry2_3;
-// wire [81:0] carry2_4_reg = carry2_4[81:0];
-// wire [73:0] carry2_5_reg = carry2_5[73:0];
 wire [82:0] carry2_0_reg;
 wire [84:0] carry2_1_reg;
 wire [84:0] carry2_2_reg;
@@ -436,9 +423,6 @@ assign l5_3  = {carry4_1[105:0], 22'h0};
 
 compressor_42#(128) l5_compressor_42_0 ( .data0(l5_0 ), .data1(l5_1 ), .data2(l5_2 ), .data3(l5_3 ), .sum(sum5_0 ), .carry_o(carry5_0 ));
 
-//! TODO pipeline
-// wire [127:0] sum5_0_reg = sum5_0;
-// wire [127:0] carry5_0_reg = carry5_0[127:0];
 wire [127:0] sum5_0_reg;
 wire [127:0] carry5_0_reg;
 wire pipeline2_wen = pipeline1_ready;

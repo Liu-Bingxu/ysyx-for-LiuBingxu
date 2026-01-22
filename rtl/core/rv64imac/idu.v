@@ -268,8 +268,6 @@ wire slti, sltiu, xori, ori, andi, addi;
 wire sll,srl,sra,slli,srli,srai;
 wire sub, slt,sltu, add;
 wire OR, XOR, AND;
-//todo fence_i to invalid i/d cache
-//todo sfence_vma to invalid tlb
 wire ecall, ebreak, fence, fence_i, sfence_vma;
 wire addiw, addw, subw;
 wire sllw,srlw,sraw,slliw,srliw,sraiw;
