@@ -270,7 +270,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 FF_D_without_asyn_rst #(128)  u_pte            (clk,pte_valid & pte_ready_i,pte,pte_reg);
 FF_D_without_asyn_rst #(1)    u_pte_error      (clk,pte_valid & pte_ready_i,pte_error,pte_error_reg);
-assign page_wen         = (stage_status == WAIT_RESP) & (pte_valid) & (pte_ready_i);
+assign page_wen         = (stage_status == WAIT_RESP) & (pte_valid) & (pte_ready_i) & (!pte_error);
 //**********************************************************************************************
 //?output
 assign immu_miss_valid  = immu_miss_valid_reg;
