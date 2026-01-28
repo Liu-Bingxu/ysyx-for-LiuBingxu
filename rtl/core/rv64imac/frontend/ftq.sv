@@ -1,64 +1,69 @@
 `include "./struct.sv"
 module ftq(
-    input                           clk,
-    input                           rst_n,
+    input                               clk,
+    input                               rst_n,
 
     //exu interface
-    input                           commit_flag,
-    input                           commit_end_flag,
-    input  [63:0]                   commit_pc,
+    input                               commit_flag,
+    input                               commit_end_flag,
+    input  [63:0]                       commit_pc,
     //jump interface
-    input                           jump_is_call,
-    input                           jump_is_ret,
-    input                           jump_restore_flag,// restore flag
-    input                           jump_flag,        // another flag: sfence, fence.i, satp_change
-    input  [63:0]                   jump_addr,        // restore addr
-    input  [63:0]                   jump_push_addr,   // restore push addr
+    input                               jump_is_call,
+    input                               jump_is_ret,
+    input                               jump_restore_flag,// restore flag
+    input                               jump_flag,        // another flag: sfence, fence.i, satp_change
+    input  [63:0]                       jump_addr,        // restore addr
+    input  [63:0]                       jump_push_addr,   // restore push addr
 
     // uftb interface
-    output                          predict,
-    input  ftq_entry                enqueue_entry,
+    output                              predict,
+    input  ftq_entry                    enqueue_entry,
 
-    output                          redirect,
-    output [63:0]                   redirect_pc,
+    output                              redirect,
+    output [63:0]                       redirect_pc,
 
-    output                          update,
-    output                          update_hit,
-    output [UFTB_ENTRY_NUM - 1 : 0] update_sel,
-    output [TAG_BIT_NUM - 1: 0]     update_tag,
-    output uftb_entry               update_entry,
+    output                              update,
+    output                              update_hit,
+    output [UFTB_ENTRY_NUM - 1 : 0]     update_sel,
+    output [TAG_BIT_NUM - 1: 0]         update_tag,
+    output uftb_entry                   update_entry,
 
     // return addr stack interface
-    output                          precheck_restore,
-    output                          precheck_push,
-    output [63:0]                   precheck_push_pc,
-    output                          precheck_pop,
-    output [63:0]                   precheck_pop_pc_i,
-    input  [63:0]                   precheck_pop_pc,
+    output                              precheck_restore,
+    output                              precheck_push,
+    output [63:0]                       precheck_push_pc,
+    output                              precheck_pop,
+    output [63:0]                       precheck_pop_pc_i,
+    input  [63:0]                       precheck_pop_pc,
 
-    output                          commit_restore,
-    output                          commit_push,
-    output [63:0]                   commit_push_pc,
-    output                          commit_pop,
+    output                              commit_restore,
+    output                              commit_push,
+    output [63:0]                       commit_push_pc,
+    output                              commit_pop,
 
     // ifu interface
-    output                          ifu_send_entry_valid,
-    input                           ifu_send_entry_ready,
-    output ftq_entry                ifu_send_entry,
+    output                              ifu_send_entry_valid,
+    input                               ifu_send_entry_ready,
+    output ftq_entry                    ifu_send_entry,
 
-    input                           ifu_dequeue_entry_ready,
-    output ftq_entry                ifu_dequeue_entry,
+    input                               ifu_dequeue_entry_ready,
+    output ftq_entry                    ifu_dequeue_entry,
+    output [FTQ_ENTRY_BIT_NUM - 1 : 0]  ifu_dequeue_ptr,
 
-    input                           if_precheck_restore,
-    input  [63:0]                   if_precheck_retsore_pc,
-    input                           if_precheck_token,
-    input                           if_precheck_is_tail,
-    input  uftb_entry               new_entry,
-    input                           if_precheck_push,
-    input  [63:0]                   if_precheck_push_pc,
-    input                           if_precheck_pop,
-    input  [63:0]                   if_precheck_pop_pc_i,
-    output [63:0]                   if_precheck_pop_pc
+    input                               if_precheck_restore,
+    input  [63:0]                       if_precheck_retsore_pc,
+    input                               if_precheck_token,
+    input                               if_precheck_is_tail,
+    input  uftb_entry                   new_entry,
+    input                               if_precheck_push,
+    input  [63:0]                       if_precheck_push_pc,
+    input                               if_precheck_pop,
+    input  [63:0]                       if_precheck_pop_pc_i,
+    output [63:0]                       if_precheck_pop_pc,
+
+    // ex interface
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  ex_r_ptr,
+    output [63:0]                       ex_r_start_pc
 );
 
 ftq_entry                       entry[FTQ_ENTRY_NUM - 1 : 0];
@@ -411,6 +416,9 @@ assign commit_pop           = jump_restore_flag & jump_is_ret;
 assign ifu_send_entry_valid = (ifu_s_ptr != bpu_w_ptr);
 assign ifu_send_entry       = entry[ifu_s_ptr[FTQ_ENTRY_BIT_NUM - 1 : 0]];
 assign ifu_dequeue_entry    = entry[ifu_r_ptr[FTQ_ENTRY_BIT_NUM - 1 : 0]];
+assign ifu_dequeue_ptr      = ifu_r_ptr[FTQ_ENTRY_BIT_NUM - 1 : 0];
+
+assign ex_r_start_pc        = entry[ex_r_ptr].start_pc;
 
 
 endmodule //ftq

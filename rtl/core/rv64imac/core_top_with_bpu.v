@@ -16,6 +16,7 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
+`include "./struct.sv"
 module core_top_with_bpu#(
     parameter MHARTID = 0,
     parameter RST_PC=64'h0,
@@ -354,19 +355,22 @@ wire            pte_valid;
 wire [127:0]    pte;
 wire            pte_error;
 
-wire                   commit_flag;
-wire                   commit_end_flag;
-wire  [63:0]           commit_pc;
-wire                   commit_restore;
-wire                   precheck_restore;
-wire                   jump_restore_flag; // restore flag
-wire  [63:0]           jump_push_addr;  // restore push addr
-wire                   jump_is_call;
-wire                   jump_is_ret;
-wire                   IF_ID_reg_tval_flag;
-wire                   IF_ID_reg_ftq_end_flag;
-wire [31:0]            IF_ID_reg_predecode_inst;
-wire [31:0]            IF_ID_reg_decode_inst;
+wire                                commit_flag;
+wire                                commit_end_flag;
+wire  [63:0]                        commit_pc;
+wire                                commit_restore;
+wire                                precheck_restore;
+wire                                jump_restore_flag; // restore flag
+wire  [63:0]                        jump_push_addr;  // restore push addr
+wire                                jump_is_call;
+wire                                jump_is_ret;
+wire                                IF_ID_reg_tval_flag;
+wire                                IF_ID_reg_ftq_end_flag;
+wire [31:0]                         IF_ID_reg_predecode_inst;
+wire [31:0]                         IF_ID_reg_decode_inst;
+wire [BLOCK_BIT_NUM - 1 : 0]        IF_ID_reg_inst_offset;
+wire [FTQ_ENTRY_BIT_NUM - 1 : 0]    IF_ID_reg_inst_ftq_ptr;
+wire [63:0]                         ex_r_start_pc;
 
 inst16_to_32 u_inst16_to_32(
     .input_inst 	( IF_ID_reg_predecode_inst[15:0]  ),
@@ -385,6 +389,7 @@ FF_D_without_asyn_rst #(1)  u_commit_end_flag (clk,ID_IF_inst_ready,IF_ID_reg_ft
 assign IF_ID_reg_inst_compress_flag = (IF_ID_reg_predecode_inst[1:0] != 2'h3);
 assign IF_ID_reg_inst_compress      = IF_ID_reg_predecode_inst[15:0];
 assign IF_ID_reg_tval               = (IF_ID_reg_tval_flag) ? (IF_ID_reg_PC + 64'h2) : IF_ID_reg_PC;
+assign IF_ID_reg_PC                 = ex_r_start_pc + {{(64 - BLOCK_BIT_NUM){1'b0}}, IF_ID_reg_inst_offset};
 frontend_top #(
 	.RST_PC 	( RST_PC  ))
 u_frontend_top(
@@ -395,6 +400,8 @@ u_frontend_top(
     .commit_pc                      ( commit_pc                     ),
     .commit_restore                 ( commit_restore                ),
     .precheck_restore               ( precheck_restore              ),
+    .ex_r_ptr                       ( IF_ID_reg_inst_ftq_ptr        ),
+    .ex_r_start_pc                  ( ex_r_start_pc                 ),
 	.jump_is_call                 	( jump_is_call                  ),
 	.jump_is_ret                  	( jump_is_ret                   ),
 	.jump_flag                    	( jump_flag                     ),
@@ -414,7 +421,8 @@ u_frontend_top(
 	.IF_ID_reg_ftq_end_flag 	    ( IF_ID_reg_ftq_end_flag        ),
 	.IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
 	.IF_ID_reg_predecode_inst       ( IF_ID_reg_predecode_inst      ),
-	.IF_ID_reg_PC                 	( IF_ID_reg_PC                  )
+	.IF_ID_reg_inst_offset          ( IF_ID_reg_inst_offset         ),
+    .IF_ID_reg_inst_ftq_ptr         ( IF_ID_reg_inst_ftq_ptr        )
 );
 
 

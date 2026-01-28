@@ -1,37 +1,37 @@
 `include "./struct.sv"
 module predecode(
-    input  [32 * IFU_INST_MAX_NUM - 1:0]    i_predecode_inst,
-    input  [63:0]                           start_pc,
-    input                                   rvi_valid,
+    input  [32 * IFU_INST_MAX_NUM - 1:0]                i_predecode_inst,
+    input  [63:0]                                       start_pc,
+    input                                               rvi_valid,
 
-    output                                  has_one_branch,
-    output                                  has_two_branch,
-    output                                  has_three_branch,
-    output                                  has_jump,
+    output                                              has_one_branch,
+    output                                              has_two_branch,
+    output                                              has_three_branch,
+    output                                              has_jump,
 
-    output [IFU_INST_MAX_NUM * 1 - 1 : 0]   o_is_valid,
-    output [IFU_INST_MAX_NUM * 1 - 1 : 0]   o_decode_eqa,
-    output [32 * IFU_INST_MAX_NUM - 1:0]    o_inst,
-    output [64 * IFU_INST_MAX_NUM - 1:0]    o_inst_pc,
+    output [IFU_INST_MAX_NUM * 1 - 1 : 0]               o_is_valid,
+    output [IFU_INST_MAX_NUM * 1 - 1 : 0]               o_decode_eqa,
+    output [32 * IFU_INST_MAX_NUM - 1:0]                o_inst,
+    output [BLOCK_BIT_NUM * IFU_INST_MAX_NUM - 1:0]     o_inst_offset,
 
-    output                          one_br_is_rvc,
-    output [63:0]                   one_br_bracnch_addr,
-    output [BLOCK_BIT_NUM - 1: 0]   one_br_offset,
+    output                                              one_br_is_rvc,
+    output [63:0]                                       one_br_bracnch_addr,
+    output [BLOCK_BIT_NUM - 1: 0]                       one_br_offset,
 
-    output                          two_br_is_rvc,
-    output [63:0]                   two_br_bracnch_addr,
-    output [BLOCK_BIT_NUM - 1: 0]   two_br_offset,
+    output                                              two_br_is_rvc,
+    output [63:0]                                       two_br_bracnch_addr,
+    output [BLOCK_BIT_NUM - 1: 0]                       two_br_offset,
 
-    output [BLOCK_BIT_NUM - 1: 0]   three_br_offset,
+    output [BLOCK_BIT_NUM - 1: 0]                       three_br_offset,
 
-    output                          jump_is_call,
-    output                          jump_is_ret,
-    output                          jump_is_jalr,
-    output                          jump_is_rvc,
-    output [63:0]                   jump_bracnch_addr,
-    output [BLOCK_BIT_NUM - 1: 0]   jump_offset,
+    output                                              jump_is_call,
+    output                                              jump_is_ret,
+    output                                              jump_is_jalr,
+    output                                              jump_is_rvc,
+    output [63:0]                                       jump_bracnch_addr,
+    output [BLOCK_BIT_NUM - 1: 0]                       jump_offset,
 
-    output                          last_rvi_valid
+    output                                              last_rvi_valid
 );
 
 logic [31:0]                   predecode_inst[IFU_INST_MAX_NUM -1 :0];
@@ -40,15 +40,6 @@ logic                          decode_eqa[IFU_INST_MAX_NUM -1 :0];
 logic                          is_rvc[IFU_INST_MAX_NUM -1 :0];
 logic [31:0]                   inst[IFU_INST_MAX_NUM -1 :0];
 logic [63:0]                   inst_pc[IFU_INST_MAX_NUM -1 :0];
-genvar packed_index;
-generate for(packed_index = 0 ; packed_index < IFU_INST_MAX_NUM; packed_index = packed_index + 1) begin : U_gen_packed_index
-    assign predecode_inst[packed_index] = i_predecode_inst[32 * packed_index + 31 : 32 * packed_index];
-    assign o_is_valid[packed_index]      = is_valid  [packed_index];
-    assign o_decode_eqa[packed_index]    = decode_eqa[packed_index];
-    assign o_inst[32 * packed_index + 31 : 32 * packed_index]        = inst      [packed_index];
-    assign o_inst_pc[64 * packed_index + 63 : 64 * packed_index]     = inst_pc   [packed_index];
-end
-endgenerate
 
 //don't need export it
 logic [BLOCK_BIT_NUM - 2 : 0]  one_branch_index;
@@ -115,6 +106,16 @@ logic [63:0]                    inst_bracnch_addr[IFU_INST_MAX_NUM -1 :0];
 logic [BLOCK_BIT_NUM - 1: 0]    inst_offset[IFU_INST_MAX_NUM -1 :0];
 logic [31:0]                    inst_inst[IFU_INST_MAX_NUM -1 :0];
 
+genvar packed_index;
+generate for(packed_index = 0 ; packed_index < IFU_INST_MAX_NUM; packed_index = packed_index + 1) begin : U_gen_packed_index
+    assign predecode_inst[packed_index]     = i_predecode_inst[32 * packed_index + 31 : 32 * packed_index];
+    assign o_is_valid[packed_index]         = is_valid  [packed_index];
+    assign o_decode_eqa[packed_index]       = decode_eqa[packed_index];
+    assign o_inst[32 * packed_index + 31 : 32 * packed_index] = inst[packed_index];
+    assign o_inst_offset[BLOCK_BIT_NUM * packed_index + BLOCK_BIT_NUM - 1 : BLOCK_BIT_NUM * packed_index] = inst_offset[packed_index];
+end
+endgenerate
+
 genvar inst_index;
 generate for(inst_index = 0 ; inst_index < IFU_INST_MAX_NUM; inst_index = inst_index + 1) begin : U_gen_inst_index_decode
 
@@ -175,7 +176,7 @@ generate for(inst_index = 0 ; inst_index < IFU_INST_MAX_NUM; inst_index = inst_i
     assign inst_is_ret[inst_index]          = (jalr_ret[inst_index] | cjr_ret[inst_index]);
     assign inst_is_jalr[inst_index]         = ((jalr[inst_index] & (!jalr_call[inst_index]) & (!jalr_ret[inst_index])) | (cjr[inst_index] & (!cjr_ret[inst_index])));
     assign inst_is_rvc[inst_index]          = (predecode_inst[inst_index][1:0] != 2'h3);
-    assign inst_bracnch_addr[inst_index]    = start_pc + ((!jalr[inst_index]) ? imm[inst_index] : 64'h0) + {{(64 - BLOCK_BIT_NUM){1'b0}}, inst_offset[inst_index]};
+    assign inst_bracnch_addr[inst_index]    = inst_pc[inst_index] + ((!jalr[inst_index]) ? imm[inst_index] : 64'h0);
     assign inst_offset[inst_index]          = {inst_index[BLOCK_BIT_NUM - 2: 0], 1'b0};
     assign inst_inst[inst_index]            = predecode_inst[inst_index];
 

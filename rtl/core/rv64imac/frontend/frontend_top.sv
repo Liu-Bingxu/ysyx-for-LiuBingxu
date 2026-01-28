@@ -1,44 +1,49 @@
 `include "./struct.sv"
 module frontend_top#(parameter RST_PC=64'h0)(
     //clock and reset
-    input                   clk,
-    input                   rst_n,
+    input                               clk,
+    input                               rst_n,
 
     //exu interface
-    input                   commit_flag,
-    input                   commit_end_flag,
-    input  [63:0]           commit_pc,
+    input                               commit_flag,
+    input                               commit_end_flag,
+    input  [63:0]                       commit_pc,
 
-    output                 	commit_restore,
-    output                 	precheck_restore,
+    output                 	            commit_restore,
+    output                 	            precheck_restore,
+
+    // ex interface
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  ex_r_ptr,
+    output [63:0]                       ex_r_start_pc,
 
     //jump interface
-    input                   jump_is_call,
-    input                   jump_is_ret,
-    input                   jump_restore_flag,// restore flag
-    input                   jump_flag,        // another flag: sfence, fence.i, satp_change
-    input  [63:0]           jump_addr,        // restore addr
-    input  [63:0]           jump_push_addr,   // restore push addr
+    input                               jump_is_call,
+    input                               jump_is_ret,
+    input                               jump_restore_flag,// restore flag
+    input                               jump_flag,        // another flag: sfence, fence.i, satp_change
+    input  [63:0]                       jump_addr,        // restore addr
+    input  [63:0]                       jump_push_addr,   // restore push addr
 
     //read addr channel
-    input                   ifu_arready,
-    output                  ifu_arvalid,
-    output [63:0]           ifu_araddr,
+    input                               ifu_arready,
+    output                              ifu_arvalid,
+    output [63:0]                       ifu_araddr,
 
     //read data channel
-    input                   ifu_rvalid,
-    output                  ifu_rready,
-    input  [1:0]            ifu_rresp,
-    input  [63:0]           ifu_rdata,
+    input                               ifu_rvalid,
+    output                              ifu_rready,
+    input  [1:0]                        ifu_rresp,
+    input  [63:0]                       ifu_rdata,
 
     //ifu - idu interface
-    output                  IF_ID_reg_inst_valid,
-    input                   ID_IF_inst_ready,
-    output                  IF_ID_reg_tval_flag,
-    output                  IF_ID_reg_ftq_end_flag,
-    output [1:0]            IF_ID_reg_rresp,
-    output [31:0]           IF_ID_reg_predecode_inst,
-    output [63:0]           IF_ID_reg_PC
+    output                              IF_ID_reg_inst_valid,
+    input                               ID_IF_inst_ready,
+    output                              IF_ID_reg_tval_flag,
+    output                              IF_ID_reg_ftq_end_flag,
+    output [1:0]                        IF_ID_reg_rresp,
+    output [31:0]                       IF_ID_reg_predecode_inst,
+    output [BLOCK_BIT_NUM - 1:0]        IF_ID_reg_inst_offset,
+    output [FTQ_ENTRY_BIT_NUM - 1:0]    IF_ID_reg_inst_ftq_ptr
 );
 
 // module bpu outports wire
@@ -46,25 +51,26 @@ ftq_entry                   enqueue_entry;
 logic [63:0]               	precheck_pop_pc;
 
 // module ftq outports wire
-logic                      	predict;
-logic                      	redirect;
-logic [63:0]               	redirect_pc;
-logic                      	update;
-logic                      	update_hit;
-logic [UFTB_ENTRY_NUM-1:0] 	update_sel;
-logic [TAG_BIT_NUM-1:0]    	update_tag;
-uftb_entry                  update_entry;
-logic                      	precheck_push;
-logic [63:0]               	precheck_push_pc;
-logic                      	precheck_pop;
-logic [63:0]               	precheck_pop_pc_i;
-logic                      	commit_push;
-logic [63:0]               	commit_push_pc;
-logic                      	commit_pop;
-logic                       ifu_send_entry_valid;
-ftq_entry                   ifu_send_entry;
-ftq_entry                   ifu_dequeue_entry;
-logic [63:0]                if_precheck_pop_pc;
+logic                      	        predict;
+logic                      	        redirect;
+logic [63:0]               	        redirect_pc;
+logic                      	        update;
+logic                      	        update_hit;
+logic [UFTB_ENTRY_NUM-1:0] 	        update_sel;
+logic [TAG_BIT_NUM-1:0]    	        update_tag;
+uftb_entry                          update_entry;
+logic                      	        precheck_push;
+logic [63:0]               	        precheck_push_pc;
+logic                      	        precheck_pop;
+logic [63:0]               	        precheck_pop_pc_i;
+logic                      	        commit_push;
+logic [63:0]               	        commit_push_pc;
+logic                      	        commit_pop;
+logic                               ifu_send_entry_valid;
+ftq_entry                           ifu_send_entry;
+ftq_entry                           ifu_dequeue_entry;
+logic [FTQ_ENTRY_BIT_NUM - 1 : 0]   ifu_dequeue_ptr;
+logic [63:0]                        if_precheck_pop_pc;
 
 // module new_ifu outports wire
 logic        	ifu_send_entry_ready;
@@ -141,6 +147,7 @@ ftq u_ftq(
 	.ifu_send_entry               	( ifu_send_entry                ),
 	.ifu_dequeue_entry_ready      	( ifu_dequeue_entry_ready       ),
 	.ifu_dequeue_entry            	( ifu_dequeue_entry             ),
+    .ifu_dequeue_ptr                ( ifu_dequeue_ptr               ),
 	.if_precheck_restore          	( if_precheck_restore           ),
     .if_precheck_retsore_pc         ( if_precheck_retsore_pc        ),
     .if_precheck_token              ( if_precheck_token             ),
@@ -150,7 +157,9 @@ ftq u_ftq(
 	.if_precheck_push_pc          	( if_precheck_push_pc           ),
 	.if_precheck_pop              	( if_precheck_pop               ),
 	.if_precheck_pop_pc_i         	( if_precheck_pop_pc_i          ),
-	.if_precheck_pop_pc           	( if_precheck_pop_pc            )
+	.if_precheck_pop_pc           	( if_precheck_pop_pc            ),
+    .ex_r_ptr                       ( ex_r_ptr                      ),
+    .ex_r_start_pc                  ( ex_r_start_pc                 )
 );
 
 
@@ -163,6 +172,7 @@ new_ifu u_new_ifu(
 	.ifu_send_entry               	( ifu_send_entry                ),
 	.ifu_dequeue_entry_ready      	( ifu_dequeue_entry_ready       ),
 	.ifu_dequeue_entry            	( ifu_dequeue_entry             ),
+    .ifu_dequeue_ptr                ( ifu_dequeue_ptr               ),
 	.if_precheck_restore          	( if_precheck_restore           ),
     .if_precheck_retsore_pc         ( if_precheck_retsore_pc        ),
     .if_precheck_token              ( if_precheck_token             ),
@@ -186,7 +196,8 @@ new_ifu u_new_ifu(
 	.IF_ID_reg_tval_flag 	        ( IF_ID_reg_tval_flag           ),
 	.IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
 	.IF_ID_reg_predecode_inst       ( IF_ID_reg_predecode_inst      ),
-	.IF_ID_reg_PC                 	( IF_ID_reg_PC                  )
+	.IF_ID_reg_inst_offset          ( IF_ID_reg_inst_offset         ),
+	.IF_ID_reg_inst_ftq_ptr         ( IF_ID_reg_inst_ftq_ptr        )
 );
 
 
