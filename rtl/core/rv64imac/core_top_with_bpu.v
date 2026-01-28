@@ -363,7 +363,17 @@ wire                   jump_restore_flag; // restore flag
 wire  [63:0]           jump_push_addr;  // restore push addr
 wire                   jump_is_call;
 wire                   jump_is_ret;
+wire                   IF_ID_reg_tval_flag;
 wire                   IF_ID_reg_ftq_end_flag;
+wire [31:0]            IF_ID_reg_predecode_inst;
+wire [31:0]            IF_ID_reg_decode_inst;
+
+inst16_to_32 u_inst16_to_32(
+    .input_inst 	( IF_ID_reg_predecode_inst[15:0]  ),
+    .output_inst 	( IF_ID_reg_decode_inst           )
+);
+
+assign IF_ID_reg_inst = (IF_ID_reg_inst_compress_flag) ? IF_ID_reg_decode_inst : IF_ID_reg_predecode_inst;
 
 assign commit_flag = ID_EX_reg_decode_valid & EX_ID_decode_ready;
 assign commit_pc   = ID_EX_reg_next_PC;
@@ -372,6 +382,9 @@ assign jump_push_addr = ID_EX_reg_next_PC;  // restore push addr
 assign jump_is_call = ID_EX_reg_jump_valid & (ID_EX_reg_rd == 5'h1);
 assign jump_is_ret  = (ID_EX_reg_inst == 32'h8067);
 FF_D_without_asyn_rst #(1)  u_commit_end_flag (clk,ID_IF_inst_ready,IF_ID_reg_ftq_end_flag,commit_end_flag);
+assign IF_ID_reg_inst_compress_flag = (IF_ID_reg_predecode_inst[1:0] != 2'h3);
+assign IF_ID_reg_inst_compress      = IF_ID_reg_predecode_inst[15:0];
+assign IF_ID_reg_tval               = (IF_ID_reg_tval_flag) ? (IF_ID_reg_PC + 64'h2) : IF_ID_reg_PC;
 frontend_top #(
 	.RST_PC 	( RST_PC  ))
 u_frontend_top(
@@ -397,12 +410,10 @@ u_frontend_top(
 	.ifu_rdata                    	( ifu_rdata                     ),
 	.IF_ID_reg_inst_valid         	( IF_ID_reg_inst_valid          ),
 	.ID_IF_inst_ready             	( ID_IF_inst_ready              ),
-	.IF_ID_reg_inst_compress_flag 	( IF_ID_reg_inst_compress_flag  ),
+	.IF_ID_reg_tval_flag 	        ( IF_ID_reg_tval_flag           ),
 	.IF_ID_reg_ftq_end_flag 	    ( IF_ID_reg_ftq_end_flag        ),
 	.IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
-	.IF_ID_reg_inst_compress      	( IF_ID_reg_inst_compress       ),
-	.IF_ID_reg_inst               	( IF_ID_reg_inst                ),
-	.IF_ID_reg_tval               	( IF_ID_reg_tval                ),
+	.IF_ID_reg_predecode_inst       ( IF_ID_reg_predecode_inst      ),
 	.IF_ID_reg_PC                 	( IF_ID_reg_PC                  )
 );
 

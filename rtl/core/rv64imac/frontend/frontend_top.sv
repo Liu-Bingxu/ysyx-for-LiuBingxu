@@ -34,12 +34,10 @@ module frontend_top#(parameter RST_PC=64'h0)(
     //ifu - idu interface
     output                  IF_ID_reg_inst_valid,
     input                   ID_IF_inst_ready,
-    output                  IF_ID_reg_inst_compress_flag,
+    output                  IF_ID_reg_tval_flag,
     output                  IF_ID_reg_ftq_end_flag,
     output [1:0]            IF_ID_reg_rresp,
-    output [15:0]           IF_ID_reg_inst_compress,
-    output [31:0]           IF_ID_reg_inst,
-    output [63:0]           IF_ID_reg_tval,
+    output [31:0]           IF_ID_reg_predecode_inst,
     output [63:0]           IF_ID_reg_PC
 );
 
@@ -184,12 +182,10 @@ new_ifu u_new_ifu(
 	.ifu_rdata                    	( ifu_rdata                     ),
 	.IF_ID_reg_inst_valid         	( IF_ID_reg_inst_valid          ),
 	.ID_IF_inst_ready             	( ID_IF_inst_ready              ),
-	.IF_ID_reg_inst_compress_flag 	( IF_ID_reg_inst_compress_flag  ),
 	.IF_ID_reg_ftq_end_flag 	    ( IF_ID_reg_ftq_end_flag        ),
+	.IF_ID_reg_tval_flag 	        ( IF_ID_reg_tval_flag           ),
 	.IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
-	.IF_ID_reg_inst_compress      	( IF_ID_reg_inst_compress       ),
-	.IF_ID_reg_inst               	( IF_ID_reg_inst                ),
-	.IF_ID_reg_tval               	( IF_ID_reg_tval                ),
+	.IF_ID_reg_predecode_inst       ( IF_ID_reg_predecode_inst      ),
 	.IF_ID_reg_PC                 	( IF_ID_reg_PC                  )
 );
 

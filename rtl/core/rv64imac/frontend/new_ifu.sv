@@ -38,12 +38,10 @@ module new_ifu (
     //ifu - idu interface
     output                          IF_ID_reg_inst_valid,
     input                           ID_IF_inst_ready,
-    output                          IF_ID_reg_inst_compress_flag,
     output                          IF_ID_reg_ftq_end_flag,
+    output                          IF_ID_reg_tval_flag,
     output [1:0]                    IF_ID_reg_rresp,
-    output [15:0]                   IF_ID_reg_inst_compress,
-    output [31:0]                   IF_ID_reg_inst,
-    output [63:0]                   IF_ID_reg_tval,
+    output [31:0]                   IF_ID_reg_predecode_inst,
     output [63:0]                   IF_ID_reg_PC
 );
 
@@ -316,11 +314,9 @@ logic                                   has_three_branch;
 logic                                   has_jump;
 logic [IFU_INST_MAX_NUM * 1 - 1 : 0]    o_is_valid;
 logic [IFU_INST_MAX_NUM * 1 - 1 : 0]    o_decode_eqa;
-logic [IFU_INST_MAX_NUM * 1 - 1 : 0]    o_is_rvc;
 logic [IFU_INST_MAX_NUM * 1 - 1 : 0]    o_tval_flag;
 logic [2 * IFU_INST_MAX_NUM - 1:0]      o_rresp;
 logic [32 * IFU_INST_MAX_NUM - 1:0]     o_inst;
-logic [16 * IFU_INST_MAX_NUM - 1:0]     o_c_inst;
 logic [64 * IFU_INST_MAX_NUM - 1:0]     o_inst_pc;
 
 logic                                   one_br_is_rvc      ;
@@ -349,12 +345,10 @@ logic [63:0]                            end_pc;
 logic                                   full;
 logic                                   empty;
 logic                                   one_is_valid;
-logic                                   one_is_rvc;
 logic                                   one_is_end;
 logic                                   one_tval_flag;
 logic [1:0]                             one_rresp;
 logic [31:0]                            one_inst;
-logic [15:0]                            one_c_inst;
 logic [63:0]                            one_inst_pc;
 
 logic                                   precheck_update  ;
@@ -459,7 +453,7 @@ generate for(inst_index = 0 ; inst_index < IFU_INST_MAX_NUM; inst_index = inst_i
     assign i_predecode_inst[32 * inst_index + 31 : 32 * inst_index]  = fetch_code_shift_reg[inst_index * 16 + 31: inst_index * 16];
     assign o_ftq_eqa[inst_index]                                     = ftq_eqa[inst_index];
     assign o_tval_flag[inst_index]                                   = (fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] == 2'h0);
-    assign o_rresp[inst_index * 2 + 1: inst_index * 2]               = ((fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] != 2'h0) | o_is_rvc[inst_index]) ? 
+    assign o_rresp[inst_index * 2 + 1: inst_index * 2]               = ((fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] != 2'h0) | (o_inst[inst_index * 32 + 1: inst_index * 32] != 2'h3)) ? 
                                                                         fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] : 
                                                                         fetch_rresp_reg_shift[inst_index * 2 + 3: inst_index * 2 + 2];
 end
@@ -476,9 +470,7 @@ predecode u_predecode(
     .has_jump           	(has_jump                   ),
     .o_is_valid           	(o_is_valid                 ),
     .o_decode_eqa           (o_decode_eqa               ),
-    .o_is_rvc             	(o_is_rvc                   ),
     .o_inst               	(o_inst                     ),
-    .o_c_inst               (o_c_inst                   ),
     .o_inst_pc            	(o_inst_pc                  ),
     .one_br_is_rvc       	(one_br_is_rvc              ),
     .one_br_bracnch_addr 	(one_br_bracnch_addr        ),
@@ -531,20 +523,16 @@ new_ifu_fifo u_new_ifu_fifo(
     .push           	(fetch_valid & (!full) & write_ibuf_flag    ),
     .o_is_valid     	(o_is_valid                                 ),
     .o_eqa          	(o_eqa                                      ),
-    .o_is_rvc       	(o_is_rvc                                   ),
     .o_tval_flag    	(o_tval_flag                                ),
     .o_rresp        	(o_rresp                                    ),
     .o_inst         	(o_inst                                     ),
-    .o_c_inst       	(o_c_inst                                   ),
     .o_inst_pc      	(o_inst_pc                                  ),
     .pop            	(IF_ID_reg_inst_valid & ID_IF_inst_ready    ),
     .one_is_valid   	(one_is_valid                               ),
-    .one_is_rvc     	(one_is_rvc                                 ),
     .one_is_end     	(one_is_end                                 ),
     .one_tval_flag  	(one_tval_flag                              ),
     .one_rresp      	(one_rresp                                  ),
     .one_inst       	(one_inst                                   ),
-    .one_c_inst     	(one_c_inst                                 ),
     .one_inst_pc    	(one_inst_pc                                )
 );
 
@@ -565,12 +553,10 @@ assign  if_precheck_pop_only_update = (!precheck_update);
 assign  if_precheck_pop_pc_i        = jump_bracnch_addr;
 
 assign IF_ID_reg_inst_valid         = one_is_valid & (!empty) & (!commit_restore);
-assign IF_ID_reg_inst_compress_flag = one_is_rvc;
 assign IF_ID_reg_ftq_end_flag       = one_is_end;
 assign IF_ID_reg_rresp              = one_rresp;
-assign IF_ID_reg_inst_compress      = one_c_inst;
-assign IF_ID_reg_inst               = one_inst;
-assign IF_ID_reg_tval               = (one_tval_flag) ? (one_inst_pc + 64'h2) : one_inst_pc;
+assign IF_ID_reg_predecode_inst     = one_inst;
+assign IF_ID_reg_tval_flag          = one_tval_flag;
 assign IF_ID_reg_PC                 = one_inst_pc;
 
 
