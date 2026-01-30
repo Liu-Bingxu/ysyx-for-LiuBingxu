@@ -9,10 +9,7 @@ module predecode(
     output                                              has_three_branch,
     output                                              has_jump,
 
-    output [IFU_INST_MAX_NUM * 1 - 1 : 0]               o_is_valid,
-    output [IFU_INST_MAX_NUM * 1 - 1 : 0]               o_decode_eqa,
-    output [32 * IFU_INST_MAX_NUM - 1:0]                o_inst,
-    output [BLOCK_BIT_NUM * IFU_INST_MAX_NUM - 1:0]     o_inst_offset,
+    output decode_result[IFU_INST_MAX_NUM - 1 : 0]      deocde_out,
 
     output                                              one_br_is_rvc,
     output [63:0]                                       one_br_bracnch_addr,
@@ -109,10 +106,10 @@ logic [31:0]                    inst_inst[IFU_INST_MAX_NUM -1 :0];
 genvar packed_index;
 generate for(packed_index = 0 ; packed_index < IFU_INST_MAX_NUM; packed_index = packed_index + 1) begin : U_gen_packed_index
     assign predecode_inst[packed_index]     = i_predecode_inst[32 * packed_index + 31 : 32 * packed_index];
-    assign o_is_valid[packed_index]         = is_valid  [packed_index];
-    assign o_decode_eqa[packed_index]       = decode_eqa[packed_index];
-    assign o_inst[32 * packed_index + 31 : 32 * packed_index] = inst[packed_index];
-    assign o_inst_offset[BLOCK_BIT_NUM * packed_index + BLOCK_BIT_NUM - 1 : BLOCK_BIT_NUM * packed_index] = inst_offset[packed_index];
+    assign deocde_out[packed_index].is_valid    = is_valid  [packed_index];
+    assign deocde_out[packed_index].decode_eqa  = decode_eqa[packed_index];
+    assign deocde_out[packed_index].inst        = inst[packed_index];
+    assign deocde_out[packed_index].inst_offset = inst_offset[packed_index];
 end
 endgenerate
 

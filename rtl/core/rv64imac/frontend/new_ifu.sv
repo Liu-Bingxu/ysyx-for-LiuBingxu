@@ -1,52 +1,47 @@
 `include "./struct.sv"
 module new_ifu (
-    input                               clk,
-    input                               rst_n,
+    input                                           clk,
+    input                                           rst_n,
 
-    input                               ifu_send_entry_valid,
-    output                              ifu_send_entry_ready,
-    input  ftq_entry                    ifu_send_entry,
+    input                                           ifu_send_entry_valid,
+    output                                          ifu_send_entry_ready,
+    input  ftq_entry                                ifu_send_entry,
 
-    output                              ifu_dequeue_entry_ready,
-    input  ftq_entry                    ifu_dequeue_entry,
-    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  ifu_dequeue_ptr,
+    output                                          ifu_dequeue_entry_ready,
+    input  ftq_entry                                ifu_dequeue_entry,
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]              ifu_dequeue_ptr,
 
-    input                               commit_restore,
+    input                                           commit_restore,
 
     //! TODO precheck_push/pop 可以尝试和restore同时有效
-    output                              if_precheck_restore,
-    output [63:0]                       if_precheck_retsore_pc,
-    output                              if_precheck_token,
-    output                              if_precheck_is_tail,
-    output uftb_entry                   new_entry,
-    output                              if_precheck_push,
-    output [63:0]                       if_precheck_push_pc,
-    output                              if_precheck_pop,
-    output [63:0]                       if_precheck_pop_pc_i,
-    input  [63:0]                       if_precheck_pop_pc,
+    output                                          if_precheck_restore,
+    output [63:0]                                   if_precheck_retsore_pc,
+    output                                          if_precheck_token,
+    output                                          if_precheck_is_tail,
+    output uftb_entry                               new_entry,
+    output                                          if_precheck_push,
+    output [63:0]                                   if_precheck_push_pc,
+    output                                          if_precheck_pop,
+    output [63:0]                                   if_precheck_pop_pc_i,
+    input  [63:0]                                   if_precheck_pop_pc,
 
     //read addr channel
-    input                               ifu_arready,
-    output                              ifu_arvalid,
-    output [63:0]                       ifu_araddr,
+    input                                           ifu_arready,
+    output                                          ifu_arvalid,
+    output [63:0]                                   ifu_araddr,
 
     //read data channel
-    input                               ifu_rvalid,
-    output                              ifu_rready,
-    input  [1:0]                        ifu_rresp,
-    input  [63:0]                       ifu_rdata,
+    input                                           ifu_rvalid,
+    output                                          ifu_rready,
+    input  [1:0]                                    ifu_rresp,
+    input  [63:0]                                   ifu_rdata,
 
     //ifu - idu interface
-    output                              IF_ID_reg_inst_valid,
-    input                               ID_IF_inst_ready,
-    output                              IF_ID_reg_ftq_end_flag,
-    output                              IF_ID_reg_tval_flag,
-    output [1:0]                        IF_ID_reg_rresp,
-    output [31:0]                       IF_ID_reg_predecode_inst,
-    output [BLOCK_BIT_NUM - 1 : 0]      IF_ID_reg_inst_offset,
-    output [FTQ_ENTRY_BIT_NUM - 1 : 0]  IF_ID_reg_inst_ftq_ptr
+    output ibuf_inst_o_entry[decode_width - 1 :0]   ibuf_inst_o,
+    input  [decode_width - 1 :0]                    decode_inst_ready
 );
 
+import core_setting_pkg::decode_width;
 //==============================stage 1:fetch code(send addr)==========================================================
 
 localparam ADDR_IDLE    = 2'h0;
@@ -178,7 +173,7 @@ assign fetch_use_code = ({IFU_SEND_ADDR_NUM * 64{fsm_recv_send  }} & {ifu_rdata,
 assign fetch_use_rresp =    ({IFU_SEND_ADDR_NUM * 2{fsm_recv_send  }} & {ifu_rresp, fetch_rresp[IFU_SEND_ADDR_NUM * 2 - 3 :0]}) | 
                             ({IFU_SEND_ADDR_NUM * 2{fsm_handle_send}} & fetch_rresp);
 
-assign addr_offset_pop = (fsm_recv_send | fsm_handle_send) & (!addr_offset_empty);
+assign addr_offset_pop = (fsm_recv_send | fsm_handle_send) & ((!fetch_valid) | fetch_ready) & (!addr_offset_empty);
 
 always_ff @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
@@ -286,19 +281,19 @@ u_fetch_valid(
 FF_D_without_asyn_rst #(
     .DATA_LEN 	( IFU_SEND_ADDR_NUM * 64 - 48  ))
 u_fetch_code_shift_reg(
-    .clk      	( clk                                               ),
-    .wen      	( ((!fetch_valid) | fetch_ready) & addr_offset_pop  ),
-    .data_in  	( fetch_code_shift                                  ),
-    .data_out 	( fetch_code_shift_reg                              )
+    .clk      	( clk                   ),
+    .wen      	( addr_offset_pop       ),
+    .data_in  	( fetch_code_shift      ),
+    .data_out 	( fetch_code_shift_reg  )
 );
 
 FF_D_without_asyn_rst #(
     .DATA_LEN 	( IFU_SEND_ADDR_NUM * 2 + 2  ))
 u_fetch_rresp_reg(
-    .clk      	( clk                                               ),
-    .wen      	( ((!fetch_valid) | fetch_ready) & addr_offset_pop  ),
-    .data_in  	( {addr_offset_rdata,fetch_use_rresp}               ),
-    .data_out 	( fetch_rresp_reg                                   )
+    .clk      	( clk                                   ),
+    .wen      	( addr_offset_pop                       ),
+    .data_in  	( {addr_offset_rdata,fetch_use_rresp}   ),
+    .data_out 	( fetch_rresp_reg                       )
 );
 
 assign ifu_rready  = ifu_rready_reg;
@@ -307,19 +302,14 @@ logic                                   rvi_valid;
 logic  [32 * IFU_INST_MAX_NUM - 1:0]    i_predecode_inst;
 logic                                   ftq_eqa[IFU_INST_MAX_NUM -1 :0];
 logic [IFU_INST_MAX_NUM * 1 - 1 : 0]    o_ftq_eqa;
-logic [IFU_INST_MAX_NUM * 1 - 1 : 0]    o_eqa;
 
 // output declaration of module predecode
 logic                                               has_one_branch;
 logic                                               has_two_branch;
 logic                                               has_three_branch;
 logic                                               has_jump;
-logic [IFU_INST_MAX_NUM * 1 - 1 : 0]                o_is_valid;
-logic [IFU_INST_MAX_NUM * 1 - 1 : 0]                o_decode_eqa;
-logic [IFU_INST_MAX_NUM * 1 - 1 : 0]                o_tval_flag;
-logic [2 * IFU_INST_MAX_NUM - 1:0]                  o_rresp;
-logic [32 * IFU_INST_MAX_NUM - 1:0]                 o_inst;
-logic [BLOCK_BIT_NUM * IFU_INST_MAX_NUM - 1:0]      o_inst_offset;
+decode_result[IFU_INST_MAX_NUM - 1 : 0]             deocde_out;
+ibuf_inst_entry[IFU_INST_MAX_NUM- 1 : 0]  ibuf_inst;
 
 logic                                               one_br_is_rvc      ;
 logic [63:0]                                        one_br_bracnch_addr;
@@ -345,15 +335,8 @@ logic [63:0]                            end_pc;
 
 // output declaration of module new_ifu_fifo
 logic                                   full;
-logic                                   empty;
-logic                                   one_is_valid;
-logic                                   one_is_end;
-logic                                   one_tval_flag;
-logic [1:0]                             one_rresp;
-logic [31:0]                            one_inst;
-logic [BLOCK_BIT_NUM - 1:0]             one_inst_offset;
-logic [FTQ_ENTRY_BIT_NUM - 1:0]         one_inst_ftq_ptr;
 
+//! TODO:改为new entry不含jump语句时不跳转
 logic                                   precheck_update  ;
 logic                                   old_entry_is_call;
 logic                                   old_entry_is_ret ;
@@ -455,13 +438,17 @@ generate for(inst_index = 0 ; inst_index < IFU_INST_MAX_NUM; inst_index = inst_i
                                 ({inst_index[BLOCK_BIT_NUM - 2: 0], 1'b0} == token_offset));
     assign i_predecode_inst[32 * inst_index + 31 : 32 * inst_index]  = fetch_code_shift_reg[inst_index * 16 + 31: inst_index * 16];
     assign o_ftq_eqa[inst_index]                                     = ftq_eqa[inst_index];
-    assign o_tval_flag[inst_index]                                   = (fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] == 2'h0);
-    assign o_rresp[inst_index * 2 + 1: inst_index * 2]               = ((fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] != 2'h0) | (o_inst[inst_index * 32 + 1: inst_index * 32] != 2'h3)) ? 
-                                                                        fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] : 
-                                                                        fetch_rresp_reg_shift[inst_index * 2 + 3: inst_index * 2 + 2];
+    assign ibuf_inst[inst_index].is_valid    = deocde_out[inst_index].is_valid   ;
+    assign ibuf_inst[inst_index].eqa         = ((!update) & ifu_dequeue_entry.token) ? o_ftq_eqa[inst_index] : deocde_out[inst_index].decode_eqa;
+    assign ibuf_inst[inst_index].tval_flag   = (fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] == 2'h0);
+    assign ibuf_inst[inst_index].rresp       = ((fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] != 2'h0) | 
+                                                (deocde_out[inst_index].inst[1:0] != 2'h3)) ? 
+                                                fetch_rresp_reg_shift[inst_index * 2 + 1: inst_index * 2] : 
+                                                fetch_rresp_reg_shift[inst_index * 2 + 3: inst_index * 2 + 2];
+    assign ibuf_inst[inst_index].inst        = deocde_out[inst_index].inst       ;
+    assign ibuf_inst[inst_index].inst_offset = deocde_out[inst_index].inst_offset;
 end
 endgenerate
-assign o_eqa = ((!update) & ifu_dequeue_entry.token) ? o_ftq_eqa : o_decode_eqa;
 
 predecode u_predecode(
     .i_predecode_inst     	(i_predecode_inst           ),
@@ -471,10 +458,7 @@ predecode u_predecode(
     .has_two_branch     	(has_two_branch             ),
     .has_three_branch   	(has_three_branch           ),
     .has_jump           	(has_jump                   ),
-    .o_is_valid           	(o_is_valid                 ),
-    .o_decode_eqa           (o_decode_eqa               ),
-    .o_inst               	(o_inst                     ),
-    .o_inst_offset          (o_inst_offset              ),
+    .deocde_out           	(deocde_out                 ),
     .one_br_is_rvc       	(one_br_is_rvc              ),
     .one_br_bracnch_addr 	(one_br_bracnch_addr        ),
     .one_br_offset       	(one_br_offset              ),
@@ -517,33 +501,22 @@ precheck u_precheck(
     .new_entry           	(new_entry                  )
 );
 
-new_ifu_fifo u_new_ifu_fifo(
+ibuf u_ibuf(
     .clk            	(clk                                        ),
     .rst_n          	(rst_n                                      ),
     .flush 	            (commit_restore                             ),
     .full           	(full                                       ),
-    .empty          	(empty                                      ),
     .push           	(fetch_valid & (!full) & write_ibuf_flag    ),
-    .o_is_valid     	(o_is_valid                                 ),
-    .o_eqa          	(o_eqa                                      ),
-    .o_tval_flag    	(o_tval_flag                                ),
-    .o_rresp        	(o_rresp                                    ),
-    .o_inst         	(o_inst                                     ),
-    .o_inst_offset      (o_inst_offset                              ),
+    .ibuf_inst     	    (ibuf_inst                                  ),
     .ifu_dequeue_ptr    (ifu_dequeue_ptr                            ),
-    .pop            	(IF_ID_reg_inst_valid & ID_IF_inst_ready    ),
-    .one_is_valid   	(one_is_valid                               ),
-    .one_is_end     	(one_is_end                                 ),
-    .one_tval_flag  	(one_tval_flag                              ),
-    .one_rresp      	(one_rresp                                  ),
-    .one_inst       	(one_inst                                   ),
-    .one_inst_offset    (one_inst_offset                            ),
-    .one_inst_ftq_ptr   (one_inst_ftq_ptr                           )
+    .ibuf_inst_o   	    (ibuf_inst_o                                ),
+    .decode_inst_ready  (decode_inst_ready                          )
 );
 
 assign ifu_dequeue_entry_ready  = stage_done_flag;
 
-assign  if_precheck_restore     = (fetch_valid & second_cycle_flag & (!first_cycle_flag) & precheck_update);
+assign  if_precheck_restore     = (fetch_valid & second_cycle_flag & (!first_cycle_flag) & precheck_update & (!write_ibuf_flag)) | 
+                                    (fetch_valid & (!first_cycle_flag) & precheck_update & (!full) & write_ibuf_flag);
 assign  if_precheck_retsore_pc  =   (64'h0) | 
                                     ({64{            (new_entry_is_ret)}} & precheck_pop_pc  ) | 
                                     ({64{has_jump & (!new_entry_is_ret)}} & jump_bracnch_addr) | 
@@ -557,13 +530,13 @@ assign  if_precheck_pop             = fetch_valid & first_cycle_flag & ((prechec
 assign  if_precheck_pop_only_update = (!precheck_update);
 assign  if_precheck_pop_pc_i        = jump_bracnch_addr;
 
-assign IF_ID_reg_inst_valid         = one_is_valid & (!empty) & (!commit_restore);
-assign IF_ID_reg_ftq_end_flag       = one_is_end;
-assign IF_ID_reg_rresp              = one_rresp;
-assign IF_ID_reg_predecode_inst     = one_inst;
-assign IF_ID_reg_tval_flag          = one_tval_flag;
-assign IF_ID_reg_inst_offset        = one_inst_offset;
-assign IF_ID_reg_inst_ftq_ptr       = one_inst_ftq_ptr;
+// assign IF_ID_reg_inst_valid         = one_is_valid & (!empty) & (!commit_restore);
+// assign IF_ID_reg_ftq_end_flag       = one_is_end;
+// assign IF_ID_reg_rresp              = one_rresp;
+// assign IF_ID_reg_predecode_inst     = one_inst;
+// assign IF_ID_reg_tval_flag          = one_tval_flag;
+// assign IF_ID_reg_inst_offset        = one_inst_offset;
+// assign IF_ID_reg_inst_ftq_ptr       = one_inst_ftq_ptr;
 
 
 endmodule //new_ifu

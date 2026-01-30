@@ -97,4 +97,36 @@ typedef struct packed {
 } ftq_entry;
 
 
+typedef struct packed {
+    logic                          is_valid;
+    logic                          decode_eqa;
+    logic [31:0]                   inst;
+    logic [BLOCK_BIT_NUM - 1: 0]   inst_offset;
+} decode_result;
+
+typedef struct packed {
+    logic                       is_valid;
+    logic                       eqa;
+    logic                       tval_flag;
+    logic [1:0]                 rresp;
+    logic [31:0]                inst;
+    logic [BLOCK_BIT_NUM - 1:0] inst_offset;
+} ibuf_inst_entry;
+
+typedef struct packed {
+    logic                               is_valid;
+    logic                               tval_flag;
+    logic                               end_flag;
+    logic [1:0]                         rresp;
+    logic [FTQ_ENTRY_BIT_NUM - 1 : 0]   ifu_dequeue_ptr;
+    logic [31:0]                        inst;
+    logic [BLOCK_BIT_NUM - 1:0]         inst_offset;
+} ibuf_inst_o_entry;
+
+localparam IBUF_ADDR_W = FTQ_ENTRY_BIT_NUM + IFU_SEND_ADDR_BIT;
+localparam IBUF_Depth = 2 ** IBUF_ADDR_W;
+
+typedef logic [IBUF_ADDR_W:0]                               ibuf_point;
+typedef logic [BLOCK_BIT_NUM + FTQ_ENTRY_BIT_NUM + 35 : 0]  ibuf_data;
+
 `endif

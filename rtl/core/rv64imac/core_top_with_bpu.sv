@@ -372,6 +372,10 @@ wire [BLOCK_BIT_NUM - 1 : 0]        IF_ID_reg_inst_offset;
 wire [FTQ_ENTRY_BIT_NUM - 1 : 0]    IF_ID_reg_inst_ftq_ptr;
 wire [63:0]                         ex_r_start_pc;
 
+import core_setting_pkg::decode_width;
+ibuf_inst_o_entry[decode_width - 1 :0]   ibuf_inst_o;
+logic [decode_width - 1 :0]              decode_inst_ready;
+
 inst16_to_32 u_inst16_to_32(
     .input_inst 	( IF_ID_reg_predecode_inst[15:0]  ),
     .output_inst 	( IF_ID_reg_decode_inst           )
@@ -390,6 +394,15 @@ assign IF_ID_reg_inst_compress_flag = (IF_ID_reg_predecode_inst[1:0] != 2'h3);
 assign IF_ID_reg_inst_compress      = IF_ID_reg_predecode_inst[15:0];
 assign IF_ID_reg_tval               = (IF_ID_reg_tval_flag) ? (IF_ID_reg_PC + 64'h2) : IF_ID_reg_PC;
 assign IF_ID_reg_PC                 = ex_r_start_pc + {{(64 - BLOCK_BIT_NUM){1'b0}}, IF_ID_reg_inst_offset};
+
+assign IF_ID_reg_inst_valid         = ibuf_inst_o[0].is_valid & (!commit_restore);
+assign IF_ID_reg_tval_flag 	        = ibuf_inst_o[0].tval_flag;
+assign IF_ID_reg_ftq_end_flag       = ibuf_inst_o[0].end_flag;
+assign IF_ID_reg_rresp              = ibuf_inst_o[0].rresp;
+assign IF_ID_reg_predecode_inst     = ibuf_inst_o[0].inst;
+assign IF_ID_reg_inst_offset        = ibuf_inst_o[0].inst_offset;
+assign IF_ID_reg_inst_ftq_ptr       = ibuf_inst_o[0].ifu_dequeue_ptr;
+assign decode_inst_ready            = {{(decode_width - 1){1'b0}}, ID_IF_inst_ready};
 frontend_top #(
 	.RST_PC 	( RST_PC  ))
 u_frontend_top(
@@ -415,14 +428,16 @@ u_frontend_top(
 	.ifu_rready                   	( ifu_rready                    ),
 	.ifu_rresp                    	( ifu_rresp                     ),
 	.ifu_rdata                    	( ifu_rdata                     ),
-	.IF_ID_reg_inst_valid         	( IF_ID_reg_inst_valid          ),
-	.ID_IF_inst_ready             	( ID_IF_inst_ready              ),
-	.IF_ID_reg_tval_flag 	        ( IF_ID_reg_tval_flag           ),
-	.IF_ID_reg_ftq_end_flag 	    ( IF_ID_reg_ftq_end_flag        ),
-	.IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
-	.IF_ID_reg_predecode_inst       ( IF_ID_reg_predecode_inst      ),
-	.IF_ID_reg_inst_offset          ( IF_ID_reg_inst_offset         ),
-    .IF_ID_reg_inst_ftq_ptr         ( IF_ID_reg_inst_ftq_ptr        )
+    .ibuf_inst_o                    ( ibuf_inst_o                   ),
+    .decode_inst_ready              ( decode_inst_ready             )
+	// .IF_ID_reg_inst_valid         	( IF_ID_reg_inst_valid          ),
+	// .ID_IF_inst_ready             	( ID_IF_inst_ready              ),
+	// .IF_ID_reg_tval_flag 	        ( IF_ID_reg_tval_flag           ),
+	// .IF_ID_reg_ftq_end_flag 	    ( IF_ID_reg_ftq_end_flag        ),
+	// .IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
+	// .IF_ID_reg_predecode_inst       ( IF_ID_reg_predecode_inst      ),
+	// .IF_ID_reg_inst_offset          ( IF_ID_reg_inst_offset         ),
+    // .IF_ID_reg_inst_ftq_ptr         ( IF_ID_reg_inst_ftq_ptr        )
 );
 
 

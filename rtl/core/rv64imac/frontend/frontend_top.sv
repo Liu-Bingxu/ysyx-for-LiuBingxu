@@ -36,16 +36,11 @@ module frontend_top#(parameter RST_PC=64'h0)(
     input  [63:0]                       ifu_rdata,
 
     //ifu - idu interface
-    output                              IF_ID_reg_inst_valid,
-    input                               ID_IF_inst_ready,
-    output                              IF_ID_reg_tval_flag,
-    output                              IF_ID_reg_ftq_end_flag,
-    output [1:0]                        IF_ID_reg_rresp,
-    output [31:0]                       IF_ID_reg_predecode_inst,
-    output [BLOCK_BIT_NUM - 1:0]        IF_ID_reg_inst_offset,
-    output [FTQ_ENTRY_BIT_NUM - 1:0]    IF_ID_reg_inst_ftq_ptr
+    output ibuf_inst_o_entry[decode_width - 1 :0]   ibuf_inst_o,
+    input  [decode_width - 1 :0]                    decode_inst_ready
 );
 
+import core_setting_pkg::decode_width;
 // module bpu outports wire
 ftq_entry                   enqueue_entry;
 logic [63:0]               	precheck_pop_pc;
@@ -190,14 +185,8 @@ new_ifu u_new_ifu(
 	.ifu_rready                   	( ifu_rready                    ),
 	.ifu_rresp                    	( ifu_rresp                     ),
 	.ifu_rdata                    	( ifu_rdata                     ),
-	.IF_ID_reg_inst_valid         	( IF_ID_reg_inst_valid          ),
-	.ID_IF_inst_ready             	( ID_IF_inst_ready              ),
-	.IF_ID_reg_ftq_end_flag 	    ( IF_ID_reg_ftq_end_flag        ),
-	.IF_ID_reg_tval_flag 	        ( IF_ID_reg_tval_flag           ),
-	.IF_ID_reg_rresp              	( IF_ID_reg_rresp               ),
-	.IF_ID_reg_predecode_inst       ( IF_ID_reg_predecode_inst      ),
-	.IF_ID_reg_inst_offset          ( IF_ID_reg_inst_offset         ),
-	.IF_ID_reg_inst_ftq_ptr         ( IF_ID_reg_inst_ftq_ptr        )
+	.ibuf_inst_o         	        ( ibuf_inst_o                   ),
+    .decode_inst_ready              ( decode_inst_ready             )
 );
 
 

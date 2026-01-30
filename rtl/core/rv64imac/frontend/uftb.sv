@@ -246,6 +246,7 @@ assign enqueue_entry.is_tail            = (|(hit_sel & is_tail_sel));
 assign enqueue_entry.hit_sel            = hit_sel;
 // assign enqueue_entry.old_entry          = uftb_entry_sel(hit_sel, entry);
 
+//! 行为级建模，因为不好做参数化
 always_comb begin : gen_for
     integer index;
     pred_push_pc            = 64'h0;
