@@ -1,5 +1,6 @@
-`include "./struct.sv"
-module predecode(
+module predecode
+import frontend_pkg::*;
+(
     input  [32 * IFU_INST_MAX_NUM - 1:0]                i_predecode_inst,
     input  [63:0]                                       start_pc,
     input                                               rvi_valid,

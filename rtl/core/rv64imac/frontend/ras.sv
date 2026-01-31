@@ -1,5 +1,6 @@
-`include "./struct.sv"
-module ras(
+module ras
+import frontend_pkg::*;
+(
     input           clk,
     input           rst_n,
 

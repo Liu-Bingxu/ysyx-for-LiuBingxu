@@ -1,5 +1,7 @@
-`include "./struct.sv"
-module new_ifu (
+module new_ifu 
+import frontend_pkg::*;
+import core_setting_pkg::decode_width;
+(
     input                                           clk,
     input                                           rst_n,
 
@@ -41,7 +43,6 @@ module new_ifu (
     input  [decode_width - 1 :0]                    decode_inst_ready
 );
 
-import core_setting_pkg::decode_width;
 //==============================stage 1:fetch code(send addr)==========================================================
 
 localparam ADDR_IDLE    = 2'h0;

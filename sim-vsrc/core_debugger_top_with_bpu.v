@@ -1,6 +1,7 @@
 `include "define.v"
-`include "./struct.sv"
-module core_debugger_top_with_bpu (
+module core_debugger_top_with_bpu
+import frontend_pkg::*;
+(
     input       clock,
     input       rst_n,
 
@@ -1501,7 +1502,8 @@ always begin
         (!core_debugger_top_with_bpu.u_core_top_with_bpu.u_wbu.u_csr.MPerformance_Monitor_inc[8]);
     // jump/branch time
     assign core_debugger_top_with_bpu.u_core_top_with_bpu.u_wbu.u_csr.MPerformance_Monitor_inc[10] = 
-        (core_debugger_top_with_bpu.u_core_top_with_bpu.EX_IF_jump_flag);
+        (core_debugger_top_with_bpu.u_core_top_with_bpu.ID_EX_reg_branch_valid | 
+        core_debugger_top_with_bpu.u_core_top_with_bpu.ID_EX_reg_jump_valid);
     // commit restore time
     assign core_debugger_top_with_bpu.u_core_top_with_bpu.u_wbu.u_csr.MPerformance_Monitor_inc[11] = 
         (core_debugger_top_with_bpu.u_core_top_with_bpu.commit_restore);

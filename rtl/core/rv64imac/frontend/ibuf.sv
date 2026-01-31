@@ -1,5 +1,7 @@
-`include "./struct.sv"
-module ibuf(
+module ibuf
+import frontend_pkg::*;
+import core_setting_pkg::decode_width;
+(
     input                                           clk,
     input                                           rst_n,
 
@@ -15,7 +17,6 @@ module ibuf(
     input  [decode_width - 1 :0]                    decode_inst_ready
 );
 
-import core_setting_pkg::decode_width;
 
 logic [IFU_INST_MAX_NUM -1 :0]                  push_is_valid;
 logic [0:0]                                     push_end_flag[IFU_INST_MAX_NUM -1 :0];

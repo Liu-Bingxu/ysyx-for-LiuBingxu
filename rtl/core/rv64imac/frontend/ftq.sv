@@ -1,5 +1,6 @@
-`include "./struct.sv"
-module ftq(
+module ftq
+import frontend_pkg::*;
+(
     input                               clk,
     input                               rst_n,
 

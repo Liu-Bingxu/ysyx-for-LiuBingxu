@@ -1,5 +1,4 @@
-`ifndef __FRONTEND_STRUCT__
-`define __FRONTEND_STRUCT__
+package frontend_pkg;
 
 localparam RAS_ENTRY_BIT_NUM   = 4 ;
 localparam SQ_ENTRY_BIT_NUM    = 4 ;
@@ -129,4 +128,4 @@ localparam IBUF_Depth = 2 ** IBUF_ADDR_W;
 typedef logic [IBUF_ADDR_W:0]                               ibuf_point;
 typedef logic [BLOCK_BIT_NUM + FTQ_ENTRY_BIT_NUM + 35 : 0]  ibuf_data;
 
-`endif
+endpackage

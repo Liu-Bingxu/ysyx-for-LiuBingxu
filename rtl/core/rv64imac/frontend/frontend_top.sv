@@ -1,5 +1,6 @@
-`include "./struct.sv"
-module frontend_top#(parameter RST_PC=64'h0)(
+module frontend_top
+import frontend_pkg::*;
+#(parameter RST_PC=64'h0)(
     //clock and reset
     input                               clk,
     input                               rst_n,

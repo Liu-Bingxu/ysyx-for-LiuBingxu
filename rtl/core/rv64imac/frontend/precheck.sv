@@ -1,5 +1,6 @@
-`include "./struct.sv"
-module precheck(
+module precheck
+import frontend_pkg::*;
+(
     input  [63:0]                   start_pc,
     input                           hit,
 

@@ -1,5 +1,6 @@
-`include "./struct.sv"
-module uftb#(parameter RST_PC=64'h0)(
+module uftb
+import frontend_pkg::*;
+#(parameter RST_PC=64'h0)(
     input                           clk,
     input                           rst_n,
 

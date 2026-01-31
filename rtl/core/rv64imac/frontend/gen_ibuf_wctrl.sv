@@ -1,5 +1,6 @@
-`include "./struct.sv"
-module gen_ibuf_wctrl(
+module gen_ibuf_wctrl
+import frontend_pkg::*;
+(
     input [IBUF_ADDR_W-1:0]                   ibuf_sel,
     input [IFU_INST_MAX_NUM -1 :0]            push_is_valid,
     input ibuf_point[IFU_INST_MAX_NUM -1 :0]  wdata_poi_n,

@@ -16,8 +16,9 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
-`include "./struct.sv"
-module core_top_with_bpu#(
+module core_top_with_bpu
+import frontend_pkg::*;
+#(
     parameter MHARTID = 0,
     parameter RST_PC=64'h0,
     parameter AXI_ID_I = 8'h10, 

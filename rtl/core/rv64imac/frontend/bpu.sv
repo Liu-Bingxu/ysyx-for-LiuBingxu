@@ -1,5 +1,6 @@
-`include "./struct.sv"
-module bpu#(parameter RST_PC=64'h0)(
+module bpu
+import frontend_pkg::*;
+#(parameter RST_PC=64'h0)(
     input                           clk,
     input                           rst_n,
 
