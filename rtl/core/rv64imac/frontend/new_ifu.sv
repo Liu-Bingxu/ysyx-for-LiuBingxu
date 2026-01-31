@@ -17,6 +17,7 @@ import core_setting_pkg::decode_width;
 
     //! TODO precheck_push/pop 可以尝试和restore同时有效
     output                                          if_precheck_restore,
+    output                                          if_precheck_update,
     output [63:0]                                   if_precheck_retsore_pc,
     output                                          if_precheck_token,
     output                                          if_precheck_is_tail,
@@ -337,13 +338,14 @@ logic [63:0]                            end_pc;
 // output declaration of module new_ifu_fifo
 logic                                   full;
 
-//! TODO:改为new entry不含jump语句时不跳转
 logic                                   precheck_update  ;
+logic                                   precheck_restore ;
 logic                                   old_entry_is_call;
 logic                                   old_entry_is_ret ;
 logic                                   new_entry_is_call;
 logic                                   new_entry_is_ret ;
-assign precheck_update     = (update & (new_entry.valid | ifu_dequeue_entry.hit));
+assign precheck_update     = (update & new_entry.valid & (!(has_jump | has_three_branch | ifu_dequeue_entry.hit)));
+assign precheck_restore    = (update & (has_jump | has_three_branch | ifu_dequeue_entry.hit));
 assign old_entry_is_call   = (ifu_dequeue_entry.hit & ifu_dequeue_entry.token & ifu_dequeue_entry.is_tail & ifu_dequeue_entry.old_entry.is_call);
 assign old_entry_is_ret    = (ifu_dequeue_entry.hit & ifu_dequeue_entry.token & ifu_dequeue_entry.is_tail & ifu_dequeue_entry.old_entry.is_ret );
 assign new_entry_is_call   = (new_entry.is_call);
@@ -364,7 +366,7 @@ logic [63:0]                            precheck_pop_pc;
 logic                                   if_precheck_pop_only_update;
 
 logic                                   stage_done_flag; 
-assign stage_done_flag = (precheck_update) ? 
+assign stage_done_flag = (precheck_update | precheck_restore) ? 
                         ((fetch_valid & (!first_cycle_flag) & second_cycle_flag & ((!write_ibuf_flag) | ((!full) & write_ibuf_flag))) | 
                         (fetch_valid & (!first_cycle_flag) & (!second_cycle_flag) & ((!full) & write_ibuf_flag))) :
                         (fetch_valid & ((!full) & write_ibuf_flag));
@@ -372,7 +374,7 @@ assign stage_done_flag = (precheck_update) ?
 assign                                  fetch_ready = stage_done_flag; 
 
 logic rvi_vakid_nxt;
-assign rvi_vakid_nxt = (precheck_update) ? ((has_jump) ? 1'b0 : ((!has_three_branch) & last_rvi_valid)) : 
+assign rvi_vakid_nxt = (precheck_update | precheck_restore) ? ((has_jump) ? 1'b0 : ((!has_three_branch) & last_rvi_valid)) : 
                         ((ifu_dequeue_entry.token) ? 1'b0 : ((!has_three_branch) & last_rvi_valid));
 FF_D_with_syn_rst #(
 	.DATA_LEN 	( 1  ),
@@ -516,7 +518,8 @@ ibuf u_ibuf(
 
 assign ifu_dequeue_entry_ready  = stage_done_flag;
 
-assign  if_precheck_restore     = (fetch_valid & second_cycle_flag & (!first_cycle_flag) & precheck_update);
+assign  if_precheck_update      = (fetch_valid & second_cycle_flag & (!first_cycle_flag) & precheck_update);
+assign  if_precheck_restore     = (fetch_valid & second_cycle_flag & (!first_cycle_flag) & precheck_restore);
 assign  if_precheck_retsore_pc  =   (64'h0) | 
                                     ({64{            (new_entry_is_ret)}} & precheck_pop_pc  ) | 
                                     ({64{has_jump & (!new_entry_is_ret)}} & jump_bracnch_addr) | 
@@ -524,10 +527,10 @@ assign  if_precheck_retsore_pc  =   (64'h0) |
 assign  if_precheck_token       = has_jump;
 assign  if_precheck_is_tail     = has_jump;
 // assign  new_entry,
-assign  if_precheck_push            = fetch_valid & first_cycle_flag & ((precheck_update & new_entry_is_call) | ((!precheck_update) & old_entry_is_call));
-assign  if_precheck_push_pc         = (precheck_update) ? new_entry_push_pc : old_entry_push_pc;
-assign  if_precheck_pop             = fetch_valid & first_cycle_flag & ((precheck_update & new_entry_is_ret ) | ((!precheck_update) & old_entry_is_ret ));
-assign  if_precheck_pop_only_update = (!precheck_update);
+assign  if_precheck_push            = fetch_valid & first_cycle_flag & ((precheck_restore & new_entry_is_call) | ((!precheck_restore) & old_entry_is_call));
+assign  if_precheck_push_pc         = (precheck_restore) ? new_entry_push_pc : old_entry_push_pc;
+assign  if_precheck_pop             = fetch_valid & first_cycle_flag & ((precheck_restore & new_entry_is_ret ) | ((!precheck_restore) & old_entry_is_ret ));
+assign  if_precheck_pop_only_update = (!precheck_restore);
 assign  if_precheck_pop_pc_i        = jump_bracnch_addr;
 
 // assign IF_ID_reg_inst_valid         = one_is_valid & (!empty) & (!commit_restore);

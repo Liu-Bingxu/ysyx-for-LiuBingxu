@@ -72,6 +72,7 @@ logic [63:0]                        if_precheck_pop_pc;
 logic        	ifu_send_entry_ready;
 logic        	ifu_dequeue_entry_ready;
 logic        	if_precheck_restore;
+logic           if_precheck_update;
 logic [63:0] 	if_precheck_retsore_pc;
 logic        	if_precheck_token;
 logic        	if_precheck_is_tail;
@@ -144,6 +145,7 @@ ftq u_ftq(
 	.ifu_dequeue_entry_ready      	( ifu_dequeue_entry_ready       ),
 	.ifu_dequeue_entry            	( ifu_dequeue_entry             ),
     .ifu_dequeue_ptr                ( ifu_dequeue_ptr               ),
+    .if_precheck_update             ( if_precheck_update            ),
 	.if_precheck_restore          	( if_precheck_restore           ),
     .if_precheck_retsore_pc         ( if_precheck_retsore_pc        ),
     .if_precheck_token              ( if_precheck_token             ),
@@ -169,6 +171,7 @@ new_ifu u_new_ifu(
 	.ifu_dequeue_entry_ready      	( ifu_dequeue_entry_ready       ),
 	.ifu_dequeue_entry            	( ifu_dequeue_entry             ),
     .ifu_dequeue_ptr                ( ifu_dequeue_ptr               ),
+    .if_precheck_update             ( if_precheck_update            ),
 	.if_precheck_restore          	( if_precheck_restore           ),
     .if_precheck_retsore_pc         ( if_precheck_retsore_pc        ),
     .if_precheck_token              ( if_precheck_token             ),

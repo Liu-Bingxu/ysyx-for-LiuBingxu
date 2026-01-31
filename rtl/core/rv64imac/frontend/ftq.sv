@@ -52,6 +52,7 @@ import frontend_pkg::*;
     output [FTQ_ENTRY_BIT_NUM - 1 : 0]  ifu_dequeue_ptr,
 
     input                               if_precheck_restore,
+    input                               if_precheck_update,
     input  [63:0]                       if_precheck_retsore_pc,
     input                               if_precheck_token,
     input                               if_precheck_is_tail,
@@ -73,6 +74,7 @@ logic                           jump_commit_flag;
 
 logic [63:0]                    next_pc;
 
+logic                           precheck_update;
 
 logic [FTQ_ENTRY_BIT_NUM : 0]   bpu_w_ptr;
 logic [FTQ_ENTRY_BIT_NUM : 0]   ifu_s_ptr;
@@ -114,10 +116,12 @@ generate for(entry_index = 0 ; entry_index < FTQ_ENTRY_NUM; entry_index = entry_
 
     // precheck_restore use
     logic precheck_wen;
-    assign precheck_wen = precheck_restore & (entry_index == ifu_r_ptr[FTQ_ENTRY_BIT_NUM - 1 : 0]);
+    assign precheck_wen = (precheck_restore | precheck_update) & (entry_index == ifu_r_ptr[FTQ_ENTRY_BIT_NUM - 1 : 0]);
     ftq_entry   precheck_entry_next;
     assign precheck_entry_next.start_pc          = entry[entry_index].start_pc;
-    assign precheck_entry_next.next_pc           = if_precheck_retsore_pc     ;
+    assign precheck_entry_next.next_pc           = (precheck_restore) ? 
+                                                    if_precheck_retsore_pc : 
+                                                    entry[entry_index].next_pc;
     assign precheck_entry_next.first_pred_flag   = 1'b1                       ;
     assign precheck_entry_next.hit               = entry[entry_index].hit     ;
     assign precheck_entry_next.token             = if_precheck_token          ;
@@ -398,7 +402,7 @@ assign update_entry         =   ({UFTB_ENTRY_BIT{update_entry_use_ftq       }} &
                                 ({UFTB_ENTRY_BIT{tail_commit_jump_update    }} & commit_tail_jump_entry     ) | 
                                 ({UFTB_ENTRY_BIT{tail_commit_not_jump_update}} & commit_tail_not_jump_entry );
 
-
+assign precheck_update      = (!commit_restore) & if_precheck_update;
 assign precheck_restore     = (!commit_restore) & if_precheck_restore;
 assign precheck_push        = (!commit_restore) & if_precheck_push;
 assign precheck_push_pc     = if_precheck_push_pc;
