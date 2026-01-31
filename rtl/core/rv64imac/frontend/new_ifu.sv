@@ -271,12 +271,12 @@ FF_D_with_syn_rst #(
 	.DATA_LEN 	( 1  ),
 	.RST_DATA 	( 0  ))
 u_fetch_valid(
-	.clk      	( clk                                       ),
-	.rst_n    	( rst_n                                     ),
-	.syn_rst  	( commit_restore | if_precheck_restore      ),
-	.wen      	( (!fetch_valid) | fetch_ready              ),
-	.data_in  	( addr_offset_pop                           ),
-	.data_out 	( fetch_valid                               )
+	.clk      	( clk                           ),
+	.rst_n    	( rst_n                         ),
+	.syn_rst  	( commit_restore                ),
+	.wen      	( (!fetch_valid) | fetch_ready  ),
+	.data_in  	( addr_offset_pop               ),
+	.data_out 	( fetch_valid                   )
 );
 
 FF_D_without_asyn_rst #(
@@ -516,8 +516,7 @@ ibuf u_ibuf(
 
 assign ifu_dequeue_entry_ready  = stage_done_flag;
 
-assign  if_precheck_restore     = (fetch_valid & second_cycle_flag & (!first_cycle_flag) & precheck_update & (!write_ibuf_flag)) | 
-                                    (fetch_valid & (!first_cycle_flag) & precheck_update & (!full) & write_ibuf_flag);
+assign  if_precheck_restore     = (fetch_valid & second_cycle_flag & (!first_cycle_flag) & precheck_update);
 assign  if_precheck_retsore_pc  =   (64'h0) | 
                                     ({64{            (new_entry_is_ret)}} & precheck_pop_pc  ) | 
                                     ({64{has_jump & (!new_entry_is_ret)}} & jump_bracnch_addr) | 
