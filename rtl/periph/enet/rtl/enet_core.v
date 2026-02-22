@@ -32,26 +32,40 @@ module enet_core#(
     input                               clk_200m,
     input                               enet_rst_n,
 
-    output                              enet_gtx_clk,
-    // input                               enet_grx_clk,
+    output                              enet_rgmii_gtx_clk,
+    input                               enet_rgmii_rx_clk,
     output                              enet_rgmii_tx_ctl,
     output [3:0]                        enet_rgmii_txd,
     input                               enet_rgmii_rx_ctl,   
     input  [3:0]                        enet_rgmii_rxd,
-    input                               enet_tx_clk,
-    input                               enet_rx_clk,
+
     input                               enet_ref_clk,
-    output [7:0]                        enet_txd,
-    output                              enet_tx_en,
     output [1:0]                        enet_rmii_txd,
     output                              enet_rmii_tx_en,
-    output                              enet_tx_er,
-    input  [7:0]                        enet_rxd,
-    input                               enet_rx_dv,
-    input                               enet_rx_er,
+    input  [1:0]                        enet_rmii_rxd,
+    input                               enet_rmii_rx_crs_dv,
 
-    input                               enet_col,
-    input                               enet_crs,
+    output                              enet_gmii_gtx_clk,
+    input                               enet_gmii_rx_clk,
+    output [7:0]                        enet_gmii_txd,
+    output                              enet_gmii_tx_en,
+    output                              enet_gmii_tx_er,
+    input  [7:0]                        enet_gmii_rxd,
+    input                               enet_gmii_rx_dv,
+    input                               enet_gmii_rx_er,
+    input                               enet_gmii_col,
+    input                               enet_gmii_crs,
+
+    input                               enet_mii_tx_clk,
+    input                               enet_mii_rx_clk,
+    output [3:0]                        enet_mii_txd,
+    output                              enet_mii_tx_en,
+    output                              enet_mii_tx_er,
+    input  [3:0]                        enet_mii_rxd,
+    input                               enet_mii_rx_dv,
+    input                               enet_mii_rx_er,
+    input                               enet_mii_col,
+    input                               enet_mii_crs,
 
     output                              mdc,
     input                               mdi,
@@ -234,9 +248,7 @@ wire        rmii_rx_clk;
 wire        rmii_rx_dv;
 wire [3:0]  rmii_rxd;
 wire        rmii_tx_clk;
-wire        rmii_tx_en;
 wire        rmii_rx_er;
-wire [1:0] rmii_txd;
 
 // output declaration of module enet_rgmii_to_gmii
 wire        rgmii_rx_clk;
@@ -509,27 +521,27 @@ enet_ecr u_enet_ecr(
     .rmii_10T      	(rmii_10T       )
 );
 
+//enet rmii out
 enet_rmii_to_mii u_enet_rmii_to_mii(
-    .rst_n        	    (rst_n            ),
-    .rmii_10T     	    (rmii_10T         ),    
-    .mii_rx_clk     	(rmii_rx_clk      ),
-    .mii_rx_dv      	(rmii_rx_dv       ),
-    .mii_rx_er     	    (rmii_rx_er       ),
-    .mii_rxd        	(rmii_rxd         ),
-    .mii_tx_clk     	(rmii_tx_clk      ),
-    .mii_tx_en      	(gmii_tx_en       ),
-    .mii_tx_er      	(gmii_tx_er       ),
-    .mii_txd        	(gmii_txd[3:0]    ),
+    .rst_n        	    (rst_n                  ),
+    .rmii_10T     	    (rmii_10T               ),    
+    .mii_rx_clk     	(rmii_rx_clk            ),
+    .mii_rx_dv      	(rmii_rx_dv             ),
+    .mii_rx_er     	    (rmii_rx_er             ),
+    .mii_rxd        	(rmii_rxd               ),
+    .mii_tx_clk     	(rmii_tx_clk            ),
+    .mii_tx_en      	(gmii_tx_en             ),
+    .mii_tx_er      	(gmii_tx_er             ),
+    .mii_txd        	(gmii_txd[3:0]          ),
 
-    .rmii_ref_clk   	(enet_ref_clk     ),
-    .rmii_rx_crs_dv 	(enet_rx_dv       ),
-    .rmii_rxd       	(enet_rxd[1:0]    ),
-    .rmii_tx_en     	(rmii_tx_en       ),
-    .rmii_txd       	(rmii_txd         )
+    .rmii_ref_clk   	(enet_ref_clk           ),
+    .rmii_rx_crs_dv 	(enet_rmii_rx_crs_dv    ),
+    .rmii_rxd       	(enet_rmii_rxd          ),
+    .rmii_tx_en     	(enet_rmii_tx_en        ),
+    .rmii_txd       	(enet_rmii_txd          )
 );
-assign enet_rmii_txd    = rmii_txd;
-assign enet_rmii_tx_en  = rmii_tx_en;
 
+//enet rgmii out
 enet_rgmii_to_gmii #(
     .TARGET        	(TARGET         ),
     .IDELAY_VALUE 	(IDELAY_VALUE   ))
@@ -543,70 +555,71 @@ u_enet_rgmii_to_gmii(
     .gmii_tx_en   	(gmii_tx_en             ),
     .gmii_tx_er   	(gmii_tx_er             ),
     .gmii_txd     	(gmii_txd               ),
-    .rgmii_rxc    	(enet_rx_clk            ),
+    .rgmii_rxc    	(enet_rgmii_rx_clk      ),
     .rgmii_rx_ctl 	(enet_rgmii_rx_ctl      ),
     .rgmii_rxd    	(enet_rgmii_rxd         ),
-    .rgmii_txc    	(enet_gtx_clk           ),
+    .rgmii_txc    	(enet_rgmii_gtx_clk     ),
     .rgmii_tx_ctl 	(enet_rgmii_tx_ctl      ),
     .rgmii_txd    	(enet_rgmii_txd         )
 );
 
+//enet gmii out
+assign enet_gmii_gtx_clk    = enet_gmii_rx_clk;
+assign enet_gmii_txd        = gmii_txd;
+assign enet_gmii_tx_en      = gmii_tx_en;
+assign enet_gmii_tx_er      = gmii_tx_er;
+
+//enet mii out
+assign enet_mii_txd         = gmii_txd[3:0];
+assign enet_mii_tx_en       = gmii_tx_en;
+assign enet_mii_tx_er       = gmii_tx_er;
+
+// half duplex mode
+wire enet_crs;
+wire enet_col;
+assign enet_crs             = (mii_select) ? enet_mii_crs : enet_gmii_crs;
+assign enet_col             = (mii_select) ? enet_mii_col : enet_gmii_col;
 
 enet_chclk u_enet_chclk(
-    .clk            (clk                ),
-    .rst_n        	(rst_n              ),
-    .mii_select   	(mii_select         ),
-    .rmii_select  	(rmii_select        ),
+    .clk            (clk                    ),
+    .rst_n        	(rst_n                  ),
+    .mii_select   	(mii_select             ),
+    .rmii_select  	(rmii_select            ),
 
-    .mii_tx_clk   	(enet_tx_clk        ),
-    .mii_rx_clk   	(enet_rx_clk        ),
-    .mii_txd      	(gmii_txd           ),
-    .mii_rxd      	(enet_rxd           ),
-    .mii_tx_en    	(gmii_tx_en         ),
-    .mii_tx_er    	(gmii_tx_er         ),
-    .mii_rx_dv    	(enet_rx_dv         ),
-    .mii_rx_er    	(enet_rx_er         ),
+    .mii_tx_clk   	(enet_mii_tx_clk        ),
+    .mii_rx_clk   	(enet_mii_rx_clk        ),
+    .mii_rxd      	({4'h0, enet_mii_rxd}   ),
+    .mii_rx_dv    	(enet_mii_rx_dv         ),
+    .mii_rx_er    	(enet_mii_rx_er         ),
 
-    .rmii_tx_clk  	(rmii_tx_clk        ),
-    .rmii_rx_clk  	(rmii_rx_clk        ),
-    .rmii_txd     	({6'h0, rmii_txd}   ),
-    .rmii_rxd     	({4'h0, rmii_rxd}   ),
-    .rmii_tx_en   	(rmii_tx_en         ),
-    .rmii_tx_er   	(1'b0               ),
-    .rmii_rx_dv   	(rmii_rx_dv         ),
-    .rmii_rx_er   	(rmii_rx_er         ),
+    .rmii_tx_clk  	(rmii_tx_clk            ),
+    .rmii_rx_clk  	(rmii_rx_clk            ),
+    .rmii_rxd     	({4'h0, rmii_rxd}       ),
+    .rmii_rx_dv   	(rmii_rx_dv             ),
+    .rmii_rx_er   	(rmii_rx_er             ),
 
-    .gmii_tx_clk  	(enet_gtx_clk       ),
-    .gmii_rx_clk  	(enet_rx_clk        ),
-    .gmii_txd     	(gmii_txd           ),
-    .gmii_rxd     	(enet_rxd           ),
-    .gmii_tx_en   	(gmii_tx_en         ),
-    .gmii_tx_er   	(gmii_tx_er         ),
-    .gmii_rx_dv   	(enet_rx_dv         ),
-    .gmii_rx_er   	(enet_rx_er         ),
+    .gmii_tx_clk  	(enet_gmii_gtx_clk      ),
+    .gmii_rx_clk  	(enet_gmii_rx_clk       ),
+    .gmii_rxd     	(enet_gmii_rxd          ),
+    .gmii_rx_dv   	(enet_gmii_rx_dv        ),
+    .gmii_rx_er   	(enet_gmii_rx_er        ),
 
-    .rgmii_tx_clk 	(rgmii_tx_clk       ),
-    .rgmii_rx_clk 	(rgmii_rx_clk       ),
-    .rgmii_txd    	({8'h0}             ),
-    .rgmii_rxd    	(rgmii_rxd          ),
-    .rgmii_tx_en  	(1'b0               ),
-    .rgmii_tx_er  	(1'b0               ),
-    .rgmii_rx_dv  	(rgmii_rx_dv        ),
-    .rgmii_rx_er  	(rgmii_rx_er        ),
+    .rgmii_tx_clk 	(rgmii_tx_clk           ),
+    .rgmii_rx_clk 	(rgmii_rx_clk           ),
+    .rgmii_rxd    	(rgmii_rxd              ),
+    .rgmii_rx_dv  	(rgmii_rx_dv            ),
+    .rgmii_rx_er  	(rgmii_rx_er            ),
 
-    .txclk_lock     (txclk_lock         ),
-    .rxclk_lock     (rxclk_lock         ),
+    .txclk_lock     (txclk_lock             ),
+    .rxclk_lock     (rxclk_lock             ),
 
-    .tx_clk       	(tx_clk             ),
-    .tx_rst_n   	(tx_rst_n           ),
-    .rx_clk       	(rx_clk             ),
-    .rx_rst_n       (rx_rst_n           ),
-    .txd          	(enet_txd           ),
-    .rxd          	(rxd                ),
-    .tx_en        	(enet_tx_en         ),
-    .tx_er        	(enet_tx_er         ),
-    .rx_dv        	(rx_dv              ),
-    .rx_er        	(rx_er              )
+    .tx_clk       	(tx_clk                 ),
+    .tx_rst_n   	(tx_rst_n               ),
+    .rx_clk       	(rx_clk                 ),
+    .rx_rst_n       (rx_rst_n               ),
+    .rxd          	(rxd                    ),
+    .rx_dv        	(rx_dv                  ),
+    .rx_er        	(rx_er                  )
 );
 
 enet_intr_coalesce u_tx_enet_intr_coalesce(
