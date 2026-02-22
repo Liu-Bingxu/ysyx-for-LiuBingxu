@@ -24,7 +24,6 @@ module enet_core#(
     input                               clk,
     input                               clk_200m,
     input                               enet_rst_n,
-    output                              rst_n,
 
     output                              enet_gtx_clk,
     // input                               enet_grx_clk,
@@ -217,6 +216,7 @@ wire [31:0] reg_wdata;
 
 // output declaration of module enet_ecr
 wire [31:0] ecr;
+wire        rst_n;
 wire        ether_en;
 wire        mii_select;
 wire        rmii_select;

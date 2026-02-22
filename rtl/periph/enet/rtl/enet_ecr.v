@@ -26,22 +26,7 @@ module enet_ecr (
     output              rmii_10T
 );
 
-reg         rst_n_r[1:0];
-always @(posedge clk or negedge enet_rst_n) begin
-    if(enet_rst_n == 1'b0)begin
-        rst_n_r[0] <= 1'b0;
-        rst_n_r[1] <= 1'b0;
-    end 
-    else if(ecr_wen & (!reg_wdata[0]))begin
-        rst_n_r[0] <= 1'b0;
-        rst_n_r[1] <= 1'b0;
-    end 
-    else begin
-        rst_n_r[0] <= 1'b1;
-        rst_n_r[1] <= rst_n_r[0];
-    end
-end
-assign rst_n = rst_n_r[1];
+assign rst_n = enet_rst_n;
 
 wire [13:0] max_fl;
 
