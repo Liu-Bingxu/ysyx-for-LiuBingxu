@@ -8,11 +8,18 @@ module enet_core#(
     parameter AXI_ID_RX = 3,
 
     // Address width in bits
-    parameter AXI_MAC_ADDR_W = 32,
+    parameter AXI_SEND_ADDR_W = 32,
     // ID width in bits
-    parameter AXI_MAC_ID_W = 8,
+    parameter AXI_SEND_ID_W = 8,
     // Data width in bits
-    parameter AXI_MAC_DATA_W = 64,
+    parameter AXI_SEND_DATA_W = 64,
+
+    // Address width in bits
+    parameter AXI_RECV_ADDR_W = 32,
+    // ID width in bits
+    parameter AXI_RECV_ID_W = 8,
+    // Data width in bits
+    parameter AXI_RECV_DATA_W = 64,
 
     // Address width in bits
     parameter AXI_REG_ADDR_W = 32,
@@ -95,7 +102,7 @@ module enet_core#(
     output                              tx_rst_n,
     output                              slv_tx_awvalid,
     input                               slv_tx_awready,
-    output [AXI_MAC_ADDR_W    -1:0]     slv_tx_awaddr,
+    output [AXI_SEND_ADDR_W   -1:0]     slv_tx_awaddr,
     output [8                 -1:0]     slv_tx_awlen,
     output [3                 -1:0]     slv_tx_awsize,
     output [2                 -1:0]     slv_tx_awburst,
@@ -104,19 +111,19 @@ module enet_core#(
     output [3                 -1:0]     slv_tx_awprot,
     output [4                 -1:0]     slv_tx_awqos,
     output [4                 -1:0]     slv_tx_awregion,
-    output [AXI_MAC_ID_W      -1:0]     slv_tx_awid,
+    output [AXI_SEND_ID_W     -1:0]     slv_tx_awid,
     output                              slv_tx_wvalid,
     input                               slv_tx_wready,
     output                              slv_tx_wlast, 
-    output [AXI_MAC_DATA_W    -1:0]     slv_tx_wdata,
-    output [AXI_MAC_DATA_W/8  -1:0]     slv_tx_wstrb,
+    output [AXI_SEND_DATA_W   -1:0]     slv_tx_wdata,
+    output [AXI_SEND_DATA_W/8 -1:0]     slv_tx_wstrb,
     input                               slv_tx_bvalid,
     output                              slv_tx_bready,
-    input  [AXI_MAC_ID_W      -1:0]     slv_tx_bid,
+    input  [AXI_SEND_ID_W     -1:0]     slv_tx_bid,
     input  [2                 -1:0]     slv_tx_bresp,
     output                              slv_tx_arvalid,
     input                               slv_tx_arready,
-    output [AXI_MAC_ADDR_W    -1:0]     slv_tx_araddr,
+    output [AXI_SEND_ADDR_W   -1:0]     slv_tx_araddr,
     output [8                 -1:0]     slv_tx_arlen,
     output [3                 -1:0]     slv_tx_arsize,
     output [2                 -1:0]     slv_tx_arburst,
@@ -125,19 +132,19 @@ module enet_core#(
     output [3                 -1:0]     slv_tx_arprot,
     output [4                 -1:0]     slv_tx_arqos,
     output [4                 -1:0]     slv_tx_arregion,
-    output [AXI_MAC_ID_W      -1:0]     slv_tx_arid,
+    output [AXI_SEND_ID_W     -1:0]     slv_tx_arid,
     input                               slv_tx_rvalid,
     output                              slv_tx_rready,
-    input  [AXI_MAC_ID_W      -1:0]     slv_tx_rid,
+    input  [AXI_SEND_ID_W     -1:0]     slv_tx_rid,
     input  [2                 -1:0]     slv_tx_rresp,
-    input  [AXI_MAC_DATA_W    -1:0]     slv_tx_rdata,
+    input  [AXI_SEND_DATA_W   -1:0]     slv_tx_rdata,
     input                               slv_tx_rlast,
 
     output                              rx_clk,
     output                              rx_rst_n,
     output                              slv_rx_awvalid,
     input                               slv_rx_awready,
-    output [AXI_MAC_ADDR_W    -1:0]     slv_rx_awaddr,
+    output [AXI_RECV_ADDR_W   -1:0]     slv_rx_awaddr,
     output [8                 -1:0]     slv_rx_awlen,
     output [3                 -1:0]     slv_rx_awsize,
     output [2                 -1:0]     slv_rx_awburst,
@@ -146,19 +153,19 @@ module enet_core#(
     output [3                 -1:0]     slv_rx_awprot,
     output [4                 -1:0]     slv_rx_awqos,
     output [4                 -1:0]     slv_rx_awregion,
-    output [AXI_MAC_ID_W      -1:0]     slv_rx_awid,
+    output [AXI_RECV_ID_W     -1:0]     slv_rx_awid,
     output                              slv_rx_wvalid,
     input                               slv_rx_wready,
     output                              slv_rx_wlast, 
-    output [AXI_MAC_DATA_W    -1:0]     slv_rx_wdata,
-    output [AXI_MAC_DATA_W/8  -1:0]     slv_rx_wstrb,
+    output [AXI_RECV_DATA_W   -1:0]     slv_rx_wdata,
+    output [AXI_RECV_DATA_W/8 -1:0]     slv_rx_wstrb,
     input                               slv_rx_bvalid,
     output                              slv_rx_bready,
-    input  [AXI_MAC_ID_W      -1:0]     slv_rx_bid,
+    input  [AXI_RECV_ID_W     -1:0]     slv_rx_bid,
     input  [2                 -1:0]     slv_rx_bresp,
     output                              slv_rx_arvalid,
     input                               slv_rx_arready,
-    output [AXI_MAC_ADDR_W    -1:0]     slv_rx_araddr,
+    output [AXI_RECV_ADDR_W   -1:0]     slv_rx_araddr,
     output [8                 -1:0]     slv_rx_arlen,
     output [3                 -1:0]     slv_rx_arsize,
     output [2                 -1:0]     slv_rx_arburst,
@@ -167,12 +174,12 @@ module enet_core#(
     output [3                 -1:0]     slv_rx_arprot,
     output [4                 -1:0]     slv_rx_arqos,
     output [4                 -1:0]     slv_rx_arregion,
-    output [AXI_MAC_ID_W      -1:0]     slv_rx_arid,
+    output [AXI_RECV_ID_W     -1:0]     slv_rx_arid,
     input                               slv_rx_rvalid,
     output                              slv_rx_rready,
-    input  [AXI_MAC_ID_W      -1:0]     slv_rx_rid,
+    input  [AXI_RECV_ID_W     -1:0]     slv_rx_rid,
     input  [2                 -1:0]     slv_rx_rresp,
-    input  [AXI_MAC_DATA_W    -1:0]     slv_rx_rdata,
+    input  [AXI_RECV_DATA_W   -1:0]     slv_rx_rdata,
     input                               slv_rx_rlast
 );
 
@@ -797,10 +804,10 @@ u_Rx_in(
 );
 
 mac_tx #(
-    .AXI_ID_SB  	(AXI_ID_TX       ),
-    .AXI_ADDR_W 	(AXI_MAC_ADDR_W  ),
-    .AXI_ID_W   	(AXI_MAC_ID_W    ),
-    .AXI_DATA_W 	(AXI_MAC_DATA_W  ))
+    .AXI_ID_SB  	(AXI_ID_TX        ),
+    .AXI_ADDR_W 	(AXI_SEND_ADDR_W  ),
+    .AXI_ID_W   	(AXI_SEND_ID_W    ),
+    .AXI_DATA_W 	(AXI_SEND_DATA_W  ))
 u_mac_tx(
     .tx_clk         	(tx_clk             ),
     .rst_n          	(tx_rst_n           ),
@@ -860,10 +867,10 @@ u_mac_tx(
 );
 
 mac_rx #(
-    .AXI_ID_SB  	(AXI_ID_RX       ),
-    .AXI_ADDR_W 	(AXI_MAC_ADDR_W  ),
-    .AXI_ID_W   	(AXI_MAC_ID_W    ),
-    .AXI_DATA_W 	(AXI_MAC_DATA_W  ))
+    .AXI_ID_SB  	(AXI_ID_RX        ),
+    .AXI_ADDR_W 	(AXI_RECV_ADDR_W  ),
+    .AXI_ID_W   	(AXI_RECV_ID_W    ),
+    .AXI_DATA_W 	(AXI_RECV_DATA_W  ))
 u_mac_rx(
     .rx_clk          	(rx_clk           ),
     .rst_n           	(rx_rst_n         ),
