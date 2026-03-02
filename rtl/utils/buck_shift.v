@@ -28,7 +28,7 @@ wire [DATA_LEN-1:0] temp[SHAMT_LEN-2:0];
 
 genvar i;
 generate for(i = 0 ; i < SHAMT_LEN; i = i + 1) begin :shift
-    if(i==0)begin
+    if(i==0)begin : gen_shift_0
         shift_base #(DATA_LEN,2**i)u_shift_base(
             .LR       	( LR        ),
             .AL       	( AL        ),
@@ -37,7 +37,7 @@ generate for(i = 0 ; i < SHAMT_LEN; i = i + 1) begin :shift
             .data_out 	( temp[i]   )
         ); 
     end
-    else if(i==SHAMT_LEN-1)begin
+    else if(i==SHAMT_LEN-1)begin : gen_shift_end
         shift_base #(DATA_LEN,2**i)u_shift_base(
             .LR       	( LR        ),
             .AL       	( AL        ),
@@ -46,7 +46,7 @@ generate for(i = 0 ; i < SHAMT_LEN; i = i + 1) begin :shift
             .data_out 	( data_out  )
         );
     end
-    else begin
+    else begin : gen_shift_other
         shift_base #(DATA_LEN,2**i)u_shift_base(
             .LR       	( LR        ),
             .AL       	( AL        ),
