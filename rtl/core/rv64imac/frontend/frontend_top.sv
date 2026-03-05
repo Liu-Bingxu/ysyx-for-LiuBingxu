@@ -5,25 +5,30 @@ import frontend_pkg::*;
     input                               clk,
     input                               rst_n,
 
-    //exu interface
-    input                               commit_flag,
-    input                               commit_end_flag,
-    input  [63:0]                       commit_pc,
-
     output                 	            commit_restore,
     output                 	            precheck_restore,
 
-    // ex interface
-    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  ex_r_ptr,
-    output [63:0]                       ex_r_start_pc,
+    // ftq req interface
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  rob_ftq_ptr,
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  bru_ftq_ptr,
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  jump_ftq_ptr,
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  csr_ftq_ptr,
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  fence_ftq_ptr,
+    output ftq_entry                    rob_ftq_entry,
+    output ftq_entry                    bru_entry,
+    output ftq_entry                    jump_entry,
+    output ftq_entry                    csr_entry,
+    output ftq_entry                    fence_entry,
 
     //jump interface
-    input                               jump_is_call,
-    input                               jump_is_ret,
-    input                               jump_restore_flag,// restore flag
-    input                               jump_flag,        // another flag: sfence, fence.i, satp_change
-    input  [63:0]                       jump_addr,        // restore addr
-    input  [63:0]                       jump_push_addr,   // restore push addr
+    input                               commit_ftq_valid,
+    input                               commit_end,
+    input                               jump_restore_valid,
+    input                               jump_other_valid,
+    input                               jump_call,
+    input                               jump_ret,
+    input  [63:0]                       jump_target,
+    input  [63:0]                       jump_push_pc,
 
     //read addr channel
     input                               ifu_arready,
@@ -111,15 +116,14 @@ u_bpu(
 ftq u_ftq(
 	.clk               	            ( clk                           ),
 	.rst_n             	            ( rst_n                         ),
-    .commit_flag                    ( commit_flag                   ),
-    .commit_end_flag                ( commit_end_flag               ),
-    .commit_pc                      ( commit_pc                     ),
-    .jump_is_call                   ( jump_is_call                  ),
-    .jump_is_ret                    ( jump_is_ret                   ),
-    .jump_restore_flag              ( jump_restore_flag             ),
-    .jump_flag                      ( jump_flag                     ),
-    .jump_addr                      ( jump_addr                     ),
-    .jump_push_addr                 ( jump_push_addr                ),   
+    .commit_ftq_valid               ( commit_ftq_valid              ),
+    .commit_end                     ( commit_end                    ),
+    .jump_restore_valid             ( jump_restore_valid            ),
+    .jump_other_valid               ( jump_other_valid              ),
+    .jump_call                      ( jump_call                     ),
+    .jump_ret                       ( jump_ret                      ),
+    .jump_target                    ( jump_target                   ),
+    .jump_push_pc                   ( jump_push_pc                  ),
 	.predict           	            ( predict                       ),
 	.redirect          	            ( redirect                      ),
 	.redirect_pc       	            ( redirect_pc                   ),
@@ -156,8 +160,16 @@ ftq u_ftq(
 	.if_precheck_pop              	( if_precheck_pop               ),
 	.if_precheck_pop_pc_i         	( if_precheck_pop_pc_i          ),
 	.if_precheck_pop_pc           	( if_precheck_pop_pc            ),
-    .ex_r_ptr                       ( ex_r_ptr                      ),
-    .ex_r_start_pc                  ( ex_r_start_pc                 )
+    .rob_ftq_ptr                    ( rob_ftq_ptr                   ),
+    .bru_ftq_ptr                    ( bru_ftq_ptr                   ),
+    .jump_ftq_ptr                   ( jump_ftq_ptr                  ),
+    .csr_ftq_ptr                    ( csr_ftq_ptr                   ),
+    .fence_ftq_ptr                  ( fence_ftq_ptr                 ),
+    .rob_ftq_entry                  ( rob_ftq_entry                 ),
+    .bru_entry                      ( bru_entry                     ),
+    .jump_entry                     ( jump_entry                    ),
+    .csr_entry                      ( csr_entry                     ),
+    .fence_entry                    ( fence_entry                   )
 );
 
 
