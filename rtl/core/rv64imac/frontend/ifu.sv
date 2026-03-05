@@ -1,4 +1,4 @@
-module new_ifu 
+module ifu 
 import frontend_pkg::*;
 import core_setting_pkg::decode_width;
 (
@@ -526,20 +526,12 @@ assign  if_precheck_retsore_pc  =   (64'h0) |
                                     ({64{(!has_jump)                   }} & end_pc           );
 assign  if_precheck_token       = has_jump;
 assign  if_precheck_is_tail     = has_jump;
-// assign  new_entry,
+
 assign  if_precheck_push            = fetch_valid & first_cycle_flag & ((precheck_restore & new_entry_is_call) | ((!precheck_restore) & old_entry_is_call));
 assign  if_precheck_push_pc         = (precheck_restore) ? new_entry_push_pc : old_entry_push_pc;
 assign  if_precheck_pop             = fetch_valid & first_cycle_flag & ((precheck_restore & new_entry_is_ret ) | ((!precheck_restore) & old_entry_is_ret ));
 assign  if_precheck_pop_only_update = (!precheck_restore);
 assign  if_precheck_pop_pc_i        = jump_bracnch_addr;
 
-// assign IF_ID_reg_inst_valid         = one_is_valid & (!empty) & (!commit_restore);
-// assign IF_ID_reg_ftq_end_flag       = one_is_end;
-// assign IF_ID_reg_rresp              = one_rresp;
-// assign IF_ID_reg_predecode_inst     = one_inst;
-// assign IF_ID_reg_tval_flag          = one_tval_flag;
-// assign IF_ID_reg_inst_offset        = one_inst_offset;
-// assign IF_ID_reg_inst_ftq_ptr       = one_inst_ftq_ptr;
 
-
-endmodule //new_ifu
+endmodule //ifu

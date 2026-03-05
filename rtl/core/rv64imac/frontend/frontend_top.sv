@@ -214,7 +214,7 @@ ftq u_ftq(
 );
 
 
-new_ifu u_new_ifu(
+ifu u_ifu(
 	.clk                          	( clk                           ),
 	.rst_n                        	( rst_n                         ),
 	.commit_restore    	            ( commit_restore                ),
