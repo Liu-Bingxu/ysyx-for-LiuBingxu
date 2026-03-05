@@ -1,6 +1,7 @@
 module uftb
 import frontend_pkg::*;
-#(parameter RST_PC=64'h0)(
+import core_setting_pkg::*;
+(
     input                           clk,
     input                           rst_n,
 

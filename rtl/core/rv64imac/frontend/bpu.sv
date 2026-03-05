@@ -1,6 +1,6 @@
 module bpu
 import frontend_pkg::*;
-#(parameter RST_PC=64'h0)(
+(
     input                           clk,
     input                           rst_n,
 
@@ -42,9 +42,7 @@ wire [63:0] pred_pop_pc_i;
 // output declaration of module ras
 wire [63:0] pred_pop_pc;
 
-uftb #(
-    .RST_PC 	(RST_PC  ))
-u_uftb(
+uftb u_uftb(
     .clk           	(clk            ),
     .rst_n         	(rst_n          ),
     .predict       	(predict        ),
