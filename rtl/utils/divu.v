@@ -22,7 +22,7 @@ module divu (
     input           div_flush,
     input           div_signed,
     input           div_valid,
-    // output          div_ready,
+    output          div_ready,
     input   [63:0]  dividend,
     input   [63:0]  divisor,
     output  [63:0]  quotient,
@@ -64,27 +64,12 @@ always @(posedge clk or negedge rst_n) begin
         divisor_reg <= 64'h1;
         dividend_reg <= 64'h0;
     end
-    else if(div_valid) begin
+    else if(div_valid & div_ready) begin
         div_signed_reg <= div_signed;
         divisor_reg <= divisor;
         dividend_reg <= dividend;
     end
 end
-
-// always @(posedge clk or negedge rst_n) begin
-//     if(!rst_n)begin
-//         div_ready_reg <= 1'b1;
-//     end
-//     else if(div_flush)begin
-//         div_ready_reg <= 1'b1;
-//     end
-//     else if(div_ready & div_valid)begin
-//         div_ready_reg <= 1'b0;
-//     end
-//     else if(div_o_ready & div_o_valid)begin
-//         div_ready_reg <= 1'b1;
-//     end
-// end
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
@@ -172,7 +157,7 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
-// assign div_ready    = div_ready_reg;
+assign div_ready    = (state == IDLE);
 assign div_o_valid  = div_o_valid_reg;
 assign quotient     = quotient_reg;
 assign remainder    = remainder_reg;
