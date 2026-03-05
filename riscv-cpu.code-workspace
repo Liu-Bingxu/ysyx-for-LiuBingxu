@@ -1,11 +1,12 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
+    "folders": [
+        {
+            "path": "."
+        }
     ],
     "settings": {
         "hide-files.files": [],
-        "digital-ide.welcome.show": false
+        "digital-ide.welcome.show": false,
+        "window.zoomLevel": 1
     }
 }
