@@ -53,7 +53,6 @@ import frontend_pkg::*;
     input                               immu_miss_ready,
     output [63:0]                       vaddr_i,
     input                               pte_valid,
-    output                              pte_ready_i,
     input  [127:0]                      pte,
     input                               pte_error,
 //interface with axi
@@ -275,7 +274,6 @@ u_icache(
 	.immu_miss_ready     	( immu_miss_ready                   ),
 	.vaddr_i             	( vaddr_i                           ),
 	.pte_valid           	( pte_valid                         ),
-	.pte_ready_i         	( pte_ready_i                       ),
 	.pte                 	( pte                               ),
 	.pte_error           	( pte_error                         ),
 	.icache_arvalid      	( icache_arvalid                    ),
