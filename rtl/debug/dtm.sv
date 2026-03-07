@@ -18,22 +18,24 @@ module dtm#(
 );
 
 // JTAG State Machine
-localparam TEST_LOGIC_RESET  = 4'h0;
-localparam RUN_TEST_IDLE     = 4'h1;
-localparam SELECT_DR         = 4'h2;
-localparam CAPTURE_DR        = 4'h3;
-localparam SHIFT_DR          = 4'h4;
-localparam EXIT1_DR          = 4'h5;
-localparam PAUSE_DR          = 4'h6;
-localparam EXIT2_DR          = 4'h7;
-localparam UPDATE_DR         = 4'h8;
-localparam SELECT_IR         = 4'h9;
-localparam CAPTURE_IR        = 4'hA;
-localparam SHIFT_IR          = 4'hB;
-localparam EXIT1_IR          = 4'hC;
-localparam PAUSE_IR          = 4'hD;
-localparam EXIT2_IR          = 4'hE;
-localparam UPDATE_IR         = 4'hF;
+typedef enum logic [3:0] {  
+    TEST_LOGIC_RESET  = 4'h0,
+    RUN_TEST_IDLE     = 4'h1,
+    SELECT_DR         = 4'h2,
+    CAPTURE_DR        = 4'h3,
+    SHIFT_DR          = 4'h4,
+    EXIT1_DR          = 4'h5,
+    PAUSE_DR          = 4'h6,
+    EXIT2_DR          = 4'h7,
+    UPDATE_DR         = 4'h8,
+    SELECT_IR         = 4'h9,
+    CAPTURE_IR        = 4'hA,
+    SHIFT_IR          = 4'hB,
+    EXIT1_IR          = 4'hC,
+    PAUSE_IR          = 4'hD,
+    EXIT2_IR          = 4'hE,
+    UPDATE_IR         = 4'hF
+} jtag_fsm_t;
 
 //ir 
 localparam IR_IDCODE         = 5'h1;
@@ -49,27 +51,27 @@ localparam DEBUG_VERSION     = 4'h1;
 
 localparam SHIFT_REG_LEN     = ABITS + 32 + 2;
 
-wire [1:0]  dmisata;
+logic [1:0]  dmisata;
 
-reg  [3:0]  jtag_tap_state;
+jtag_fsm_t  jtag_tap_state;
 
-wire [SHIFT_REG_LEN - 1 : 0] transfer_res;
-reg                          dtm2dm_wen_reg;
-reg                          dm2dtm_ren_reg;
-reg [ ABITS + 33 : 0 ]       dtm2dm_data_in_reg;
+logic [SHIFT_REG_LEN - 1 : 0] transfer_res;
+logic                         dtm2dm_wen_reg;
+logic                         dm2dtm_ren_reg;
+logic [ ABITS + 33 : 0 ]      dtm2dm_data_in_reg;
 
-reg  [4:0]  ir_reg;
+logic [4:0]  ir_reg;
 
-reg  [SHIFT_REG_LEN - 1 : 0] shift_reg;
+logic [SHIFT_REG_LEN - 1 : 0] shift_reg;
 
 //* 0x1445A001
 wire [31:0] idcode = {JTAG_VERISON, JTAG_PART_NUMBER, JTAG_MANUFLD, 1'b1};
 
 wire [31:0] dtmcs  = {11'h0, 3'h0, 1'h0, 1'h0, 1'h0, IDLE_CYCLE, dmisata, ABITS[5:0], DEBUG_VERSION};
 
-reg         in_busy;
-reg         busy_sticky;
-// wire        in_busy = (!(dtm2dm_full_f | dtm2dm_empty_t));
+logic        in_busy;
+logic        busy_sticky;
+// logic        in_busy = (!(dtm2dm_full_f | dtm2dm_empty_t));
 
 assign      dmisata = (in_busy | busy_sticky) ? 2'h3 : transfer_res[1:0];
 
@@ -220,7 +222,7 @@ end
 
 generate 
     if(READ_THROUGH == "TRUE") begin : read_through
-        reg [SHIFT_REG_LEN - 1 : 0] transfer_res_reg;
+        logic [SHIFT_REG_LEN - 1 : 0] transfer_res_reg;
         always @(posedge tck or negedge trst_n) begin
             if(!trst_n)begin
                 transfer_res_reg      <= {SHIFT_REG_LEN{1'b0}};

@@ -1,5 +1,6 @@
-`include "define.v"
-module dm_abstract #(
+module dm_abstract 
+import dm_pkg::*;
+#(
     parameter ABITS = 7,
 
     // Address width in bits
@@ -75,14 +76,18 @@ localparam PROGBUF_COUNT = 16;
 localparam NSCRATCH_COUNT = 2;
 localparam DATA_ACCESS = 1; //? data register in mem space
 
-localparam IDLE     = 1'h0;
-localparam RUNING   = 1'b1;
+typedef enum logic {  
+    IDLE     = 1'h0,
+    RUNING   = 1'b1
+}dm_abstract_fsm_t;
 
-localparam AXI_IDLE         = 3'h0;
-localparam AXI_READ         = 3'h1;
-localparam AXI_WRITE        = 3'h2;
-localparam AXI_WRITE_ERROR  = 3'h4;
-localparam AXI_WIRTE_BACK   = 3'h3;
+typedef enum logic [2:0] {  
+    AXI_IDLE         = 3'h0,
+    AXI_READ         = 3'h1,
+    AXI_WRITE        = 3'h2,
+    AXI_WRITE_ERROR  = 3'h4,
+    AXI_WIRTE_BACK   = 3'h3
+}axi_fsm_t;
 
 localparam AXI_ADDR_END     = (AXI_DATA_W == 64) ? 3 : 2;
 
@@ -130,12 +135,12 @@ reg                       dm_resume_flag;
 reg                       dm_core_halted;
 reg                       dm_core_resumeack;
 
-reg                       dm_abstract_state;
+dm_abstract_fsm_t         dm_abstract_state;
 reg  [2:0]                dm_abstract_cmderr;
 wire                      dm_abstractcs_visit;
 wire                      busy = (dm_abstract_state != IDLE);
 
-reg  [2:0]                axi_state;
+axi_fsm_t                 axi_state;
 
 reg  [AXI_ADDR_W    -1:0] mst_awaddr_reg;
 
@@ -154,28 +159,28 @@ wire [AXI_DATA_W    -1:0] mst_wmask;
 
 wire [AXI_DATA_W    -1:0] mst_rdata_sel;
 
-wire                      mst_rsel_rom          = ({mst_araddr[AXI_ADDR_W - 1 : 7], 7'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_ROM_START});
+wire                      mst_rsel_rom          = ({mst_araddr[AXI_ADDR_W - 1 : 7], 7'h0} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_ROM_START});
 wire [AXI_DATA_W    -1:0] mst_rdata_rom;
-wire                      mst_rsel_flag         = (mst_araddr == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_FLAG_START});
+wire                      mst_rsel_flag         = (mst_araddr == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_FLAG_START});
 wire [AXI_DATA_W    -1:0] mst_rdata_flag        = {{(AXI_DATA_W - 2){1'b0}}, dm_resume_flag, dm_going_flag};
-wire                      mst_rsel_data         = (({mst_araddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_DATA_START}) 
+wire                      mst_rsel_data         = (({mst_araddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_DATA_START}) 
                                                     & (mst_araddr[5:4] != 2'h3));
 wire [AXI_DATA_W    -1:0] mst_rdata_data;
-wire                      mst_rsel_progbuf      = ({mst_araddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_PROGBUF_START});
+wire                      mst_rsel_progbuf      = ({mst_araddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_PROGBUF_START});
 wire [AXI_DATA_W    -1:0] mst_rdata_progbuf;
-wire                      mst_rsel_sbstract     = (({mst_araddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_ROM_WHERETO}) 
+wire                      mst_rsel_sbstract     = (({mst_araddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_ROM_WHERETO}) 
                                                     & (mst_araddr[5:4] != 2'h0));
 wire [AXI_DATA_W    -1:0] mst_rdata_abstract;
-wire                      mst_rsel_rom_whereto  = ({mst_araddr[AXI_ADDR_W - 1 : 2], 2'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_ROM_WHERETO});
+wire                      mst_rsel_rom_whereto  = ({mst_araddr[AXI_ADDR_W - 1 : 2], 2'h0} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_ROM_WHERETO});
 wire [AXI_DATA_W    -1:0] mst_rdata_rom_whereto = {{(AXI_DATA_W - 32){1'b0}}, 32'h0100006f};
 
-wire                      mst_wsel_data         = (({mst_awaddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_DATA_START}) 
+wire                      mst_wsel_data         = (({mst_awaddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_DATA_START}) 
                                                 & (mst_awaddr[5:4] != 2'h3));
-wire                      mst_wsel_data_reg     = (({mst_awaddr_reg[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_DATA_START}) 
+wire                      mst_wsel_data_reg     = (({mst_awaddr_reg[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_DATA_START}) 
                                                 & (mst_awaddr_reg[5:4] != 2'h3));
-wire                      mst_wsel_flag         = ({mst_awaddr[AXI_ADDR_W - 1 : 4], 2'h0, mst_awaddr[1:0]} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_HALT_START});
-wire                      mst_wsel_progbuf      = ({mst_awaddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_PROGBUF_START});
-wire                      mst_wsel_progbuf_reg  = ({mst_awaddr_reg[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_PROGBUF_START});
+wire                      mst_wsel_flag         = ({mst_awaddr[AXI_ADDR_W - 1 : 4], 2'h0, mst_awaddr[1:0]} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_HALT_START});
+wire                      mst_wsel_progbuf      = ({mst_awaddr[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_PROGBUF_START});
+wire                      mst_wsel_progbuf_reg  = ({mst_awaddr_reg[AXI_ADDR_W - 1 : 6], 6'h0} == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_PROGBUF_START});
 
 assign mst_rdata_sel = {AXI_DATA_W{1'b0}}
                 | ({AXI_DATA_W{mst_rsel_rom          }} & mst_rdata_rom         )
@@ -363,7 +368,7 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
                 end
             end
             RUNING: begin
-                if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_HALT_START}) & (!dm_going_flag))begin
+                if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_HALT_START}) & (!dm_going_flag))begin
                     dm_abstract_state <= IDLE;
                 end
             end
@@ -378,7 +383,7 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
     if(!dm_rst_n)begin
         dm_going_flag <= 1'b0;
     end
-    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_GOING_START}))begin
+    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_GOING_START}))begin
         dm_going_flag <= 1'b0;
     end
     else if((!busy) & (dm_abstract_cmderr == 3'h0) & dm_core_halted & ((|dm_abstract_data_dtm_accsee) | (|dm_abstract_progbuf_dtm_accsee)) & dm_abstract_commad_legal)begin
@@ -393,7 +398,7 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
     if(!dm_rst_n)begin
         dm_resume_flag <= 1'b0;
     end
-    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_RESUMING_START}))begin
+    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_RESUMING_START}))begin
         dm_resume_flag <= 1'b0;
     end
     else if((dm_reg_addr == {{(ABITS - 5){1'b0}}, 5'h10}) & dm_reg_wen & dm_reg_data[30] & dm_reg_data[0])begin
@@ -405,10 +410,10 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
     if(!dm_rst_n)begin
         dm_core_halted <= 1'b0;
     end
-    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_HALT_START}))begin
+    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_HALT_START}))begin
         dm_core_halted <= 1'b1;
     end
-    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_RESUMING_START}))begin
+    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_RESUMING_START}))begin
         dm_core_halted <= 1'b0;
     end
     else if((dm_reg_addr == {{(ABITS - 5){1'b0}}, 5'h10}) & dm_reg_wen & (dm_reg_data[29] | dm_reg_data[1]) & dm_reg_data[0])begin
@@ -420,7 +425,7 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
     if(!dm_rst_n)begin
         dm_core_resumeack <= 1'b0;
     end
-    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_RESUMING_START}))begin
+    else if((axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_RESUMING_START}))begin
         dm_core_resumeack <= 1'b1;
     end
     else if((dm_reg_addr == {{(ABITS - 5){1'b0}}, 5'h10}) & dm_reg_wen & dm_reg_data[30] & dm_reg_data[0])begin
@@ -436,7 +441,7 @@ always @(posedge dm_clk or negedge dm_rst_n) begin
     else if(dm_abstractcs_visit)begin
         dm_abstract_cmderr <= dm_abstract_cmderr & (~dm_reg_data[10:8]);
     end
-    else if((dm_abstract_cmderr == 3'h0) & (axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_EXCEPTION_START}))begin
+    else if((dm_abstract_cmderr == 3'h0) & (axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_EXCEPTION_START}))begin
         dm_abstract_cmderr <= 3'h3; //? CMDERR_EXCEPTION
     end
     else if((dm_abstract_cmderr == 3'h0) & busy & ((|dm_abstract_data_dtm_visit) | (|dm_abstract_progbuf_dtm_visit) | dm_abstractauto_visit | dm_abstract_commad_visit | dm_abstractcs_visit))begin
@@ -552,7 +557,7 @@ u_abstractauto(
 
 assign dm_abstract_commad_wen       = ((!busy) & (dm_reg_addr == {{(ABITS - 5){1'b0}}, 5'h17}) & dm_reg_wen) | (dm_abstract_commad_finish & dm_abstract_commad[19]);
 assign dm_abstract_commad_visit     = (dm_reg_addr == {{(ABITS - 5){1'b0}}, 5'h17}) & dm_reg_wen;
-assign dm_abstract_commad_finish    = (axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, `DEBUG_HALT_START}) & (!dm_going_flag) & (dm_abstract_state == RUNING);
+assign dm_abstract_commad_finish    = (axi_state == AXI_WRITE) & (mst_awaddr_reg == {{(AXI_ADDR_W - 12){1'b0}}, DEBUG_HALT_START}) & (!dm_going_flag) & (dm_abstract_state == RUNING);
 assign dm_abstract_commad_w         = (dm_abstract_commad_finish) ? {dm_abstract_commad[31:16], (dm_abstract_commad[15:0] + 1'b1)} : dm_reg_data;
 FF_D_with_syn_rst #(
     .DATA_LEN 	( 32  ),
@@ -570,7 +575,7 @@ assign allresumeack = dm_core_resumeack;
 assign anyresumeack = dm_core_resumeack;
 assign allhalt = dm_core_halted;
 assign anyhalt = dm_core_halted;
-assign dm_hartinfo = {8'h0, NSCRATCH_COUNT[3:0], 3'h0, DATA_ACCESS[0], DATA_COUNT[3:0], `DEBUG_DATA_START};
+assign dm_hartinfo = {8'h0, NSCRATCH_COUNT[3:0], 3'h0, DATA_ACCESS[0], DATA_COUNT[3:0], DEBUG_DATA_START};
 assign dm_abstractcs = {3'h0, PROGBUF_COUNT[4:0], 11'h0, busy, 1'b0, dm_abstract_cmderr, 4'h0, DATA_COUNT[3:0]};
 assign dm_command = dm_abstract_commad;
 assign dm_abstractauto = {{(16 - PROGBUF_COUNT){1'b0}}, dm_autoexec_progbuf, 4'h0, {(12 - DATA_COUNT){1'b0}}, dm_autoexec_data};

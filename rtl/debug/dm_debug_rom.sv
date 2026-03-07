@@ -6,7 +6,7 @@ module dm_debug_rom #(
     output [AXI_DATA_W    -1:0]     rom_rdata
 );
 
-wire [31 : 0] debug_rom [0 : 31];
+logic [31 : 0] debug_rom [0 : 31];
 
 assign debug_rom[0]  = 32'h00c0006f;
 assign debug_rom[1]  = 32'h0600006f;

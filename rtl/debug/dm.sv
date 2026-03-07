@@ -1,4 +1,3 @@
-`include "define.v"
 module dm#(
     parameter ABITS = 7,
     parameter READ_THROUGH  = "TRUE",
@@ -111,76 +110,78 @@ module dm#(
 
 localparam impebreak = 1'b0;
 
-localparam IDLE      = 2'h0;
-localparam TEMP      = 2'h1;
-localparam WRITE     = 2'h2;
-localparam READ      = 2'h3;
+typedef enum logic [1:0] {  
+    IDLE      = 2'h0,
+    TEMP      = 2'h1,
+    WRITE     = 2'h2,
+    READ      = 2'h3
+} dm_tran_fsm_t;
 
-wire                            dmactive;
-wire                            dmactive_data_in;
-wire                            dmcontrol_wen;
+logic                           dmactive;
+logic                           dmactive_data_in;
+logic                           dmcontrol_wen;
 
-wire                            dm_havereset;
-wire                            dm_havereset_data_in;
+logic                           dm_havereset;
+logic                           dm_havereset_data_in;
 
-wire [32            -1:0]       dm_control;
-wire [32            -1:0]       dm_status;
+logic [32            -1:0]      dm_control;
+logic [32            -1:0]      dm_status;
 
-wire                            dm_reg_wen;
-wire                            dm_reg_ren;
-wire  [ABITS         -1:0]      dm_reg_addr;
-wire  [32            -1:0]      dm_reg_data;
-wire  [2             -1:0]      dm_reg_op;
+logic                           dm_reg_wen;
+logic                           dm_reg_ren;
+logic [ABITS         -1:0]      dm_reg_addr;
+logic [32            -1:0]      dm_reg_data;
+logic [2             -1:0]      dm_reg_op;
 
-wire                            dm_sel_dmcontrol;
-wire                            dm_sel_dmstatus;
-wire                            dm_sel_dmhartinfo;
-wire                            dm_sel_dmabstractcs;
-wire                            dm_sel_dmcommand;
-wire                            dm_sel_dmabstractauto;
-wire                            dm_sel_dmdata;
-wire                            dm_sel_dmprogbuf;
-wire                            dm_sel_dmsbcs;
-wire                            dm_sel_dmsbaddress0;
-wire                            dm_sel_dmsbaddress1;
-wire                            dm_sel_dmsbaddress2;
-wire                            dm_sel_dmsbaddress3;
-wire                            dm_sel_dmsbdata0;
-wire                            dm_sel_dmsbdata1;
-wire                            dm_sel_dmsbdata2;
-wire                            dm_sel_dmsbdata3;
-wire                            dm_success_read;
-wire                            dm_success_write;
-wire  [32            -1:0]      dm_reg_data_out;
-wire  [ABITS        +33:0]      dm2dtm_read_data_out;
-wire  [ABITS        +33:0]      dm2dtm_write_data_out;
-wire  [ABITS        +33:0]      dm2dtm_data_in_temp;
+logic                           dm_sel_dmcontrol;
+logic                           dm_sel_dmstatus;
+logic                           dm_sel_dmhartinfo;
+logic                           dm_sel_dmabstractcs;
+logic                           dm_sel_dmcommand;
+logic                           dm_sel_dmabstractauto;
+logic                           dm_sel_dmdata;
+logic                           dm_sel_dmprogbuf;
+logic                           dm_sel_dmsbcs;
+logic                           dm_sel_dmsbaddress0;
+logic                           dm_sel_dmsbaddress1;
+logic                           dm_sel_dmsbaddress2;
+logic                           dm_sel_dmsbaddress3;
+logic                           dm_sel_dmsbdata0;
+logic                           dm_sel_dmsbdata1;
+logic                           dm_sel_dmsbdata2;
+logic                           dm_sel_dmsbdata3;
+logic                           dm_success_read;
+logic                           dm_success_write;
+logic [32            -1:0]      dm_reg_data_out;
+logic [ABITS        +33:0]      dm2dtm_read_data_out;
+logic [ABITS        +33:0]      dm2dtm_write_data_out;
+logic [ABITS        +33:0]      dm2dtm_data_in_temp;
 
-reg   [2             -1:0]      dm_trans_state;
-reg                             dtm2dm_ren_reg;
+dm_tran_fsm_t                   dm_trans_state;
+logic                           dtm2dm_ren_reg;
 
-// dm_abstract outports wire
-wire                    	    allresumeack;
-wire                    	    anyresumeack;
-wire                    	    allhalt;
-wire                    	    anyhalt;
-wire [32            -1:0]       dm_hartinfo;
-wire [32            -1:0]       dm_abstractcs;
-wire [32            -1:0]       dm_command;
-wire [32            -1:0]       dm_abstractauto;
-wire [32            -1:0]       dm_data;
-wire [32            -1:0]       dm_progbuf;
+// dm_abstract outports logic
+logic                    	    allresumeack;
+logic                    	    anyresumeack;
+logic                    	    allhalt;
+logic                    	    anyhalt;
+logic [32            -1:0]      dm_hartinfo;
+logic [32            -1:0]      dm_abstractcs;
+logic [32            -1:0]      dm_command;
+logic [32            -1:0]      dm_abstractauto;
+logic [32            -1:0]      dm_data;
+logic [32            -1:0]      dm_progbuf;
 
-// dm_systembus outports wire
-wire [32            -1:0]       dm_sbcs;
-wire [32            -1:0]       dm_sbaddress0;
-wire [32            -1:0]       dm_sbaddress1;
-wire [32            -1:0]       dm_sbaddress2;
-wire [32            -1:0]       dm_sbaddress3;
-wire [32            -1:0]       dm_sbdata0;
-wire [32            -1:0]       dm_sbdata1;
-wire [32            -1:0]       dm_sbdata2;
-wire [32            -1:0]       dm_sbdata3;
+// dm_systembus outports logic
+logic [32            -1:0]      dm_sbcs;
+logic [32            -1:0]      dm_sbaddress0;
+logic [32            -1:0]      dm_sbaddress1;
+logic [32            -1:0]      dm_sbaddress2;
+logic [32            -1:0]      dm_sbaddress3;
+logic [32            -1:0]      dm_sbdata0;
+logic [32            -1:0]      dm_sbdata1;
+logic [32            -1:0]      dm_sbdata2;
+logic [32            -1:0]      dm_sbdata3;
 
 FF_D_with_syn_rst #(
     .DATA_LEN 	( 1    ),
@@ -249,7 +250,7 @@ assign dm_status     = {7'h0, ndmreset, 1'b0, impebreak, 2'h0, dm_havereset, dm_
 
 generate 
     if(READ_THROUGH == "TRUE") begin : read_through
-        reg [ABITS + 33 : 0] trans_data_reg;
+        logic [ABITS + 33 : 0] trans_data_reg;
         always @(posedge dm_clk) begin
             if(!dtm2dm_empty)begin
                 trans_data_reg      <= dtm2dm_data_out;

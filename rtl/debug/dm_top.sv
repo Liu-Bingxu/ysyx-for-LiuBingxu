@@ -106,24 +106,24 @@ module dm_top#(
 );
 
 // output declaration of module dm
-wire dm2dtm_wen;
-wire [ABITS+33:0] dm2dtm_data_in;
-wire dtm2dm_ren;
+logic dm2dtm_wen;
+logic [ABITS+33:0] dm2dtm_data_in;
+logic dtm2dm_ren;
 
 // output declaration of module dtm
-wire dtm2dm_wen;
-wire [ABITS+33:0] dtm2dm_data_in;
-wire dm2dtm_ren;
+logic dtm2dm_wen;
+logic [ABITS+33:0] dtm2dm_data_in;
+logic dm2dtm_ren;
 
 // output declaration of module dtm2dm async_fifo_my
-wire dtm2dm_full;
-wire dtm2dm_empty;
-wire [ABITS+33:0] dtm2dm_data_out;
+logic dtm2dm_full;
+logic dtm2dm_empty;
+logic [ABITS+33:0] dtm2dm_data_out;
 
 // output declaration of module dm2dtm async_fifo_my
-wire dm2dtm_full;
-wire dm2dtm_empty;
-wire [ABITS+33:0] dm2dtm_data_out;
+logic dm2dtm_full;
+logic dm2dtm_empty;
+logic [ABITS+33:0] dm2dtm_data_out;
 
 dm #(
     .ABITS        	(ABITS      ),

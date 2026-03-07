@@ -69,48 +69,50 @@ module dm_systembus #(
     input                           slv_rlast
 );
 
-localparam AXI_IDLE         = 3'h0;
-localparam AXI_WAIT_AR      = 3'h1;
-localparam AXI_WAIT_R       = 3'h2;
-localparam AXI_WAIT_AW_W    = 3'h3;
-localparam AXI_WAIT_AW      = 3'h4;
-localparam AXI_WAIT_W       = 3'h5;
-localparam AXI_WAIT_B       = 3'h6;
+typedef enum logic [2:0] {  
+    AXI_IDLE         = 3'h0,
+    AXI_WAIT_AR      = 3'h1,
+    AXI_WAIT_R       = 3'h2,
+    AXI_WAIT_AW_W    = 3'h3,
+    AXI_WAIT_AW      = 3'h4,
+    AXI_WAIT_W       = 3'h5,
+    AXI_WAIT_B       = 3'h6
+}dm_systembus_fsm_t;
 
-wire [31:0]                   dm_systembus_addr[AXI_ADDR_W/32 -1 : 0];
-wire [31:0]                   dm_systembus_addr_w[AXI_ADDR_W/32 -1 : 0];
-wire [31:0]                   dm_systembus_addr_increment[AXI_ADDR_W/32 -1 : 0];
-wire                          dm_systembus_addr_wen[AXI_ADDR_W/32 -1 : 0];
-wire                          dm_systembus_addr_dtm_wen[AXI_ADDR_W/32 -1 : 0];
-wire                          dm_systembus_addr_increment_wen[AXI_ADDR_W/32 -1 : 0];
-wire [AXI_ADDR_W/32 -1 : 0]   dm_systembus_addr_dtm_access;
-wire [31:0]                   dm_systembus_data[AXI_DATA_W/32 -1 : 0];
-wire [31:0]                   dm_systembus_data_w[AXI_DATA_W/32 -1 : 0];
-wire [31:0]                   dm_systembus_data_axi_w[AXI_DATA_W/32 -1 : 0];
-wire                          dm_systembus_data_wen[AXI_DATA_W/32 -1 : 0];
-wire                          dm_systembus_data_dtm_wen[AXI_DATA_W/32 -1 : 0];
-wire                          dm_systembus_data_axi_wen[AXI_DATA_W/32 -1 : 0];
-wire [AXI_DATA_W/32 -1 : 0]   dm_systembus_data_dtm_access;
-wire                          dm_systembus_data_dtm_ren[0 : 0];
+logic [31:0]                   dm_systembus_addr[AXI_ADDR_W/32 -1 : 0];
+logic [31:0]                   dm_systembus_addr_w[AXI_ADDR_W/32 -1 : 0];
+logic [31:0]                   dm_systembus_addr_increment[AXI_ADDR_W/32 -1 : 0];
+logic                          dm_systembus_addr_wen[AXI_ADDR_W/32 -1 : 0];
+logic                          dm_systembus_addr_dtm_wen[AXI_ADDR_W/32 -1 : 0];
+logic                          dm_systembus_addr_increment_wen[AXI_ADDR_W/32 -1 : 0];
+logic [AXI_ADDR_W/32 -1 : 0]   dm_systembus_addr_dtm_access;
+logic [31:0]                   dm_systembus_data[AXI_DATA_W/32 -1 : 0];
+logic [31:0]                   dm_systembus_data_w[AXI_DATA_W/32 -1 : 0];
+logic [31:0]                   dm_systembus_data_axi_w[AXI_DATA_W/32 -1 : 0];
+logic                          dm_systembus_data_wen[AXI_DATA_W/32 -1 : 0];
+logic                          dm_systembus_data_dtm_wen[AXI_DATA_W/32 -1 : 0];
+logic                          dm_systembus_data_axi_wen[AXI_DATA_W/32 -1 : 0];
+logic [AXI_DATA_W/32 -1 : 0]   dm_systembus_data_dtm_access;
+logic                          dm_systembus_data_dtm_ren[0 : 0];
 
-wire [AXI_ADDR_W    -1:0]     slv_addr;
-wire [AXI_DATA_W    -1:0]     slv_wdata_prev;
-wire [AXI_DATA_W    -1:0]     slv_load_data;
-reg                           slv_awvalid_reg;
-reg                           slv_wvalid_reg;
-reg                           slv_arvalid_reg;
+logic [AXI_ADDR_W    -1:0]     slv_addr;
+logic [AXI_DATA_W    -1:0]     slv_wdata_prev;
+logic [AXI_DATA_W    -1:0]     slv_load_data;
+logic                          slv_awvalid_reg;
+logic                          slv_wvalid_reg;
+logic                          slv_arvalid_reg;
 
-reg  [2:0]                    systembus_axi_state;
+dm_systembus_fsm_t             systembus_axi_state;
 
-reg                           sbbusyerror;
-wire                          sbbusy;
-wire                          sbreadonaddr;
-wire [2:0]                    sbaccess;
-wire                          sbautoincrement;
-wire                          sbreadondata;
-reg  [2:0]                    sberror;
-wire                          sbaccess64;
-wire                          dm_systembus_sbcs_wen;
+logic                          sbbusyerror;
+logic                          sbbusy;
+logic                          sbreadonaddr;
+logic [2:0]                    sbaccess;
+logic                          sbautoincrement;
+logic                          sbreadondata;
+logic [2:0]                    sberror;
+logic                          sbaccess64;
+logic                          dm_systembus_sbcs_wen;
 
 wire [3:0] autoincrement_byte = {4{1'b0}}
                 | ({4{sbaccess == 3'h0}} & 4'h1)

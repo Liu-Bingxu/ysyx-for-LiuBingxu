@@ -11,18 +11,18 @@ module dm_abstract_inst#(
     output [AXI_DATA_W    -1:0] abstract_rdata
 );
 
-wire [31:0] abstract_inst[0:15];
+logic [31:0] abstract_inst[0:15];
 
-wire [31:0] no_transfer;
-wire [31:0] csr_r_inst[0:4];
-wire [31:0] csr_w_inst[0:4];
-wire [31:0] gpr_r_inst[0:1];
-wire [31:0] gpr_w_inst[0:1];
-wire [31:0] gpr_s0_w_inst[0:2];
-wire [31:0] fcsr_r_inst[0:10];
-wire [31:0] fcsr_w_inst[0:10];
-wire [31:0] fgpr_r_inst[0:9];
-wire [31:0] fgpr_w_inst[0:9];
+logic [31:0] no_transfer;
+logic [31:0] csr_r_inst[0:4];
+logic [31:0] csr_w_inst[0:4];
+logic [31:0] gpr_r_inst[0:1];
+logic [31:0] gpr_w_inst[0:1];
+logic [31:0] gpr_s0_w_inst[0:2];
+logic [31:0] fcsr_r_inst[0:10];
+logic [31:0] fcsr_w_inst[0:10];
+logic [31:0] fgpr_r_inst[0:9];
+logic [31:0] fgpr_w_inst[0:9];
 
 wire        csr_is_fpu          = ((regno == 16'h1) | (regno == 16'h2) | (regno == 16'h3)); 
 
@@ -169,7 +169,7 @@ assign fgpr_w_inst[9]  = (postexec) ? 32'h00c0006f : 32'h00100073;
 
 genvar inst_index;
 generate for(inst_index = 0 ; inst_index < 16; inst_index = inst_index + 1) begin : gen_inst
-    if(inst_index == 0)begin
+    if(inst_index == 0)begin : U_gen_dm_abstract_inst_0
         assign abstract_inst[inst_index + 4] = {32{1'b0}}
                 | ({32{sel_no_transfer      }} & no_transfer                )
                 | ({32{sel_csr_r_inst       }} & csr_r_inst[inst_index]     )
@@ -183,7 +183,7 @@ generate for(inst_index = 0 ; inst_index < 16; inst_index = inst_index + 1) begi
                 | ({32{sel_fgpr_w_inst      }} & fgpr_w_inst[inst_index]    )
                 ;
     end
-    else if(inst_index == 1)begin
+    else if(inst_index == 1)begin : U_gen_dm_abstract_inst_1
         assign abstract_inst[inst_index + 4] = {32{1'b0}}
                 | ({32{sel_csr_r_inst       }} & csr_r_inst[inst_index]     )
                 | ({32{sel_csr_w_inst       }} & csr_w_inst[inst_index]     )
@@ -196,7 +196,7 @@ generate for(inst_index = 0 ; inst_index < 16; inst_index = inst_index + 1) begi
                 | ({32{sel_fgpr_w_inst      }} & fgpr_w_inst[inst_index]    )
                 ;
     end
-    else if(inst_index == 2)begin
+    else if(inst_index == 2)begin : U_gen_dm_abstract_inst_2
         assign abstract_inst[inst_index + 4] = {32{1'b0}}
                 | ({32{sel_csr_r_inst       }} & csr_r_inst[inst_index]     )
                 | ({32{sel_csr_w_inst       }} & csr_w_inst[inst_index]     )
@@ -207,7 +207,7 @@ generate for(inst_index = 0 ; inst_index < 16; inst_index = inst_index + 1) begi
                 | ({32{sel_fgpr_w_inst      }} & fgpr_w_inst[inst_index]    )
                 ;
     end
-    else if(inst_index < 5)begin
+    else if(inst_index < 5)begin : U_gen_dm_abstract_inst_3_4
         assign abstract_inst[inst_index + 4] = {32{1'b0}}
                 | ({32{sel_csr_r_inst       }} & csr_r_inst[inst_index]     )
                 | ({32{sel_csr_w_inst       }} & csr_w_inst[inst_index]     )
@@ -217,7 +217,7 @@ generate for(inst_index = 0 ; inst_index < 16; inst_index = inst_index + 1) begi
                 | ({32{sel_fgpr_w_inst      }} & fgpr_w_inst[inst_index]    )
                 ;
     end
-    else if(inst_index < 10)begin
+    else if(inst_index < 10)begin : U_gen_dm_abstract_inst_5_to_9
         assign abstract_inst[inst_index + 4] = {32{1'b0}}
                 | ({32{sel_fcsr_r_inst      }} & fcsr_r_inst[inst_index]    )
                 | ({32{sel_fcsr_w_inst      }} & fcsr_w_inst[inst_index]    )
@@ -225,16 +225,16 @@ generate for(inst_index = 0 ; inst_index < 16; inst_index = inst_index + 1) begi
                 | ({32{sel_fgpr_w_inst      }} & fgpr_w_inst[inst_index]    )
                 ;
     end
-    else if(inst_index == 10)begin
+    else if(inst_index == 10)begin : U_gen_dm_abstract_inst_10
         assign abstract_inst[inst_index + 4] = {32{1'b0}}
                 | ({32{sel_fcsr_r_inst      }} & fcsr_r_inst[inst_index]    )
                 | ({32{sel_fcsr_w_inst      }} & fcsr_w_inst[inst_index]    )
                 ;
     end
-    else if(inst_index == 11)begin
+    else if(inst_index == 11)begin : U_gen_dm_abstract_inst_11
         assign abstract_inst[inst_index + 4] = {32{1'b0}};
     end
-    else begin
+    else begin : U_gen_dm_abstract_inst_other
         assign abstract_inst[inst_index - 4'hc] = {32{1'b0}};
     end
 end
