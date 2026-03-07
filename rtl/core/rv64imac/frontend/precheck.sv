@@ -10,11 +10,15 @@ import frontend_pkg::*;
     input                           has_jump,
 
     input                           one_br_is_rvc,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  [63:0]                   one_br_bracnch_addr,
+    /* verilator lint_on UNUSEDSIGNAL */
     input  [BLOCK_BIT_NUM - 1: 0]   one_br_offset,
 
     input                           two_br_is_rvc,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  [63:0]                   two_br_bracnch_addr,
+    /* verilator lint_on UNUSEDSIGNAL */
     input  [BLOCK_BIT_NUM - 1: 0]   two_br_offset,
 
     input  [BLOCK_BIT_NUM - 1: 0]   three_br_offset,
@@ -23,10 +27,14 @@ import frontend_pkg::*;
     input                           jump_is_ret,
     input                           jump_is_jalr,
     input                           jump_is_rvc,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  [63:0]                   jump_bracnch_addr,
+    /* verilator lint_on UNUSEDSIGNAL */
     input  [BLOCK_BIT_NUM - 1: 0]   jump_offset,
 
+    /* verilator lint_off UNUSEDSIGNAL */
     input  uftb_entry               old_entry,
+    /* verilator lint_on UNUSEDSIGNAL */
 
     output                          update,
     output [63:0]                   end_pc,

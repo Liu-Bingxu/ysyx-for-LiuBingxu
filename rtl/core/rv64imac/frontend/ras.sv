@@ -41,15 +41,19 @@ logic    pred_push_recursion_flag;
 logic    precheck_push_recursion_flag;
 logic    commit_push_recursion_flag;
 
+/* verilator lint_off UNUSEDSIGNAL */
 queue_entry queue_tosr_entry ;
 queue_entry queue_ptosr_entry;
+/* verilator lint_on UNUSEDSIGNAL */
 assign queue_tosr_entry        = return_addr_queue.entry[return_addr_queue.tosr];
 assign queue_ptosr_entry       = return_addr_queue.entry[return_addr_queue.ptosr];
 
+/* verilator lint_off UNUSEDSIGNAL */
 stack_entry stack_bos_entry     ;
 stack_entry stack_last_nsp_entry;
 stack_entry stack_last_ssp_entry;
 stack_entry stack_last_psp_entry;
+/* verilator lint_on UNUSEDSIGNAL */
 assign stack_bos_entry         = return_addr_stack.entry[return_addr_stack.bos];
 assign stack_last_nsp_entry    = return_addr_stack.entry[last_nsp];
 assign stack_last_ssp_entry    = return_addr_stack.entry[last_ssp];

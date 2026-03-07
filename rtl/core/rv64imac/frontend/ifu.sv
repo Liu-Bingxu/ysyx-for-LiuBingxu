@@ -7,10 +7,14 @@ import core_setting_pkg::decode_width;
 
     input                                           ifu_send_entry_valid,
     output                                          ifu_send_entry_ready,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  ftq_entry                                ifu_send_entry,
+    /* verilator lint_on UNUSEDSIGNAL */
 
     output                                          ifu_dequeue_entry_ready,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  ftq_entry                                ifu_dequeue_entry,
+    /* verilator lint_on UNUSEDSIGNAL */
     input  [FTQ_ENTRY_BIT_NUM - 1 : 0]              ifu_dequeue_ptr,
 
     input                                           commit_restore,

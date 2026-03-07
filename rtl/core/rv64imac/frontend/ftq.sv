@@ -91,7 +91,9 @@ logic [FTQ_ENTRY_BIT_NUM : 0]   ifu_r_ptr_next;
 logic                           commit_ptr_wen;
 logic [FTQ_ENTRY_BIT_NUM : 0]   commit_ptr_next;
 
+/* verilator lint_off UNUSEDSIGNAL */
 ftq_entry commit_ftq_entry;
+/* verilator lint_on UNUSEDSIGNAL */
 assign commit_ftq_entry  = entry[commit_ptr[FTQ_ENTRY_BIT_NUM - 1 : 0]];
 uftb_entry commit_entry;
 assign commit_entry     = commit_ftq_entry.old_entry;
