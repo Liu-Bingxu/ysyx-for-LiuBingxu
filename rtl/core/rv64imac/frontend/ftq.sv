@@ -66,11 +66,13 @@ import frontend_pkg::*;
     input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  jump_ftq_ptr,
     input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  csr_ftq_ptr,
     input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  fence_ftq_ptr,
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  rob_ftq_ptr_lq_raw,
     output ftq_entry                    rob_ftq_entry,
     output ftq_entry                    bru_entry,
     output ftq_entry                    jump_entry,
     output ftq_entry                    csr_entry,
-    output ftq_entry                    fence_entry
+    output ftq_entry                    fence_entry,
+    output ftq_entry                    rob_ftq_entry_lq_raw
 );
 
 ftq_entry                       entry[FTQ_ENTRY_NUM - 1 : 0];
@@ -390,5 +392,6 @@ assign bru_entry            = entry[bru_ftq_ptr];
 assign jump_entry           = entry[jump_ftq_ptr];
 assign csr_entry            = entry[csr_ftq_ptr];
 assign fence_entry          = entry[fence_ftq_ptr];
+assign rob_ftq_entry_lq_raw = entry[rob_ftq_ptr_lq_raw];
 
 endmodule //ftq

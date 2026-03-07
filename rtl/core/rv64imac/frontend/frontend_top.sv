@@ -25,11 +25,13 @@ import frontend_pkg::*;
     input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  jump_ftq_ptr,
     input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  csr_ftq_ptr,
     input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  fence_ftq_ptr,
+    input  [FTQ_ENTRY_BIT_NUM - 1 : 0]  rob_ftq_ptr_lq_raw,
     output ftq_entry                    rob_ftq_entry,
     output ftq_entry                    bru_entry,
     output ftq_entry                    jump_entry,
     output ftq_entry                    csr_entry,
     output ftq_entry                    fence_entry,
+    output ftq_entry                    rob_ftq_entry_lq_raw,
 
     //jump interface
     input                               commit_ftq_valid,
@@ -205,11 +207,13 @@ ftq u_ftq(
     .jump_ftq_ptr                   ( jump_ftq_ptr                  ),
     .csr_ftq_ptr                    ( csr_ftq_ptr                   ),
     .fence_ftq_ptr                  ( fence_ftq_ptr                 ),
+    .rob_ftq_ptr_lq_raw             ( rob_ftq_ptr_lq_raw            ),
     .rob_ftq_entry                  ( rob_ftq_entry                 ),
     .bru_entry                      ( bru_entry                     ),
     .jump_entry                     ( jump_entry                    ),
     .csr_entry                      ( csr_entry                     ),
-    .fence_entry                    ( fence_entry                   )
+    .fence_entry                    ( fence_entry                   ),
+    .rob_ftq_entry_lq_raw           ( rob_ftq_entry_lq_raw          )
 );
 
 

@@ -11,10 +11,16 @@ import rob_pkg::*;
     input                                               redirect,
 
     output rob_entry_ptr_t                              top_rob_ptr,
+    output ls_rob_entry_ptr_t                           deq_rob_ptr,
 
     output [FTQ_ENTRY_BIT_NUM - 1 : 0]                  rob_ftq_ptr,
     /* verilator lint_off UNUSEDSIGNAL */
     input  ftq_entry                                    rob_ftq_entry,
+    /* verilator lint_on UNUSEDSIGNAL */
+
+    output [FTQ_ENTRY_BIT_NUM - 1 : 0]                  rob_ftq_ptr_lq_raw,
+    /* verilator lint_off UNUSEDSIGNAL */
+    input  ftq_entry                                    rob_ftq_entry_lq_raw,
     /* verilator lint_on UNUSEDSIGNAL */
 
     // rename table interface
@@ -93,6 +99,10 @@ import rob_pkg::*;
     input  rob_entry_ptr_t                              atomicUnit_rob_ptr_o,
     input  [63:0]                                       atomic_vaddr_o,
 
+    // LoadQueueRAW interface
+    input                                               LoadQueue_flush_o,
+    input  rob_entry_ptr_t                              LoadQueue_rob_ptr_o,
+
     // interface with gen_redirect
     output                                              rob_gen_redirect_valid,
     output                                              rob_gen_redirect_bp_miss,
@@ -122,6 +132,7 @@ logic           [dispatch_width - 1 : 0]    rob_can_dispatch_inner/* verilator s
 /* verilator lint_off UNUSEDSIGNAL */
 rob_entry_t     [dispatch_width - 1 : 0]    rob_entry_dispatch/* verilator split_var */;
 rob_entry_t                                 rob_entry_button;
+rob_entry_t                                 rob_entry_lq_raw;
 /* verilator lint_on UNUSEDSIGNAL */
 assign rob_entry_button = rob_entry[rob_ptr_button];
 
@@ -181,6 +192,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
     logic       rob_entry_loadUnit_update_wen;
     logic       rob_entry_StoreQueue_update_wen;
     logic       rob_entry_atomic_update_wen;
+    logic       rob_entry_loadQueueRAW_update_wen;
     rob_entry_t rob_entry_nxt;
     rob_entry_t rob_entry_enq;
     rob_entry_t rob_entry_alu_mul_exu_update;
@@ -190,6 +202,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
     rob_entry_t rob_entry_loadUnit_update;
     rob_entry_t rob_entry_StoreQueue_update;
     rob_entry_t rob_entry_atomic_update;
+    rob_entry_t rob_entry_loadQueueRAW_update;
 
     rob_enq u_rob_enq(
         .rename_fire       	( rename_fire        ),
@@ -284,7 +297,8 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
                                 ({5{loadUnit_page_error_o   }} & 5'hd) |
                                 ({5{loadUnit_load_error_o   }} & 5'h5);
     assign rob_entry_loadUnit_update_wen                   = loadUnit_valid_o & loadUnit_ready_o &
-                                                            (entry_index == loadUnit_rob_ptr_o);
+                                                            (entry_index == loadUnit_rob_ptr_o) & (!rob_entry_loadUnit_update.finish) &
+                                                            ((!LoadQueue_flush_o) | (entry_index != LoadQueue_rob_ptr_o));
     assign rob_entry_loadUnit_update.finish                = 1'b1                                        ;
     assign rob_entry_loadUnit_update.rfwen                 = rob_entry[entry_index].rfwen                ;
     assign rob_entry_loadUnit_update.wdest                 = rob_entry[entry_index].wdest                ;
@@ -355,6 +369,24 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
     assign rob_entry_atomic_update.ftq_ptr               = rob_entry[entry_index].ftq_ptr              ;
     assign rob_entry_atomic_update.inst_offset           = rob_entry[entry_index].inst_offset          ;
 
+    assign rob_entry_loadQueueRAW_update_wen                = LoadQueue_flush_o & (entry_index == LoadQueue_rob_ptr_o);
+    assign rob_entry_loadQueueRAW_update.finish             = 1'b1                                                                                              ;
+    assign rob_entry_loadQueueRAW_update.rfwen              = rob_entry[entry_index].rfwen                                                                      ;
+    assign rob_entry_loadQueueRAW_update.wdest              = rob_entry[entry_index].wdest                                                                      ;
+    assign rob_entry_loadQueueRAW_update.old_pdest          = rob_entry[entry_index].old_pdest                                                                  ;
+    assign rob_entry_loadQueueRAW_update.pwdest             = rob_entry[entry_index].pwdest                                                                     ;
+    assign rob_entry_loadQueueRAW_update.no_intr_exec       = rob_entry[entry_index].no_intr_exec                                                               ;
+    assign rob_entry_loadQueueRAW_update.block_forward_flag = rob_entry[entry_index].block_forward_flag                                                         ;
+    assign rob_entry_loadQueueRAW_update.rvc_flag           = rob_entry[entry_index].rvc_flag                                                                   ;
+    assign rob_entry_loadQueueRAW_update.call               = rob_entry[entry_index].call                                                                       ;
+    assign rob_entry_loadQueueRAW_update.ret                = rob_entry[entry_index].ret                                                                        ;
+    assign rob_entry_loadQueueRAW_update.trap_flag          = 1'b1                                                                                              ;
+    assign rob_entry_loadQueueRAW_update.trap_cause         = 5'd26                                                                                             ;
+    assign rob_entry_loadQueueRAW_update.trap_tval          = rob_ftq_entry_lq_raw.start_pc + {{(64 - BLOCK_BIT_NUM){1'b0}}, rob_entry[entry_index].inst_offset};
+    assign rob_entry_loadQueueRAW_update.end_flag           = rob_entry[entry_index].end_flag                                                                   ;
+    assign rob_entry_loadQueueRAW_update.ftq_ptr            = rob_entry[entry_index].ftq_ptr                                                                    ;
+    assign rob_entry_loadQueueRAW_update.inst_offset        = rob_entry[entry_index].inst_offset                                                                ;
+
     assign rob_entry_wen =  (rob_entry_enq_wen                      ) |
                             (rob_entry_alu_mul_exu_update_wen       ) |
                             (rob_entry_alu_div_exu_update_wen       ) |
@@ -362,7 +394,8 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
                             (rob_entry_alu_csr_fence_exu_update_wen ) |
                             (rob_entry_loadUnit_update_wen          ) |
                             (rob_entry_StoreQueue_update_wen        ) |
-                            (rob_entry_atomic_update_wen            );
+                            (rob_entry_atomic_update_wen            ) |
+                            (rob_entry_loadQueueRAW_update_wen      );
     assign rob_entry_nxt =  ({ROB_ENTRY_W{rob_entry_enq_wen                      }} & rob_entry_enq                      ) |
                             ({ROB_ENTRY_W{rob_entry_alu_mul_exu_update_wen       }} & rob_entry_alu_mul_exu_update       ) |
                             ({ROB_ENTRY_W{rob_entry_alu_div_exu_update_wen       }} & rob_entry_alu_div_exu_update       ) |
@@ -370,7 +403,8 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
                             ({ROB_ENTRY_W{rob_entry_alu_csr_fence_exu_update_wen }} & rob_entry_alu_csr_fence_exu_update ) |
                             ({ROB_ENTRY_W{rob_entry_loadUnit_update_wen          }} & rob_entry_loadUnit_update          ) |
                             ({ROB_ENTRY_W{rob_entry_StoreQueue_update_wen        }} & rob_entry_StoreQueue_update        ) |
-                            ({ROB_ENTRY_W{rob_entry_atomic_update_wen            }} & rob_entry_atomic_update            );
+                            ({ROB_ENTRY_W{rob_entry_atomic_update_wen            }} & rob_entry_atomic_update            ) |
+                            ({ROB_ENTRY_W{rob_entry_loadQueueRAW_update_wen      }} & rob_entry_loadQueueRAW_update      );
 
     FF_D_without_asyn_rst #(ROB_ENTRY_W)    u_entry     (clk,rob_entry_wen, rob_entry_nxt, rob_entry[entry_index]);
 end
@@ -422,6 +456,7 @@ end
 endgenerate
 
 assign top_rob_ptr = rob_ptr_top[rob_entry_w - 1 : 0];
+assign deq_rob_ptr = rob_ptr_top;
 
 genvar resp_index;
 generate for(resp_index = 0 ; resp_index < rename_width; resp_index = resp_index + 1) begin : U_gen_rob_resp
@@ -468,9 +503,13 @@ assign StoreQueue_ready_o          = 1'b1;
 assign atomicUnit_ready_o          = 1'b1;
 
 assign rob_ftq_ptr                 = rob_ftq_ptr_inner[commit_width - 1];
+assign rob_entry_lq_raw            = rob_entry[LoadQueue_rob_ptr_o];
+assign rob_ftq_ptr_lq_raw          = rob_entry_lq_raw.ftq_ptr;
 
 assign rob_gen_redirect_valid      = (rob_commit_valid_inner[commit_width - 1] & rob_trap_flag_inner[commit_width - 1] &
-                                    ((rob_trap_cause_inner[commit_width - 1] == 5'd24) | (rob_trap_cause_inner[commit_width - 1] == 5'd25)));
+                                    ((rob_trap_cause_inner[commit_width - 1] == 5'd24) | 
+                                    ( rob_trap_cause_inner[commit_width - 1] == 5'd25) |
+                                    ( rob_trap_cause_inner[commit_width - 1] == 5'd26)));
 assign rob_gen_redirect_bp_miss    = (rob_trap_cause_inner[commit_width - 1] == 5'd24);
 assign rob_gen_redirect_call       = rob_call_inner[commit_width - 1];
 assign rob_gen_redirect_ret        = rob_ret_inner[commit_width - 1];
@@ -483,7 +522,9 @@ assign rob_commit_pc               = rob_ftq_entry.start_pc + {{(64 - BLOCK_BIT_
 assign rob_commit_next_pc          = rob_commit_pc + (rob_rvc_flag_inner[commit_width - 1] ? 64'h2 : 64'h4);
 
 assign rob_trap_valid              = (rob_commit_valid_inner[commit_width - 1] & rob_trap_flag_inner[commit_width - 1] &
-                                    (rob_trap_cause_inner[commit_width - 1] != 5'd24) & (rob_trap_cause_inner[commit_width - 1] != 5'd25));
+                                    (rob_trap_cause_inner[commit_width - 1] != 5'd24) & 
+                                    (rob_trap_cause_inner[commit_width - 1] != 5'd25) &
+                                    (rob_trap_cause_inner[commit_width - 1] != 5'd26));
 assign rob_trap_cause              = {59'h0, rob_trap_cause_inner[commit_width - 1]};
 assign rob_trap_tval               = (rob_trap_cause_inner[commit_width - 1] != 5'h1) ? rob_trap_tval_inner[commit_width - 1] :
                                     (rob_trap_tval_inner[commit_width - 1] == 64'h1) ? (rob_commit_pc + 64'h2) : (rob_commit_pc + 64'h4);

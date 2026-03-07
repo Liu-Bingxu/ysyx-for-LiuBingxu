@@ -20,6 +20,12 @@ import core_setting_pkg::*;
     input                                           msip,
     input                                           halt_req,
 
+    output                                          redirect,
+    output                                          rename_fire,
+
+    output rob_entry_ptr_t                          top_rob_ptr,
+    output ls_rob_entry_ptr_t                       deq_rob_ptr,
+
     input  ibuf_inst_o_entry[decode_width - 1 :0]   ibuf_inst_o,
     output [decode_width - 1 :0]                    decode_inst_ready,
 
@@ -53,11 +59,13 @@ import core_setting_pkg::*;
     output [FTQ_ENTRY_BIT_NUM - 1 : 0]              jump_ftq_ptr,
     output [FTQ_ENTRY_BIT_NUM - 1 : 0]              csr_ftq_ptr,
     output [FTQ_ENTRY_BIT_NUM - 1 : 0]              fence_ftq_ptr,
+    output [FTQ_ENTRY_BIT_NUM - 1 : 0]              rob_ftq_ptr_lq_raw,
     input  ftq_entry                                rob_ftq_entry,
     input  ftq_entry                                bru_entry,
     input  ftq_entry                                jump_entry,
     input  ftq_entry                                csr_entry,
     input  ftq_entry                                fence_entry,
+    input  ftq_entry                                rob_ftq_entry_lq_raw,
 
     // fence_i interface
     output logic                                    flush_i_valid,
@@ -113,6 +121,10 @@ import core_setting_pkg::*;
     input  pint_regdest_t                           atomicUnit_pwdest_o,
     input  [63:0]                                   atomicUnit_preg_wdata_o,
 
+    // LoadQueueRAW report port
+    input                                           LoadQueue_flush_o,
+    input  rob_entry_ptr_t                          LoadQueue_rob_ptr_o,
+
     // status update port
     output               [wb_width - 1 : 0]         rfwen,
     output pint_regdest_t[wb_width - 1 : 0]         pwdest,
@@ -156,7 +168,6 @@ rename_resp_t   [decode_width-1:0] 	rename_int_resp;
 
 // outports logic Rename
 logic                    	        rename_ready;
-logic                    	        rename_fire;
 logic                    	        rename_hold;
 logic           [rename_width-1:0] 	rename_intrat_valid;
 regsrc_t        [rename_width-1:0] 	rename_intrat_dest;
@@ -184,7 +195,6 @@ logic                      	        alu_csr_fence_exu_in_valid;
 iq_csr_in_t                      	alu_csr_fence_exu_in;
 
 // outports logic u_rob
-rob_entry_ptr_t                     top_rob_ptr;
 logic           [commit_width-1:0]  commit_intrat_valid;
 regsrc_t        [commit_width-1:0]  commit_intrat_dest;
 pint_regdest_t  [commit_width-1:0]  commit_intrat_pdest;
@@ -283,9 +293,6 @@ logic                    	        TW;
 logic                    	        TVM;
 logic                    	        debug_mode;
 logic                               interrupt_happen;
-
-// outports logic u_gen_redirect
-logic        	                    redirect;
 
 DecodeUnit u_DecodeUnit(
 	.clk                 	( clk                  ),
@@ -417,8 +424,11 @@ rob u_rob(
 	.rst_n                           	( rst_n                            ),
 	.redirect                        	( redirect                         ),
 	.top_rob_ptr                     	( top_rob_ptr                      ),
+	.deq_rob_ptr                     	( deq_rob_ptr                      ),
 	.rob_ftq_ptr                     	( rob_ftq_ptr                      ),
 	.rob_ftq_entry                   	( rob_ftq_entry                    ),
+    .rob_ftq_ptr_lq_raw                 ( rob_ftq_ptr_lq_raw               ),
+    .rob_ftq_entry_lq_raw               ( rob_ftq_entry_lq_raw             ),
 	.commit_intrat_valid             	( commit_intrat_valid              ),
 	.commit_intrat_dest              	( commit_intrat_dest               ),
 	.commit_intrat_pdest             	( commit_intrat_pdest              ),
@@ -473,6 +483,8 @@ rob u_rob(
 	.atomicUnit_store_error_o        	( atomicUnit_store_error_o         ),
 	.atomicUnit_rob_ptr_o            	( atomicUnit_rob_ptr_o             ),
 	.atomic_vaddr_o                  	( atomic_vaddr_o                   ),
+    .LoadQueue_flush_o                  ( LoadQueue_flush_o                ),
+    .LoadQueue_rob_ptr_o                ( LoadQueue_rob_ptr_o              ),
 	.rob_gen_redirect_valid          	( rob_gen_redirect_valid           ),
 	.rob_gen_redirect_bp_miss        	( rob_gen_redirect_bp_miss         ),
 	.rob_gen_redirect_call           	( rob_gen_redirect_call            ),
