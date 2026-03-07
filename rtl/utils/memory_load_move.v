@@ -63,7 +63,7 @@ generate
     if(HAS_SIGN == 0) begin : no_sign
         assign use_sign = 1'b0;
     end
-    else begin
+    else begin : with_sign
         if(DATA_WIDTH == 64) begin : gen_64bit_use_sign
             assign use_sign = is_sign;
         end
