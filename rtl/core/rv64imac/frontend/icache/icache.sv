@@ -114,7 +114,9 @@ logic                       icache_arvalid_reg;
 logic [127:0]               sram_tag_wdata;
 logic [127:0]               sram_data_wdata;
 logic                       icache_line_wen;
+/* verilator lint_off UNUSEDSIGNAL */
 logic [63:0]                icache_line_waddr;
+/* verilator lint_on UNUSEDSIGNAL */
 
 logic                       icache_send_not_recv_flag;
 
@@ -156,20 +158,20 @@ generate
                 .A    	( sram_addr                                                 ),
                 .D    	( sram_data_wdata                                           )
             );
-            if(ICACHE_GROUP == 1)begin
+            if(ICACHE_GROUP == 1)begin : U_gen_sram_wen_group_only_1
                 assign sram_data_wen[icache_group_index][icache_way_index]          = (!icache_line_wen) | (icache_way_index != rand_way);
                 assign sram_data_way[icache_way_index]                              = sram_data_rdata[icache_group_index][icache_way_index];
                 assign sram_tag_way[icache_way_index]                               = sram_tag[icache_group_index][icache_way_index];
                 assign icache_line_valid_way[icache_way_index]                      = icache_line_valid[icache_group_index][icache_way_index];
             end
-            else begin
+            else begin : U_gen_sram_wen_group_other
                 assign sram_data_wen[icache_group_index][icache_way_index]          = (!icache_line_wen) | (icache_way_index != rand_way) | 
                                                                                         (icache_group_index != icache_line_waddr[9 + ICACHE_GROUP_LEN:10]);
                 assign sram_data_way[icache_way_index]                              = sram_data_rdata[icache_line_waddr[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
                 assign sram_tag_way[icache_way_index]                               = sram_tag[icache_line_waddr[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
                 assign icache_line_valid_way[icache_way_index]                      = icache_line_valid[icache_line_waddr[9 + ICACHE_GROUP_LEN:10]][icache_way_index];
             end
-            if(icache_group_index % 2 == 0)begin
+            if(icache_group_index % 2 == 0)begin : U_gen_icache_meta_data
                 S011HD1P_X32Y2D128_BW u_S011HD1P_X32Y2D128_BW_tag(
                     .Q    	( sram_tag_rdata[icache_group_index/2][icache_way_index]    ),
                     .CLK  	( clk                                                       ),
@@ -179,19 +181,19 @@ generate
                     .A    	( sram_addr                                                 ),
                     .D    	( sram_tag_wdata                                            )
                 );
-                if((icache_group_index + 1) >= ICACHE_GROUP)begin
+                if((icache_group_index + 1) >= ICACHE_GROUP)begin : U_gen_icache_meta_data_wen_final
                     assign sram_tag_cen[icache_group_index/2]                       = sram_data_cen[icache_group_index];
                     assign sram_tag_wen[icache_group_index/2][icache_way_index]     = sram_data_wen[icache_group_index][icache_way_index];
                 end
-                else begin
+                else begin : U_gen_icache_meta_data_wen_other
                     assign sram_tag_cen[icache_group_index/2]                       = sram_data_cen[icache_group_index]                     & sram_data_cen[icache_group_index+1];
                     assign sram_tag_wen[icache_group_index/2][icache_way_index]     = sram_data_wen[icache_group_index][icache_way_index]   & sram_data_wen[icache_group_index+1][icache_way_index];
                 end
             end
-            if(icache_group_index % 2 == 0)begin
+            if(icache_group_index % 2 == 0)begin : U_gen_icache_tag_rdata_second
                 assign sram_tag[icache_group_index][icache_way_index]               = sram_tag_rdata[icache_group_index/2][icache_way_index][63:0];
             end
-            else begin
+            else begin : U_gen_icache_tag_rdata_first
                 assign sram_tag[icache_group_index][icache_way_index]               = sram_tag_rdata[icache_group_index/2][icache_way_index][127:64];
             end
             FF_D_with_addr #(
@@ -206,11 +208,11 @@ generate
                 .data_in    ( 1'b1                                                      ),
                 .data_out   ( icache_line_valid[icache_group_index][icache_way_index]   )
             );
-            if(icache_group_index == 0)begin
+            if(icache_group_index == 0)begin : U_gen_icache_way_sel
                 assign sram_way_sel[icache_way_index]                           = (sram_tag_way_use[icache_way_index][63:64-ICACHE_TAG_SIZE] == paddr[63:64-ICACHE_TAG_SIZE]) & 
                                                                                     icache_line_valid_way_use[icache_way_index][icache_line_waddr[9:4]]; 
             end
-            if(icache_group_index == 0)begin
+            if(icache_group_index == 0)begin : U_gen_icache_way_data
                 FF_D_without_asyn_rst #(128)  u_sram_data_way            (clk,way_flag_set,sram_data_way[icache_way_index],sram_data_way_reg[icache_way_index]);
                 FF_D_without_asyn_rst #(64)   u_sram_tag_way             (clk,way_flag_set,sram_tag_way[icache_way_index] ,sram_tag_way_reg[icache_way_index] );
                 FF_D_without_asyn_rst #(64)   u_icache_line_valid_way    (clk,way_flag_set,icache_line_valid_way[icache_way_index],icache_line_valid_way_reg[icache_way_index]);
@@ -219,10 +221,10 @@ generate
                 assign icache_line_valid_way_use[icache_way_index]    = (way_flag) ? icache_line_valid_way_reg[icache_way_index] : icache_line_valid_way[icache_way_index];
             end
         end
-        if(ICACHE_GROUP == 1)begin
+        if(ICACHE_GROUP == 1)begin : U_gen_sram_cen_group_only_1
             assign sram_data_cen[icache_group_index]                            =   (!icache_line_wen) & (rch_fifo_empty);
         end
-        else begin
+        else begin : U_gen_sram_cen_group_other
             assign sram_data_cen[icache_group_index]                            =   (( rch_fifo_empty ) | (icache_group_index != rch_fifo_rdata[9 + ICACHE_GROUP_LEN:10]) | icache_line_wen) & 
                                                                                     ((!icache_line_wen) | (icache_group_index != icache_line_waddr[9 + ICACHE_GROUP_LEN:10])) ;
         end
@@ -238,10 +240,10 @@ rand_lfsr_8_bit #(
 FF_D_without_asyn_rst #(64)   u_icache_line_waddr           (clk,rch_fifo_ren,rch_fifo_rdata,icache_line_waddr);
 assign sram_addr                = (icache_line_wen) ? icache_line_waddr[9:4] : rch_fifo_rdata[9:4];
 assign sram_tag_wdata           = {paddr, paddr};
-if(ICACHE_GROUP == 1)begin
+if(ICACHE_GROUP == 1)begin : U_gen_tag_bwen_group_only_1
     assign sram_tag_bwen        = 128'h0;
 end
-else begin
+else begin : U_gen_tag_bwen_group_other
     assign sram_tag_bwen        = (icache_line_waddr[10]) ? {{64{1'b0}}, {64{1'b1}}} : {{64{1'b1}}, {64{1'b0}}};
 end
 assign way_flag_set = first_stage_valid & (!first_stage_ready) & (!way_flag);
