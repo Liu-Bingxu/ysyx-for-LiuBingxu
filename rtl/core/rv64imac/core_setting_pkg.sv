@@ -2,11 +2,19 @@ package core_setting_pkg;
 
 localparam NOP      = 32'h13;
 localparam RST_PC   = 64'h80000000;
-localparam use_booth_mul = 1;
 
+// rename_width永远和decode_width一样
 localparam decode_width     = 2;
+localparam rename_width     = 2;
+localparam dispatch_width   = 2;
+localparam commit_width     = 2;
+
+localparam wb_width         = 6;
 
 typedef logic [11:0] riscv_csr_t;
+
+localparam DEBUG_ENTRY_TVEC       = 12'h800;
+localparam DEBUG_EXCEPTION_TVEC   = 12'h808;
 
 typedef enum logic [11:0] {
     // User mode register
