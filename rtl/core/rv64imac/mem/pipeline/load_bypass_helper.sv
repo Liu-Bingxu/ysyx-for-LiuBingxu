@@ -45,7 +45,17 @@ import rob_pkg::*;
     input                                               load_rvalid,
     output                                              load_rready,
     input  [1:0]                                        load_rresp,
-    input  [63:0]                                       load_rdata
+    input  [63:0]                                       load_rdata,
+
+    output                                              load_uncache_arvalid,
+    input                                               load_uncache_arready,
+    output [2:0]                                        load_uncache_arsize,
+    output [63:0]                                       load_uncache_araddr,
+
+    input                                               load_uncache_rvalid,
+    output                                              load_uncache_rready,
+    input  [1:0]                                        load_uncache_rresp,
+    input  [63:0]                                       load_uncache_rdata
 );
 logic          recv_stage_valid;
 logic          recv_stage_ready;
@@ -53,6 +63,8 @@ logic          recv_stage_ready;
 logic [7:0]    load_rstrb;
 logic          sq_sb_can_cover;
 logic          sq_sb_can_cover_reg;
+
+logic          loaduncache_reg;
 
 logic          dcache_load_hit_reg;
 logic  [63:0]  dcache_load_data_reg;
@@ -65,7 +77,7 @@ logic  [7:0]   sb_load_rstrb_reg;
 
 assign sq_sb_can_cover      = (load_rstrb == (sq_load_rstrb | sb_load_rstrb));
 
-assign loadUnit_arready = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (sq_sb_can_cover | dcache_load_hit | load_arready);
+assign loadUnit_arready = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (sq_sb_can_cover | dcache_load_hit | (addrcache(loadUnit_araddr) ? load_arready : load_uncache_arready));
 assign recv_stage_ready = loadUnit_rvalid & loadUnit_rready;
 
 logic recv_valid;
@@ -83,13 +95,14 @@ FF_D_with_syn_rst #(
     .data_out 	( recv_stage_valid  )
 );
 
-FF_D_without_asyn_rst #(1 ) u_sq_sb_can_cover_reg_o     (clk,recv_valid, sq_sb_can_cover,   sq_sb_can_cover_reg);
-FF_D_without_asyn_rst #(1 ) u_dcache_load_hit_reg_o     (clk,recv_valid, dcache_load_hit,   dcache_load_hit_reg);
-FF_D_without_asyn_rst #(64) u_dcache_load_data_reg_o    (clk,recv_valid, dcache_load_data,  dcache_load_data_reg);
-FF_D_without_asyn_rst #(64) u_sq_load_data_reg_o        (clk,recv_valid, sq_load_data,      sq_load_data_reg);
-FF_D_without_asyn_rst #(8 ) u_sq_load_rstrb_reg_o       (clk,recv_valid, sq_load_rstrb,     sq_load_rstrb_reg);
-FF_D_without_asyn_rst #(64) u_sb_load_data_reg_o        (clk,recv_valid, sb_load_data,      sb_load_data_reg);
-FF_D_without_asyn_rst #(8 ) u_sb_load_rstrb_reg_o       (clk,recv_valid, sb_load_rstrb,     sb_load_rstrb_reg);
+FF_D_without_asyn_rst #(1 ) u_loaduncache_reg_o         (clk,recv_valid, addrcache(loadUnit_araddr),loaduncache_reg);
+FF_D_without_asyn_rst #(1 ) u_sq_sb_can_cover_reg_o     (clk,recv_valid, sq_sb_can_cover,           sq_sb_can_cover_reg);
+FF_D_without_asyn_rst #(1 ) u_dcache_load_hit_reg_o     (clk,recv_valid, dcache_load_hit,           dcache_load_hit_reg);
+FF_D_without_asyn_rst #(64) u_dcache_load_data_reg_o    (clk,recv_valid, dcache_load_data,          dcache_load_data_reg);
+FF_D_without_asyn_rst #(64) u_sq_load_data_reg_o        (clk,recv_valid, sq_load_data,              sq_load_data_reg);
+FF_D_without_asyn_rst #(8 ) u_sq_load_rstrb_reg_o       (clk,recv_valid, sq_load_rstrb,             sq_load_rstrb_reg);
+FF_D_without_asyn_rst #(64) u_sb_load_data_reg_o        (clk,recv_valid, sb_load_data,              sb_load_data_reg);
+FF_D_without_asyn_rst #(8 ) u_sb_load_rstrb_reg_o       (clk,recv_valid, sb_load_rstrb,             sb_load_rstrb_reg);
 
 
 //get wstrb by control sign 
@@ -145,20 +158,25 @@ assign load_rob_ptr  = loadUnit_rob_ptr;
 assign load_paddr2sb = loadUnit_araddr;
 assign load_rstrb2sb = load_rstrb;
 
-assign loadUnit_rvalid  = recv_stage_valid & (sq_sb_can_cover_reg | dcache_load_hit_reg | load_rvalid);
-assign loadUnit_rresp   = (sq_sb_can_cover_reg | dcache_load_hit_reg) ? 2'h0 : load_rresp;
+assign loadUnit_rvalid  = recv_stage_valid & (sq_sb_can_cover_reg | dcache_load_hit_reg | (loaduncache_reg ? load_rvalid : load_uncache_rvalid));
+assign loadUnit_rresp   = (sq_sb_can_cover_reg | dcache_load_hit_reg) ? 2'h0 : loaduncache_reg ? load_rresp : load_uncache_rresp;
 logic [63:0] rdata_inner1;
 logic [63:0] rdata_inner2;
 logic [63:0] rdata_inner3;
-assign rdata_inner1 = data_splicing_64(load_rdata, dcache_load_data_reg, {8{dcache_load_hit_reg}});
+assign rdata_inner1 = data_splicing_64(loaduncache_reg ? load_rdata : load_uncache_rdata, dcache_load_data_reg, {8{dcache_load_hit_reg}});
 assign rdata_inner2 = data_splicing_64(rdata_inner1, sb_load_data_reg, sb_load_rstrb_reg);
 assign rdata_inner3 = data_splicing_64(rdata_inner2, sq_load_data_reg, sq_load_rstrb_reg);
 assign loadUnit_rdata   = rdata_inner3;
 
-assign load_arvalid = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (!sq_sb_can_cover) & (!dcache_load_hit) & loadUnit_arvalid;
-assign load_arsize  = loadUnit_arsize;
-assign load_araddr  = loadUnit_araddr;
+assign load_arvalid         = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (!sq_sb_can_cover) & (!dcache_load_hit) & addrcache(loadUnit_araddr) & loadUnit_arvalid;
+assign load_arsize          = loadUnit_arsize;
+assign load_araddr          = loadUnit_araddr;
 
-assign load_rready  = recv_stage_valid & (!sq_sb_can_cover_reg) & (!dcache_load_hit_reg);
+assign load_uncache_arvalid = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (!sq_sb_can_cover) & (!dcache_load_hit) & (!addrcache(loadUnit_araddr)) & loadUnit_arvalid;
+assign load_uncache_arsize  = loadUnit_arsize;
+assign load_uncache_araddr  = loadUnit_araddr;
+
+assign load_rready          = recv_stage_valid & (!sq_sb_can_cover_reg) & (!dcache_load_hit_reg) & loaduncache_reg;
+assign load_uncache_rready  = recv_stage_valid & (!sq_sb_can_cover_reg) & (!dcache_load_hit_reg) & (!loaduncache_reg);
 
 endmodule
