@@ -102,7 +102,7 @@ generate for(commit_index = 0 ; commit_index < commit_width; commit_index = comm
         assign int_free_list_commit_point[commit_index] = int_free_list_arch_tail;
     end
     else begin:u_gen_commit_point_another
-        assign int_free_list_commit_point[commit_index] = (commit_int_need_free[resp_index - 1]) ? 
+        assign int_free_list_commit_point[commit_index] = (commit_int_need_free[commit_index - 1]) ? 
                                                         (int_free_list_commit_point[commit_index - 1] + 1) : 
                                                         int_free_list_commit_point[commit_index - 1];
     end
