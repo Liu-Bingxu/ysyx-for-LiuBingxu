@@ -7,11 +7,11 @@ module DifftestInstrCommit(
   input         io_rfwen,		//整数寄存器写使能
   input         io_fpwen,		//浮点寄存器写使能
   input         io_vecwen,	//向量寄存器写使能
-  input  [ 4:0] io_wpdest,	//写入的物理寄存器目标
-  input  [ 7:0] io_wdest,		//写入的虚拟寄存器目标
+  input  [ 6:0] io_wpdest,	//写入的物理寄存器目标
+  input  [ 4:0] io_wdest,		//写入的虚拟寄存器目标
   input  [63:0] io_pc,			//当前的程序计数器PC
   input  [31:0] io_instr,		//当前的指令内容
-  input  [ 9:0] io_robIdx,	//ROB重排序缓冲区索引
+  input  [ 5:0] io_robIdx,	//ROB重排序缓冲区索引
   input  [ 6:0] io_lqIdx,		//LQ负载队列索引
   input  [ 6:0] io_sqIdx,		//SQ存储队列索引
   input         io_isLoad,	//是否为加载指令
