@@ -276,15 +276,14 @@ genvar resp_index;
 generate for(resp_index = 0 ; resp_index < rename_width; resp_index = resp_index + 1) begin : U_gen_sq_resp
     if(resp_index == 0)begin : U_gen_sq_resp_0
         assign sq_resp_inner[resp_index].valid     = ((sq_ptr_resp[resp_index][SQ_entry_w] == sq_r_ptr[SQ_entry_w]) |
-                                                    (sq_ptr_resp[resp_index][SQ_entry_w - 1 : 0] != sq_r_ptr[SQ_entry_w - 1 : 0])) &
-                                                    sq_req[resp_index];
+                                                    (sq_ptr_resp[resp_index][SQ_entry_w - 1 : 0] != sq_r_ptr[SQ_entry_w - 1 : 0]));
         assign sq_ptr_resp[resp_index]             = sq_w_ptr;
     end
     else begin : U_gen_sq_resp_other
         assign sq_resp_inner[resp_index].valid     = ((sq_ptr_resp[resp_index][SQ_entry_w] == sq_r_ptr[SQ_entry_w]) |
                                                     (sq_ptr_resp[resp_index][SQ_entry_w - 1 : 0] != sq_r_ptr[SQ_entry_w - 1 : 0])) &
-                                                    sq_req[resp_index] & sq_resp_inner[resp_index - 1].valid;
-        assign sq_ptr_resp[resp_index]             = (sq_resp_inner[resp_index - 1].valid) ? (sq_ptr_resp[resp_index - 1] + 1) : sq_ptr_resp[resp_index - 1];
+                                                    sq_resp_inner[resp_index - 1].valid;
+        assign sq_ptr_resp[resp_index]             = (sq_resp_inner[resp_index - 1].valid & sq_req[resp_index] ) ? (sq_ptr_resp[resp_index - 1] + 1) : sq_ptr_resp[resp_index - 1];
     end
     assign sq_ptr_enq[resp_index]              = sq_ptr_resp[resp_index][SQ_entry_w - 1 : 0];
     assign sq_resp_inner[resp_index].sq_ptr    = sq_ptr_enq[resp_index];
