@@ -170,17 +170,19 @@ FF_D_with_syn_rst #(
     .data_out   ( rob_ptr_top       )
 );
 
+ls_rob_entry_ptr_t                          rob_ptr_button_nxt;
+assign rob_ptr_button_nxt = (rob_can_commit[commit_width - 1]) ? (rob_ptr_commit_full[commit_width - 1] + 1) : rob_ptr_commit_full[commit_width - 1];
 FF_D_with_syn_rst #(
     .DATA_LEN 	( rob_entry_w + 1   ),
     .RST_DATA 	( 0                 )
 )u_rob_ptr_button
 (
-    .clk        ( clk                                   ),
-    .rst_n      ( rst_n                                 ),
-    .syn_rst    ( redirect                              ),
-    .wen        ( rob_commit_valid                      ),
-    .data_in    ( rob_ptr_commit_full[commit_width - 1] ),
-    .data_out   ( rob_ptr_button                        )
+    .clk        ( clk                   ),
+    .rst_n      ( rst_n                 ),
+    .syn_rst    ( redirect              ),
+    .wen        ( rob_commit_valid      ),
+    .data_in    ( rob_ptr_button_nxt    ),
+    .data_out   ( rob_ptr_button        )
 );
 
 genvar entry_index;
