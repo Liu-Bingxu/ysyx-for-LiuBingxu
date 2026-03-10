@@ -1,16 +1,3 @@
-import "DPI-C" function void sim_sram_read (
-    input   longint raddr,
-    output  longint rdata
-);
-
-import "DPI-C" function void sim_sram_write (
-    input   longint waddr,
-    input   longint wdata,
-    input      byte wmask
-);
-
-import "DPI-C" function void halt(byte code);
-
 module sim_sram_dpic#(
     // Address width in bits
     parameter AXI_ADDR_W = 64,
@@ -65,6 +52,19 @@ module sim_sram_dpic#(
 
 import "DPI-C" function void Log_mem_read(longint addr);
 import "DPI-C" function void Log_mem_wirte(longint addr, longint data,byte wmask);
+
+import "DPI-C" function void sim_sram_read (
+    input   longint raddr,
+    output  longint rdata
+);
+
+import "DPI-C" function void sim_sram_write (
+    input   longint waddr,
+    input   longint wdata,
+    input      byte wmask
+);
+
+import "DPI-C" function void halt(byte code);
 
 reg [AXI_ID_W      -1:0]     mst_id;
 reg [AXI_ADDR_W    -1:0]     mst_awaddr_reg;

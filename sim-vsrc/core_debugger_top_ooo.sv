@@ -1,4 +1,5 @@
 module core_debugger_top_ooo
+import core_setting_pkg::*;
 import frontend_pkg::*;
 import rob_pkg::*;
 import mem_pkg::*;
@@ -1404,6 +1405,17 @@ DifftestCSRState u_DifftestCSRState(
 
 logic          rob_entry_io_skip[rob_entry_num - 1 : 0];
 logic [31:0]   rob_entry_inst[rob_entry_num - 1 : 0];
+logic [31:0]   decode_inst[rename_width - 1 : 0];
+
+genvar decode_index;
+generate for(decode_index = 0 ; decode_index < decode_width; decode_index = decode_index + 1) begin : U_gen_decode
+    FF_D_without_asyn_rst #(32) u_decode_o (clk,
+        u_core_ooo_top.u_backend_top.u_DecodeUnit.ibuf_inst_o[decode_index].is_valid & 
+        u_core_ooo_top.u_backend_top.u_DecodeUnit.decode_inst_ready[decode_index],
+        u_core_ooo_top.u_backend_top.u_DecodeUnit.ibuf_inst_o[decode_index].inst,
+        decode_inst[decode_index]);
+end
+endgenerate
 
 logic [63:0]    load_paddr;
 FF_D_without_asyn_rst #(64)    u_stage3_paddr_o (clk,u_core_ooo_top.u_mem_top.u_loadUnit.send_valid_stage3, u_core_ooo_top.u_mem_top.u_loadUnit.loadUnit_paddr, load_paddr);
@@ -1422,15 +1434,22 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
 
     logic [31:0] rob_entry_nxt_inst;
 
-    rob_enq u_rob_enq(
-        .rename_fire       	( u_core_ooo_top.u_backend_top.u_rob.rename_fire        ),
-        .rob_req           	( u_core_ooo_top.u_backend_top.u_rob.rob_req            ),
-        .rob_req_entry     	( u_core_ooo_top.u_backend_top.u_rob.rob_req_entry      ),
-        .rob_ptr_resp      	( u_core_ooo_top.u_backend_top.u_rob.rob_ptr_enq        ),
-        .rob_ptr_self      	( entry_index                                           ),
-        .rob_entry_enq_wen 	( rob_entry_enq_wen                                     ),
-        .rob_entry_enq     	(                                                       )
-    );
+    integer i;
+    always_comb begin : rob_enq_comb
+        rob_entry_enq_wen  = 0;
+        rob_entry_nxt_inst = 0;
+        for(i = 0; i < rename_width; i = i + 1)begin
+            rob_entry_enq_wen  = (rob_entry_enq_wen | 
+                                (u_core_ooo_top.u_backend_top.u_rob.rename_fire & 
+                                u_core_ooo_top.u_backend_top.u_rob.rob_req[i] & 
+                                (u_core_ooo_top.u_backend_top.u_rob.rob_ptr_enq[i] == entry_index)));
+            rob_entry_nxt_inst = (rob_entry_nxt_inst     | 
+                                ({32{u_core_ooo_top.u_backend_top.u_rob.rename_fire & 
+                                u_core_ooo_top.u_backend_top.u_rob.rob_req[i] & 
+                                (u_core_ooo_top.u_backend_top.u_rob.rob_ptr_enq[i] == entry_index)}} & 
+                                decode_inst[i]));
+        end
+    end
 
     assign rob_entry_enq_io_skip                            = 1'b0;
 
@@ -1467,73 +1486,73 @@ wire io_valid1 = (((u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button + 1) != u_
                 u_core_ooo_top.u_backend_top.u_rob.rob_entry[u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button + 1].finish);
 
 DifftestInstrCommit u_DifftestInstrCommit0(
-    .clock      	(clk                                                        ),
-    .io_valid   	(io_valid0                                                  ),
+    .clock      	(clk                                                                ),
+    .io_valid   	(io_valid0                                                          ),
     .io_skip    	(rob_entry_io_skip[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button]          ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]]             ),
     .io_isRVC   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].rvc_flag ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].rvc_flag    ),
     .io_rfwen   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].rfwen    ),
-    .io_fpwen   	(1'b0                                                       ),
-    .io_vecwen  	(1'b0                                                       ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].rfwen       ),
+    .io_fpwen   	(1'b0                                                               ),
+    .io_vecwen  	(1'b0                                                               ),
     .io_wpdest  	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].pwdest   ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].pwdest      ),
     .io_wdest   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].wdest    ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].wdest       ),
     .io_pc      	(u_core_ooo_top.u_frontend_top.u_ftq.entry[
                     u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].ftq_ptr].start_pc + 
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].ftq_ptr].start_pc + 
                     {{(64 - BLOCK_BIT_NUM){1'b0}}, u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].inst_offset}),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].inst_offset}),
     .io_instr  	    (rob_entry_inst[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button]          ),
-    .io_robIdx  	(u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]     ),
-    .io_lqIdx   	(7'h0                                                       ),
-    .io_sqIdx   	(7'h0                                                       ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]]             ),
+    .io_robIdx  	(u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]             ),
+    .io_lqIdx   	(7'h0                                                               ),
+    .io_sqIdx   	(7'h0                                                               ),
 //     //todo 暂不支持查询是否访存指令
-    .io_isLoad  	(1'b0                                                       ),
-    .io_isStore 	(1'b0                                                       ),
+    .io_isLoad  	(1'b0                                                               ),
+    .io_isStore 	(1'b0                                                               ),
 
-    .io_nFused  	(8'h0                                                       ),
-    .io_special 	(8'h0                                                       ),
-    .io_coreid  	(8'h0                                                       ),
-    .io_index   	(8'h0                                                       )
+    .io_nFused  	(8'h0                                                               ),
+    .io_special 	(8'h0                                                               ),
+    .io_coreid  	(8'h0                                                               ),
+    .io_index   	(8'h0                                                               )
 );
 
 DifftestInstrCommit u_DifftestInstrCommit1(
-    .clock      	(clk                                                        ),
-    .io_valid   	(io_valid0                                                  ),
+    .clock      	(clk                                                                ),
+    .io_valid   	(io_valid1                                                          ),
     .io_skip    	(rob_entry_io_skip[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button]          ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]]             ),
     .io_isRVC   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].rvc_flag ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].rvc_flag    ),
     .io_rfwen   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].rfwen    ),
-    .io_fpwen   	(1'b0                                                       ),
-    .io_vecwen  	(1'b0                                                       ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].rfwen       ),
+    .io_fpwen   	(1'b0                                                               ),
+    .io_vecwen  	(1'b0                                                               ),
     .io_wpdest  	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].pwdest   ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].pwdest      ),
     .io_wdest   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].wdest    ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].wdest       ),
     .io_pc      	(u_core_ooo_top.u_frontend_top.u_ftq.entry[
                     u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].ftq_ptr].start_pc + 
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].ftq_ptr].start_pc + 
                     {{(64 - BLOCK_BIT_NUM){1'b0}}, u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].inst_offset}),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].inst_offset}),
     .io_instr  	    (rob_entry_inst[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button]          ),
-    .io_robIdx  	(u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0] + 1 ),
-    .io_lqIdx   	(7'h0                                                       ),
-    .io_sqIdx   	(7'h0                                                       ),
+                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]]             ),
+    .io_robIdx  	(u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0] + 1         ),
+    .io_lqIdx   	(7'h0                                                               ),
+    .io_sqIdx   	(7'h0                                                               ),
 //     //todo 暂不支持查询是否访存指令
-    .io_isLoad  	(1'b0                                                       ),
-    .io_isStore 	(1'b0                                                       ),
+    .io_isLoad  	(1'b0                                                               ),
+    .io_isStore 	(1'b0                                                               ),
 
-    .io_nFused  	(8'h0                                                       ),
-    .io_special 	(8'h0                                                       ),
-    .io_coreid  	(8'h0                                                       ),
-    .io_index   	(8'h1                                                       )
+    .io_nFused  	(8'h0                                                               ),
+    .io_special 	(8'h0                                                               ),
+    .io_coreid  	(8'h0                                                               ),
+    .io_index   	(8'h1                                                               )
 );
 
 DifftestTrapEvent u_DifftestTrapEvent(
