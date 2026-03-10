@@ -25,6 +25,7 @@ import core_setting_pkg::*;
     input                                           TVM,
 
     input  ibuf_inst_o_entry[decode_width - 1 :0]   ibuf_inst_o,
+    output [decode_width - 1 :0]                    inst_out_valid,
     output [decode_width - 1 :0]                    decode_inst_ready,
 
     output regsrc_t [decode_width - 1 :0]           int_src1_torat,
@@ -695,6 +696,7 @@ generate for(decode_index = 0 ; decode_index < decode_width; decode_index = deco
     );
     FF_D_without_asyn_rst #(DECODE_O_W) u_decode_o (clk,ibuf_inst_o[decode_index].is_valid & decode_inst_ready[decode_index],decode[decode_index],decode_reg[decode_index]);
 
+    assign inst_out_valid[decode_index]     = ibuf_inst_o[decode_index].is_valid;
     assign decode_inst_ready[decode_index] = ((!(|decode_valid_reg)) | rename_ready);
     assign int_src1_torat[decode_index] = rs1;
     assign int_src2_torat[decode_index] = rs2;

@@ -9,8 +9,8 @@ import core_setting_pkg::*;
 
     input                                               redirect,
 
-    input           [decode_width - 1 : 0]              decode_out_valid,
-    input                                               rename_ready,
+    input           [decode_width - 1 : 0]              inst_out_valid,
+    input           [decode_width - 1 : 0]              decode_inst_ready,
 
     input  regsrc_t [decode_width - 1 :0]               int_src1_torat,
     input  regsrc_t [decode_width - 1 :0]               int_src2_torat,
@@ -41,9 +41,9 @@ generate for(rat_decode_index = 0 ; rat_decode_index < decode_width; rat_decode_
     logic src1_wen;
     logic src2_wen;
     logic dest_wen;
-    assign src1_wen = decode_out_valid[rat_decode_index] & rename_ready & (!rename_hold) & (int_src1_torat[rat_decode_index] != 5'h0);
-    assign src2_wen = decode_out_valid[rat_decode_index] & rename_ready & (!rename_hold) & (int_src2_torat[rat_decode_index] != 5'h0);
-    assign dest_wen = decode_out_valid[rat_decode_index] & rename_ready & (!rename_hold) & (int_dest_torat[rat_decode_index] != 5'h0);
+    assign src1_wen = inst_out_valid[rat_decode_index] & decode_inst_ready[rat_decode_index] & (!rename_hold) & (int_src1_torat[rat_decode_index] != 5'h0);
+    assign src2_wen = inst_out_valid[rat_decode_index] & decode_inst_ready[rat_decode_index] & (!rename_hold) & (int_src2_torat[rat_decode_index] != 5'h0);
+    assign dest_wen = inst_out_valid[rat_decode_index] & decode_inst_ready[rat_decode_index] & (!rename_hold) & (int_dest_torat[rat_decode_index] != 5'h0);
     FF_D_without_asyn_rst #(
         .DATA_LEN 	( int_preg_width))
     u_int_src1_fromrat(

@@ -152,6 +152,7 @@ import core_setting_pkg::*;
 
 
 // outports logic DeocdeUnit
+logic           [decode_width-1:0]  inst_out_valid;
 regsrc_t        [decode_width-1:0] 	int_src1_torat;
 regsrc_t        [decode_width-1:0] 	int_src2_torat;
 regdest_t       [decode_width-1:0] 	int_dest_torat;
@@ -304,6 +305,7 @@ DecodeUnit u_DecodeUnit(
 	.TW                  	( TW                   ),
 	.TVM                 	( TVM                  ),
 	.ibuf_inst_o         	( ibuf_inst_o          ),
+    .inst_out_valid         ( inst_out_valid       ),
 	.decode_inst_ready   	( decode_inst_ready    ),
 	.int_src1_torat      	( int_src1_torat       ),
 	.int_src2_torat      	( int_src2_torat       ),
@@ -317,8 +319,8 @@ rename_table u_rename_table(
 	.clk                 	( clk                  ),
 	.rst_n               	( rst_n                ),
 	.redirect               ( redirect             ),
-	.decode_out_valid    	( decode_out_valid     ),
-	.rename_ready        	( rename_ready         ),
+    .inst_out_valid         ( inst_out_valid       ),
+	.decode_inst_ready   	( decode_inst_ready    ),
 	.int_src1_torat      	( int_src1_torat       ),
 	.int_src2_torat      	( int_src2_torat       ),
 	.int_dest_torat      	( int_dest_torat       ),
