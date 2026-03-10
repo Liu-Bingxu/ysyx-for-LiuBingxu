@@ -155,17 +155,19 @@ logic                                       rob_ret_inner[commit_width - 1 : 0]/
 logic [FTQ_ENTRY_BIT_NUM - 1 : 0]           rob_ftq_ptr_inner[commit_width - 1 : 0]/* verilator split_var */;
 logic [BLOCK_BIT_NUM - 1:0]                 rob_inst_offset_inner[commit_width - 1 : 0]/* verilator split_var */;
 
+ls_rob_entry_ptr_t                          rob_ptr_top_nxt;
+assign rob_ptr_top_nxt = (rob_resp_inner[rename_width - 1].valid) ? (rob_ptr_resp[rename_width - 1] + 1) : rob_ptr_resp[rename_width - 1];
 FF_D_with_syn_rst #(
     .DATA_LEN 	( rob_entry_w + 1   ),
     .RST_DATA 	( 0                 )
 )u_rob_ptr_top
 (
-    .clk        ( clk                               ),
-    .rst_n      ( rst_n                             ),
-    .syn_rst    ( redirect                          ),
-    .wen        ( rename_fire                       ),
-    .data_in    ( rob_ptr_resp[rename_width - 1]    ),
-    .data_out   ( rob_ptr_top                       )
+    .clk        ( clk               ),
+    .rst_n      ( rst_n             ),
+    .syn_rst    ( redirect          ),
+    .wen        ( rename_fire       ),
+    .data_in    ( rob_ptr_top_nxt   ),
+    .data_out   ( rob_ptr_top       )
 );
 
 FF_D_with_syn_rst #(
@@ -428,6 +430,7 @@ generate for(commit_index = 0 ; commit_index < commit_width; commit_index = comm
         assign rob_inst_offset_inner[commit_index]  = rob_entry_commit[commit_index].inst_offset;
     end
     else begin : U_gen_rob_commit_other
+        //! TODO 现在trap和end只能在第一个提交
         assign rob_can_commit[commit_index]         = ((rob_ptr_commit_full[commit_index] != rob_ptr_top) & rob_entry_commit[commit_index].finish &
                                                         (!rob_entry_commit[commit_index].trap_flag) & (!rob_entry_commit[commit_index].end_flag) & rob_can_commit[commit_index - 1]);
         assign rob_ptr_commit_full[commit_index]    = (rob_can_commit[commit_index - 1]) ? (rob_ptr_commit_full[commit_index - 1] + 1) : rob_ptr_commit_full[commit_index - 1];

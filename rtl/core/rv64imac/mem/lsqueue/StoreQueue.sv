@@ -84,17 +84,19 @@ logic [7:0]                                 sq_bypass_wstrb_spec_o[SQ_entry_num 
 logic [63:0]                                sq_bypass_data_normal[SQ_entry_num - 1 : 0]/* verilator split_var */;
 logic [63:0]                                sq_bypass_data_spec[SQ_entry_num - 1 : 0]/* verilator split_var */;
 
+SQ_entry_ptr_inner_t              sq_w_ptr_nxt;
+assign sq_w_ptr_nxt = (sq_resp_inner[rename_width - 1].valid & sq_req[rename_width - 1] ) ? (sq_ptr_resp[rename_width - 1] + 1) : sq_ptr_resp[rename_width - 1];
 FF_D_with_syn_rst #(
     .DATA_LEN 	( SQ_entry_w + 1    ),
     .RST_DATA 	( 0                 )
 )u_sq_w_ptr
 (
-    .clk        ( clk                           ),
-    .rst_n      ( rst_n                         ),
-    .syn_rst    ( redirect                      ),
-    .wen        ( rename_fire                   ),
-    .data_in    ( sq_ptr_resp[rename_width - 1] ),
-    .data_out   ( sq_w_ptr                      )
+    .clk        ( clk           ),
+    .rst_n      ( rst_n         ),
+    .syn_rst    ( redirect      ),
+    .wen        ( rename_fire   ),
+    .data_in    ( sq_w_ptr_nxt  ),
+    .data_out   ( sq_w_ptr      )
 );
 
 FF_D_with_syn_rst #(
