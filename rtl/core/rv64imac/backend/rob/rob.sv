@@ -135,7 +135,7 @@ rob_entry_t     [dispatch_width - 1 : 0]    rob_entry_dispatch/* verilator split
 rob_entry_t                                 rob_entry_button;
 rob_entry_t                                 rob_entry_lq_raw;
 /* verilator lint_on UNUSEDSIGNAL */
-assign rob_entry_button = rob_entry[rob_ptr_button];
+assign rob_entry_button = rob_entry[rob_ptr_button[rob_entry_w - 1 : 0]];
 
 ls_rob_entry_ptr_t [rename_width - 1 : 0]   rob_ptr_resp/* verilator split_var */;
 rob_entry_ptr_t [rename_width - 1 : 0]      rob_ptr_enq;
