@@ -285,7 +285,7 @@ generate for(resp_index = 0 ; resp_index < rename_width; resp_index = resp_index
         assign sq_resp_inner[resp_index].valid     = ((sq_ptr_resp[resp_index][SQ_entry_w] == sq_r_ptr[SQ_entry_w]) |
                                                     (sq_ptr_resp[resp_index][SQ_entry_w - 1 : 0] != sq_r_ptr[SQ_entry_w - 1 : 0])) &
                                                     sq_resp_inner[resp_index - 1].valid;
-        assign sq_ptr_resp[resp_index]             = (sq_resp_inner[resp_index - 1].valid & sq_req[resp_index] ) ? (sq_ptr_resp[resp_index - 1] + 1) : sq_ptr_resp[resp_index - 1];
+        assign sq_ptr_resp[resp_index]             = (sq_resp_inner[resp_index - 1].valid & sq_req[resp_index - 1] ) ? (sq_ptr_resp[resp_index - 1] + 1) : sq_ptr_resp[resp_index - 1];
     end
     assign sq_ptr_enq[resp_index]              = sq_ptr_resp[resp_index][SQ_entry_w - 1 : 0];
     assign sq_resp_inner[resp_index].sq_ptr    = sq_ptr_enq[resp_index];
