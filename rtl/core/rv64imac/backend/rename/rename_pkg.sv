@@ -85,7 +85,7 @@ task automatic int_rename_one(
 endtask //automatic
 
 task automatic int_free_one(    
-    input  int_free_list_ptr_t                          free_index,
+    input  logic [int_free_list_w - 1 : 0]              free_index,
 
     input                       [commit_width - 1 :0]   commit_valid,
     input  int_free_list_ptr_t  [commit_width - 1 :0]   commit_dest,
@@ -99,7 +99,7 @@ task automatic int_free_one(
     int_free_list_wen = 0;
     int_free_list_nxt = 0;
     for(index = 0 ; index < commit_width; index = index + 1)begin: u_gen_rat_once
-        assign wen[index] = commit_valid[index] & (commit_dest[index] == free_index);
+        assign wen[index] = commit_valid[index] & (commit_dest[index][int_free_list_w - 1 : 0] == free_index);
         int_free_list_wen = int_free_list_wen | wen[index];
         int_free_list_nxt = int_free_list_nxt | ({int_preg_width{wen[index]}} & commit_pdest[index]);
     end

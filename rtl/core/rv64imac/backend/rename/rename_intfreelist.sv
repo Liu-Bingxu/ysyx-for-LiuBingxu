@@ -19,7 +19,6 @@ import core_setting_pkg::*;
 
 pint_regsrc_t       [int_free_list_NUM - 1:0]   int_free_list;
 int_free_list_ptr_t                             int_free_list_head;
-int_free_list_ptr_t                             int_free_list_arch_head;
 int_free_list_ptr_t                             int_free_list_arch_tail;
 
 int_free_list_ptr_t [decode_width - 1 : 0]      int_free_list_resp_point/* verilator split_var */;
@@ -28,7 +27,6 @@ int_free_list_ptr_t [commit_width - 1 : 0]      int_free_list_commit_point/* ver
 logic                                           int_free_list_arch_wen;
 
 int_free_list_ptr_t                             int_free_list_head_nxt;
-int_free_list_ptr_t                             int_free_list_arch_head_nxt;
 int_free_list_ptr_t                             int_free_list_arch_tail_nxt;
 
 int_free_list_ptr_t                             commit_num;
@@ -43,10 +41,9 @@ end
 
 assign int_free_list_arch_wen       = (|commit_int_need_free);
 
-assign int_free_list_head_nxt       = (redirect) ? (int_free_list_arch_wen ? int_free_list_arch_head_nxt : int_free_list_arch_head) : 
+assign int_free_list_head_nxt       = (redirect) ? (int_free_list_arch_wen ? int_free_list_arch_tail_nxt : int_free_list_arch_tail) : 
                     (rename_int_req[decode_width - 1] ? (int_free_list_resp_point[decode_width - 1] + 1) : int_free_list_resp_point[decode_width - 1]);
 
-assign int_free_list_arch_head_nxt  = int_free_list_arch_head + commit_num;
 assign int_free_list_arch_tail_nxt  = int_free_list_arch_tail + commit_num;
 
 FF_D_with_wen #(
@@ -61,19 +58,8 @@ u_int_free_list_head(
 );
 
 FF_D_with_wen #(
-	.DATA_LEN 	( int_free_list_w + 1   ),
-	.RST_DATA 	( 0                     ))
-u_int_free_list_arch_head(
-	.clk      	( clk                           ),
-	.rst_n    	( rst_n                         ),
-	.wen      	( int_free_list_arch_wen        ),
-	.data_in  	( int_free_list_arch_head_nxt   ),
-	.data_out 	( int_free_list_arch_head       )
-);
-
-FF_D_with_wen #(
-	.DATA_LEN 	( int_free_list_w + 1   ),
-	.RST_DATA 	( 0                     ))
+	.DATA_LEN 	( int_free_list_w + 1               ),
+	.RST_DATA 	( {1'b1, {int_free_list_w{1'b0}}}   ))
 u_int_free_list_arch_tail(
 	.clk      	( clk                           ),
 	.rst_n    	( rst_n                         ),
@@ -90,8 +76,7 @@ generate for(resp_index = 0 ; resp_index < decode_width; resp_index = resp_index
     else begin:u_gen_resp_point_another
         assign int_free_list_resp_point[resp_index] = rename_int_req[resp_index - 1] ? (int_free_list_resp_point[resp_index - 1] + 1) : int_free_list_resp_point[resp_index - 1];
     end
-    assign rename_int_resp[resp_index].rename_valid = (int_free_list_resp_point[resp_index][int_free_list_w - 1:0] != int_free_list_arch_tail[int_free_list_w - 1:0]) | 
-                                                (int_free_list_resp_point[resp_index][int_free_list_w] == int_free_list_arch_tail[int_free_list_w]);
+    assign rename_int_resp[resp_index].rename_valid = (int_free_list_resp_point[resp_index] != int_free_list_arch_tail);
     assign rename_int_resp[resp_index].rename_dest = int_free_list[int_free_list_resp_point[resp_index][int_free_list_w - 1:0]];
 end
 endgenerate
