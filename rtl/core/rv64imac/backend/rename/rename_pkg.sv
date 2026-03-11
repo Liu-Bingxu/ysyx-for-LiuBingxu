@@ -59,7 +59,7 @@ task automatic int_commit_one(
     for(index = 0 ; index < commit_width; index = index + 1)begin: u_gen_rat_once
         assign wen[index] = commit_valid[index] & (commit_dest[index] == rat_index);
         arch_rat_wen = arch_rat_wen | wen[index];
-        arch_rat_nxt = arch_rat_nxt | ({int_preg_width{wen[index]}} & commit_pdest[index]);
+        arch_rat_nxt = (wen[index]) ? commit_pdest[index] : arch_rat_nxt;
     end
 endtask //automatic
 
@@ -80,7 +80,7 @@ task automatic int_rename_one(
     for(index = 0 ; index < rename_width; index = index + 1)begin: u_gen_rat_once
         assign wen[index] = rename_valid[index] & (rename_dest[index] == rat_index);
         rat_wen = rat_wen | wen[index];
-        rat_nxt = rat_nxt | ({int_preg_width{wen[index]}} & rename_pdest[index]);
+        rat_nxt = (wen[index]) ? rename_pdest[index] : rat_nxt;
     end
 endtask //automatic
 
