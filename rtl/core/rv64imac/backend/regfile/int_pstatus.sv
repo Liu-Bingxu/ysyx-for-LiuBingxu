@@ -50,8 +50,8 @@ endgenerate
 
 genvar dispatch_index;
 generate for(dispatch_index = 0 ; dispatch_index < rename_width; dispatch_index = dispatch_index + 1) begin : U_gen_regfile_out
-    assign dispatch_psrc1_status[dispatch_index] = (regfile_status_wen[dispatch_psrc1]) ? regfile_status_nxt[dispatch_psrc1]: regfile_status[dispatch_psrc1];
-    assign dispatch_psrc2_status[dispatch_index] = (regfile_status_wen[dispatch_psrc2]) ? regfile_status_nxt[dispatch_psrc2]: regfile_status[dispatch_psrc2];
+    assign dispatch_psrc1_status[dispatch_index] = (|dispatch_psrc1) ? ((regfile_status_wen[dispatch_psrc1]) ? regfile_status_nxt[dispatch_psrc1]: regfile_status[dispatch_psrc1]) : 1'b1;
+    assign dispatch_psrc2_status[dispatch_index] = (|dispatch_psrc2) ? ((regfile_status_wen[dispatch_psrc2]) ? regfile_status_nxt[dispatch_psrc2]: regfile_status[dispatch_psrc2]) : 1'b1;
 end
 endgenerate
 
