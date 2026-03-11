@@ -308,7 +308,7 @@ assign sq_empty                 = (sq_r_ptr == sq_w_ptr);
 assign sq_entry_wirte_use       = sq_entry[sq_r_ptr];
 
 assign StoreQueue_valid_o           = (StoreQueue_rob_ptr_o == top_rob_ptr) & sq_entry_wirte_use.addr_finish & sq_entry_wirte_use.data_finish & 
-                                    (addrcache(StoreQueue_vaddr_o) & StoreQueue_can_write_sb | ((!addrcache(StoreQueue_vaddr_o)) & StoreQueue_can_write_uc) | 
+                                    ((addrcache(StoreQueue_vaddr_o) & StoreQueue_can_write_sb) | ((!addrcache(StoreQueue_vaddr_o)) & StoreQueue_can_write_uc) | 
                                     StoreQueue_addr_misalign_o | StoreQueue_page_error_o) & (!sq_empty);
 assign StoreQueue_addr_misalign_o   = sq_entry_wirte_use.addr_misalign  ;
 assign StoreQueue_page_error_o      = sq_entry_wirte_use.page_error     ;
