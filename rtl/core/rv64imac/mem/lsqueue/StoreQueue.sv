@@ -304,7 +304,7 @@ assign sq_wait                  = sq_bypass_wait[SQ_entry_num - 1];
 assign storeaddrUnit_ready_o    = 1'b1;
 assign storedataUnit_ready_o    = 1'b1;
 
-assign sq_empty                 = (sq_r_ptr != sq_w_ptr);
+assign sq_empty                 = (sq_r_ptr == sq_w_ptr);
 assign sq_entry_wirte_use       = sq_entry[sq_r_ptr];
 
 assign StoreQueue_valid_o           = (StoreQueue_rob_ptr_o == top_rob_ptr) & sq_entry_wirte_use.addr_finish & sq_entry_wirte_use.data_finish & 
