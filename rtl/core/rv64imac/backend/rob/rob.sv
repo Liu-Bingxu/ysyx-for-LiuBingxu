@@ -461,8 +461,8 @@ generate for(commit_index = 0 ; commit_index < commit_width; commit_index = comm
 end
 endgenerate
 
-assign top_rob_ptr = rob_ptr_top[rob_entry_w - 1 : 0];
-assign deq_rob_ptr = rob_ptr_top;
+assign top_rob_ptr = rob_ptr_button[rob_entry_w - 1 : 0];
+assign deq_rob_ptr = rob_ptr_button;
 
 genvar resp_index;
 generate for(resp_index = 0 ; resp_index < rename_width; resp_index = resp_index + 1) begin : U_gen_rob_resp
