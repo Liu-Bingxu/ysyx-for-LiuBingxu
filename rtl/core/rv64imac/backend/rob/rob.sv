@@ -302,7 +302,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
                                 ({5{loadUnit_page_error_o   }} & 5'hd) |
                                 ({5{loadUnit_load_error_o   }} & 5'h5);
     assign rob_entry_loadUnit_update_wen                   = loadUnit_valid_o & loadUnit_ready_o &
-                                                            (entry_index == loadUnit_rob_ptr_o) & (!rob_entry_loadUnit_update.finish) &
+                                                            (entry_index == loadUnit_rob_ptr_o) & (!rob_entry[entry_index].finish) &
                                                             ((!LoadQueue_flush_o) | (entry_index != LoadQueue_rob_ptr_o));
     assign rob_entry_loadUnit_update.finish                = 1'b1                                        ;
     assign rob_entry_loadUnit_update.rfwen                 = rob_entry[entry_index].rfwen                ;
