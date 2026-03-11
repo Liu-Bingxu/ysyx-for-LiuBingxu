@@ -617,7 +617,7 @@ generate for(decode_index = 0 ; decode_index < decode_width; decode_index = deco
     assign src1_type            =   (csrrwi | csrrci | csrrsi | auipc | jal) ? src_imm : 
                                     ((src1 == 5'h0) | lui) ? src_zero : src_reg;
     assign src2                 = rs2;
-    assign src2_type            =   (U_flag | J_flag | I_flag | S_flag | arith_w_flag | csrrc | csrrs | csrrci | csrrsi) ? src_imm :
+    assign src2_type            =   (U_flag | J_flag | I_flag | arith_w_flag | csrrc | csrrs | csrrci | csrrsi) ? src_imm :
                                     ((src2 == 5'h0) | csrrw | csrrwi) ? src_zero : src_reg;
     assign rfwen                = ((I_flag | U_flag | A_flag | R_flag | RW_flag | J_flag | csr_ren) & (rd != 5'h0));
     assign csrwen               = csr_wen;
