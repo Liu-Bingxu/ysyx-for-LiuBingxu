@@ -525,7 +525,8 @@ assign rob_gen_redirect_target     = rob_trap_tval_inner[commit_width - 1];
 assign rob_can_interrupt           = rob_entry_button.no_intr_exec;
 assign rob_commit_valid            = rob_commit_valid_inner[commit_width - 1] & (!interrupt_happen);
 assign rob_commit_pc               = rob_ftq_entry.start_pc + {{(64 - BLOCK_BIT_NUM){1'b0}}, rob_inst_offset_inner[commit_width - 1]};
-assign rob_commit_next_pc          = (rob_entry_button.trap_flag | (rob_entry_button.trap_cause == 5'd24)) ? 
+assign rob_commit_next_pc          = (rob_entry_button.trap_flag | 
+                                    ((rob_entry_button.trap_cause == 5'd24) & rob_entry_button.end_flag & rob_ftq_entry.token)) ? 
                                     rob_entry_button.trap_tval : 
                                     rob_commit_pc + (rob_rvc_flag_inner[commit_width - 1] ? 64'h2 : 64'h4);
 
