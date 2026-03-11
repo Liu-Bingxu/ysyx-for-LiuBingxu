@@ -121,10 +121,23 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     assign rename_inst[rename_index].ftq_ptr             = decode_out[rename_index].ftq_ptr                     ;
     assign rename_inst[rename_index].inst_offset         = decode_out[rename_index].inst_offset                 ;    
 
+    if(rename_index == 0)begin: u_gen_old_pdest_0
+        assign rob_req_entry[rename_index].old_pdest     = int_dest_fromrat[rename_index];
+    end
+    else begin: u_gen_old_pdest_another
+        pint_regdest_t bypass_pdest;
+        rename_bypass_pdest #(.BYPASS_NUM(rename_index)) u_dest(
+            .src_need       (decode_out[rename_index].rfwen         ),
+            .src            (decode_out[rename_index].wdest         ),
+            .psrc           (int_dest_fromrat[rename_index]         ),
+            .rob_entry      (rob_req_entry[rename_index - 1 : 0]    ),
+            .psrc_o         (bypass_pdest                           )
+        );
+        assign rob_req_entry[rename_index].old_pdest        = bypass_pdest;
+    end
     assign rob_req_entry[rename_index].finish               = rename_rob_finish[rename_index]             ;
     assign rob_req_entry[rename_index].rfwen                = decode_out[rename_index].rfwen              ;
     assign rob_req_entry[rename_index].wdest                = decode_out[rename_index].wdest              ;
-    assign rob_req_entry[rename_index].old_pdest            = int_dest_fromrat[rename_index]              ;
     assign rob_req_entry[rename_index].pwdest               = rename_int_resp[rename_index].rename_dest   ;
     assign rob_req_entry[rename_index].no_intr_exec         = decode_out[rename_index].no_intr_exec       ;
     assign rob_req_entry[rename_index].block_forward_flag   = decode_out[rename_index].block_forward_flag ;
