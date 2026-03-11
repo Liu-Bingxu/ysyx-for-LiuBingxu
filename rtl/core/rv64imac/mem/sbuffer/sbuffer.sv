@@ -103,10 +103,10 @@ logic [sb_line - 1 : 0]     sb_addr_hit_but_same_send;
 logic [sb_line_bit - 1 : 0] sb_write_index_sel[sb_line - 1 : 0]/* verilator split_var */;
 
 logic [15:0]                sq_wstrb;
-assign sq_wstrb = StoreQueue_mem_waddr_o[3] ? {8'h0, StoreQueue_mem_wstrb_o} : {StoreQueue_mem_wstrb_o, 8'h0};
+assign sq_wstrb = StoreQueue_mem_waddr_o[3] ? {StoreQueue_mem_wstrb_o, 8'h0} : {8'h0, StoreQueue_mem_wstrb_o};
 
 logic [127:0]               sq_wdata;
-assign sq_wdata = StoreQueue_mem_waddr_o[3] ? {64'h0, StoreQueue_mem_wdata_o} : {StoreQueue_mem_wdata_o, 64'h0};
+assign sq_wdata = StoreQueue_mem_waddr_o[3] ? {StoreQueue_mem_wdata_o, 64'h0} : {64'h0, StoreQueue_mem_wdata_o};
 
 genvar line_index;
 generate for(line_index = 0 ; line_index < sb_line; line_index = line_index + 1) begin : U_gen_sb_line
