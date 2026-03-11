@@ -497,6 +497,7 @@ rob u_rob(
 	.rob_commit_valid                	( rob_commit_valid                 ),
 	.rob_commit_pc                   	( rob_commit_pc                    ),
 	.rob_commit_next_pc              	( rob_commit_next_pc               ),
+    .interrupt_happen                   ( interrupt_happen                 ),
 	.rob_trap_valid                  	( rob_trap_valid                   ),
 	.rob_trap_cause                  	( rob_trap_cause                   ),
 	.rob_trap_tval                   	( rob_trap_tval                    )

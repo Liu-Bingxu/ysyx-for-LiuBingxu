@@ -118,6 +118,7 @@ import rob_pkg::*;
     output [63:0]                                       rob_commit_pc,
     output [63:0]                                       rob_commit_next_pc,
     // trap
+    input                                               interrupt_happen,
     output                                              rob_trap_valid,
     output [63:0]                                       rob_trap_cause,
     output [63:0]                                       rob_trap_tval
@@ -451,11 +452,11 @@ generate for(commit_index = 0 ; commit_index < commit_width; commit_index = comm
     assign rob_ptr_commit[commit_index]         = rob_ptr_commit_full[commit_index][rob_entry_w - 1 : 0];
     assign rob_entry_commit[commit_index]       = rob_entry[rob_ptr_commit[commit_index]];
 
-    assign commit_intrat_valid[commit_index]    = (rob_can_commit[commit_index] & rob_entry_commit[commit_index].rfwen);
+    assign commit_intrat_valid[commit_index]    = (rob_can_commit[commit_index] & rob_entry_commit[commit_index].rfwen & (!interrupt_happen));
     assign commit_intrat_dest[commit_index]     = rob_entry_commit[commit_index].wdest;
     assign commit_intrat_pdest[commit_index]    = rob_entry_commit[commit_index].pwdest;
 
-    assign commit_int_need_free[commit_index]   = (rob_can_commit[commit_index] & rob_entry_commit[commit_index].rfwen);
+    assign commit_int_need_free[commit_index]   = (rob_can_commit[commit_index] & rob_entry_commit[commit_index].rfwen & (!interrupt_happen));
     assign commit_int_old_pdest[commit_index]   = rob_entry_commit[commit_index].old_pdest;
 end
 endgenerate
@@ -522,9 +523,11 @@ assign rob_gen_redirect_end        = rob_end_flag_inner[commit_width - 1];
 assign rob_gen_redirect_target     = rob_trap_tval_inner[commit_width - 1];
 
 assign rob_can_interrupt           = rob_entry_button.no_intr_exec;
-assign rob_commit_valid            = rob_commit_valid_inner[commit_width - 1];
+assign rob_commit_valid            = rob_commit_valid_inner[commit_width - 1] & (!interrupt_happen);
 assign rob_commit_pc               = rob_ftq_entry.start_pc + {{(64 - BLOCK_BIT_NUM){1'b0}}, rob_inst_offset_inner[commit_width - 1]};
-assign rob_commit_next_pc          = rob_commit_pc + (rob_rvc_flag_inner[commit_width - 1] ? 64'h2 : 64'h4);
+assign rob_commit_next_pc          = (rob_entry_button.trap_flag | (rob_entry_button.trap_cause == 5'd24)) ? 
+                                    rob_entry_button.trap_tval : 
+                                    rob_commit_pc + (rob_rvc_flag_inner[commit_width - 1] ? 64'h2 : 64'h4);
 
 assign rob_trap_valid              = (rob_commit_valid_inner[commit_width - 1] & rob_trap_flag_inner[commit_width - 1] &
                                     (rob_trap_cause_inner[commit_width - 1] != 5'd24) & 
