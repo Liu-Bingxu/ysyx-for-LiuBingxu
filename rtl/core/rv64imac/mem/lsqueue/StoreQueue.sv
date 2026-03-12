@@ -150,12 +150,7 @@ always_comb begin
     endcase
 end
 
-logic [63:0] store_data;
-memory_store_move u_memory_store_move(
-    .pre_data    	( sq_entry_wirte_use.mem_wdata      ),
-    .data_offset 	( sq_entry_wirte_use.mem_waddr[2:0] ),
-    .data        	( store_data                        )
-);
+logic [63:0] sq_bypass_store_data[SQ_entry_num - 1 : 0];
 
 genvar entry_index;
 generate for(entry_index = 0 ; entry_index < SQ_entry_num; entry_index = entry_index + 1) begin : U_gen_sq_entry
@@ -167,6 +162,12 @@ generate for(entry_index = 0 ; entry_index < SQ_entry_num; entry_index = entry_i
     sq_entry_t  sq_entry_enq;
     sq_entry_t  sq_entry_storeaddr_update;
     sq_entry_t  sq_entry_storedata_update;
+
+    memory_store_move u_memory_store_move(
+        .pre_data    	( sq_entry[entry_index].mem_wdata      ),
+        .data_offset 	( sq_entry[entry_index].mem_waddr[2:0] ),
+        .data        	( sq_bypass_store_data[entry_index]    )
+    );
 
     StoreQueue_enq u_StoreQueue_enq(
         .rename_fire       	( rename_fire        ),
@@ -215,15 +216,15 @@ generate for(entry_index = 0 ; entry_index < SQ_entry_num; entry_index = entry_i
         assign sq_bypass_wait[entry_index]              = (Queue_entry_use_for_bypass & (!sq_entry[entry_index].data_finish));
         assign sq_bypass_wstrb_normal_o[entry_index]    = sq_bypass_wstrb_normal[entry_index];
         assign sq_bypass_wstrb_spec_o[entry_index]      = sq_bypass_wstrb_spec[entry_index];
-        assign sq_bypass_data_normal[entry_index]       = data_splicing_64(64'h0, sq_entry[entry_index].mem_wdata, sq_bypass_wstrb_normal[entry_index]);
-        assign sq_bypass_data_spec[entry_index]         = data_splicing_64(64'h0, sq_entry[entry_index].mem_wdata, sq_bypass_wstrb_spec[entry_index]);
+        assign sq_bypass_data_normal[entry_index]       = data_splicing_64(64'h0, sq_bypass_store_data[entry_index], sq_bypass_wstrb_normal[entry_index]);
+        assign sq_bypass_data_spec[entry_index]         = data_splicing_64(64'h0, sq_bypass_store_data[entry_index], sq_bypass_wstrb_spec[entry_index]);
     end
     else begin : U_gen_sq_bypass_other
         assign sq_bypass_wait[entry_index]              = ((Queue_entry_use_for_bypass & (!sq_entry[entry_index].data_finish)) | sq_bypass_wait[entry_index - 1]);
         assign sq_bypass_wstrb_normal_o[entry_index]    = (sq_bypass_wstrb_normal[entry_index] | sq_bypass_wstrb_normal_o[entry_index - 1]);
         assign sq_bypass_wstrb_spec_o[entry_index]      = (sq_bypass_wstrb_spec[entry_index] | sq_bypass_wstrb_spec_o[entry_index - 1]);
-        assign sq_bypass_data_normal[entry_index]       = data_splicing_64(sq_bypass_data_normal[entry_index - 1], sq_entry[entry_index].mem_wdata, sq_bypass_wstrb_normal[entry_index]);
-        assign sq_bypass_data_spec[entry_index]         = data_splicing_64(sq_bypass_data_spec[entry_index - 1], sq_entry[entry_index].mem_wdata, sq_bypass_wstrb_spec[entry_index]);
+        assign sq_bypass_data_normal[entry_index]       = data_splicing_64(sq_bypass_data_normal[entry_index - 1], sq_bypass_store_data[entry_index], sq_bypass_wstrb_normal[entry_index]);
+        assign sq_bypass_data_spec[entry_index]         = data_splicing_64(sq_bypass_data_spec[entry_index - 1],   sq_bypass_store_data[entry_index], sq_bypass_wstrb_spec[entry_index]);
     end
 
     logic [7:0] bypass_byte_wstrb, bypass_half_wstrb, bypass_word_wstrb, bypass_double_wstrb;
@@ -305,7 +306,7 @@ assign storeaddrUnit_ready_o    = 1'b1;
 assign storedataUnit_ready_o    = 1'b1;
 
 assign sq_empty                 = (sq_r_ptr == sq_w_ptr);
-assign sq_entry_wirte_use       = sq_entry[sq_r_ptr];
+assign sq_entry_wirte_use       = sq_entry[sq_r_ptr[SQ_entry_w - 1 : 0]];
 
 assign StoreQueue_valid_o           = (StoreQueue_rob_ptr_o == top_rob_ptr) & sq_entry_wirte_use.addr_finish & sq_entry_wirte_use.data_finish & 
                                     ((addrcache(StoreQueue_vaddr_o) & StoreQueue_can_write_sb) | ((!addrcache(StoreQueue_vaddr_o)) & StoreQueue_can_write_uc) | 
@@ -316,8 +317,8 @@ assign StoreQueue_rob_ptr_o         = sq_entry_wirte_use.rob_ptr[rob_entry_w - 1
 assign StoreQueue_vaddr_o           = sq_entry_wirte_use.mem_waddr      ;
 
 assign StoreQueue2Uncache_valid     = StoreQueue_valid_o & (!StoreQueue_addr_misalign_o) & (!StoreQueue_page_error_o) & (!addrcache(StoreQueue_vaddr_o));
-assign StoreQueue_Uncache_waddr_o   = sq_entry_wirte_use.mem_waddr      ;
-assign StoreQueue_Uncache_wdata_o   = store_data                        ;
+assign StoreQueue_Uncache_waddr_o   = sq_entry_wirte_use.mem_waddr;
+assign StoreQueue_Uncache_wdata_o   = sq_bypass_store_data[sq_r_ptr[SQ_entry_w - 1 : 0]];
 assign StoreQueue_Uncache_wstrb_o   = 8'h0 |
                                     ({8{store_byte  (sq_entry_wirte_use.storeaddrUnit_op)}} & byte_wstrb   ) |
                                     ({8{store_half  (sq_entry_wirte_use.storeaddrUnit_op)}} & half_wstrb   ) |
@@ -325,8 +326,8 @@ assign StoreQueue_Uncache_wstrb_o   = 8'h0 |
                                     ({8{store_double(sq_entry_wirte_use.storeaddrUnit_op)}} & double_wstrb ) ;
 
 assign StoreQueue2StoreBuffer_valid = StoreQueue_valid_o & (!StoreQueue_addr_misalign_o) & (!StoreQueue_page_error_o) & addrcache(StoreQueue_vaddr_o);
-assign StoreQueue_mem_waddr_o       = sq_entry_wirte_use.mem_waddr      ;
-assign StoreQueue_mem_wdata_o       = store_data                        ;
+assign StoreQueue_mem_waddr_o       = sq_entry_wirte_use.mem_waddr;
+assign StoreQueue_mem_wdata_o       = sq_bypass_store_data[sq_r_ptr[SQ_entry_w - 1 : 0]];
 assign StoreQueue_mem_wstrb_o       = 8'h0 |
                                     ({8{store_byte  (sq_entry_wirte_use.storeaddrUnit_op)}} & byte_wstrb   ) | 
                                     ({8{store_half  (sq_entry_wirte_use.storeaddrUnit_op)}} & half_wstrb   ) |
