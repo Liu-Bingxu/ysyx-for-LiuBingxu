@@ -490,7 +490,8 @@ FF_D_without_asyn_rst #(.DATA_LEN(128))u_carry5_0_reg(.clk(clk),.wen(pipeline2_w
 assign pipeline1_ready = ((!pipeline2_valid) | pipeline2_ready);
 assign pipeline2_ready = mul_ready_o;
 
-logic[127:0] res = sum5_0_reg + carry5_0_reg;
+logic [127:0] res;
+assign res = sum5_0_reg + carry5_0_reg;
 
 assign mul_valid_o      = pipeline2_valid;
 assign mul_rob_ptr_o    = rob_ptr_pipeline2;
