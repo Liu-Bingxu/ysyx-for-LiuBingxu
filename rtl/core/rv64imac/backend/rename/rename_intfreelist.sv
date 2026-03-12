@@ -41,7 +41,10 @@ end
 
 assign int_free_list_arch_wen       = (|commit_int_need_free);
 
-assign int_free_list_head_nxt       = (redirect) ? (int_free_list_arch_wen ? int_free_list_arch_tail_nxt : int_free_list_arch_tail) : 
+assign int_free_list_head_nxt       = (redirect) ? 
+                    (int_free_list_arch_wen ? 
+                    {(!int_free_list_arch_tail_nxt[int_free_list_w]), int_free_list_arch_tail_nxt[int_free_list_w - 1: 0]} : 
+                    {(!int_free_list_arch_tail[int_free_list_w]), int_free_list_arch_tail[int_free_list_w - 1: 0]}) : 
                     (rename_int_req[decode_width - 1] ? (int_free_list_resp_point[decode_width - 1] + 1) : int_free_list_resp_point[decode_width - 1]);
 
 assign int_free_list_arch_tail_nxt  = int_free_list_arch_tail + commit_num;
