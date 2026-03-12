@@ -316,8 +316,9 @@ compressor_32#(84) l2_compressor_32_3 ( .data0(l2_9 ), .data1(l2_10), .data2(l2_
 compressor_32#(82) l2_compressor_32_4 ( .data0(l2_12), .data1(l2_13), .data2(l2_14), .sum(sum2_4 ), .carry_o(carry2_4 ));
 compressor_32#(74) l2_compressor_32_5 ( .data0(l2_15), .data1(l2_16), .data2(l2_17), .sum(sum2_5 ), .carry_o(carry2_5 ));
 
+mul_optype_t    op_pipeline1;
 rob_entry_ptr_t rob_ptr_pipeline1;
-pint_regdest_t pwdest_pipeline1;
+pint_regdest_t  pwdest_pipeline1;
 
 logic[81:0] sum2_0_reg;
 logic[83:0] sum2_1_reg;
@@ -347,6 +348,7 @@ FF_D_with_syn_rst #(
 	.data_in    ( pipeline1_nxt     ),
 	.data_out   ( pipeline1_valid   )
 );
+FF_D_without_asyn_rst #(.DATA_LEN(9))             u_op_pipeline1(.clk(clk),.wen(pipeline1_wen),.data_in (op),.data_out(op_pipeline1));
 FF_D_without_asyn_rst #(.DATA_LEN(rob_entry_w))   u_rob_ptr_pipeline1(.clk(clk),.wen(pipeline1_wen),.data_in (rob_ptr),.data_out(rob_ptr_pipeline1));
 FF_D_without_asyn_rst #(.DATA_LEN(int_preg_width))u_pwdest_pipeline1(.clk(clk),.wen(pipeline1_wen),.data_in (pwdest),.data_out(pwdest_pipeline1));
 
@@ -456,8 +458,9 @@ assign l5_3  = {carry4_1[105:0], 22'h0};
 
 compressor_42#(128) l5_compressor_42_0 ( .data0(l5_0 ), .data1(l5_1 ), .data2(l5_2 ), .data3(l5_3 ), .sum(sum5_0 ), .carry_o(carry5_0 ));
 
+mul_optype_t    op_pipeline2;
 rob_entry_ptr_t rob_ptr_pipeline2;
-pint_regdest_t pwdest_pipeline2;
+pint_regdest_t  pwdest_pipeline2;
 
 logic[127:0] sum5_0_reg;
 logic[127:0] carry5_0_reg;
@@ -476,6 +479,7 @@ FF_D_with_syn_rst #(
 	.data_in    ( pipeline2_nxt     ),
 	.data_out   ( pipeline2_valid   )
 );
+FF_D_without_asyn_rst #(.DATA_LEN(9))             u_op_pipeline2(.clk(clk),.wen(pipeline2_wen),.data_in (op_pipeline1),.data_out(op_pipeline2));
 FF_D_without_asyn_rst #(.DATA_LEN(rob_entry_w))   u_rob_ptr_pipeline2(.clk(clk),.wen(pipeline2_wen),.data_in (rob_ptr_pipeline1),.data_out(rob_ptr_pipeline2));
 FF_D_without_asyn_rst #(.DATA_LEN(int_preg_width))u_pwdest_pipeline2(.clk(clk),.wen(pipeline2_wen),.data_in (pwdest_pipeline1),.data_out(pwdest_pipeline2));
 
@@ -491,8 +495,8 @@ logic[127:0] res = sum5_0_reg + carry5_0_reg;
 assign mul_valid_o      = pipeline2_valid;
 assign mul_rob_ptr_o    = rob_ptr_pipeline2;
 assign mul_pwdest_o     = pwdest_pipeline2;
-assign mul_preg_wdata_o =   ({64{mul_low(op) }} & res[63:0]                 ) | 
-                            ({64{mul_high(op)}} & res[127:64]               ) | 
-                            ({64{mul_word(op)}} & {{32{res[31]}}, res[31:0]});
+assign mul_preg_wdata_o =   ({64{mul_low(op_pipeline2) }} & res[63:0]                 ) | 
+                            ({64{mul_high(op_pipeline2)}} & res[127:64]               ) | 
+                            ({64{mul_word(op_pipeline2)}} & {{32{res[31]}}, res[31:0]});
 
 endmodule //Mul_fu
