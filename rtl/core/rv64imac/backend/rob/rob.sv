@@ -434,7 +434,8 @@ generate for(commit_index = 0 ; commit_index < commit_width; commit_index = comm
     end
     else begin : U_gen_rob_commit_other
         //! TODO 现在trap和end只能在第一个提交
-        assign rob_can_commit[commit_index]         = ((rob_ptr_commit_full[commit_index] != rob_ptr_top) & rob_entry_commit[commit_index].finish &
+        assign rob_can_commit[commit_index]         = ((rob_ptr_commit_full[commit_index] != rob_ptr_top) & rob_entry_commit[commit_index].finish & 
+                                                        (!rob_entry_commit[commit_index - 1].trap_flag) & (!rob_entry_commit[commit_index - 1].end_flag) & 
                                                         (!rob_entry_commit[commit_index].trap_flag) & (!rob_entry_commit[commit_index].end_flag) & rob_can_commit[commit_index - 1]);
         assign rob_ptr_commit_full[commit_index]    = (rob_can_commit[commit_index - 1]) ? (rob_ptr_commit_full[commit_index - 1] + 1) : rob_ptr_commit_full[commit_index - 1];
 
@@ -452,11 +453,11 @@ generate for(commit_index = 0 ; commit_index < commit_width; commit_index = comm
     assign rob_ptr_commit[commit_index]         = rob_ptr_commit_full[commit_index][rob_entry_w - 1 : 0];
     assign rob_entry_commit[commit_index]       = rob_entry[rob_ptr_commit[commit_index]];
 
-    assign commit_intrat_valid[commit_index]    = (rob_can_commit[commit_index] & rob_entry_commit[commit_index].rfwen & (!interrupt_happen));
+    assign commit_intrat_valid[commit_index]    = (rob_can_commit[commit_index] & rob_entry_commit[commit_index].rfwen & (!interrupt_happen) & ((!rob_entry_commit[commit_index].trap_flag) | (rob_entry_commit[commit_index].trap_cause == 5'd24) | (rob_entry_commit[commit_index].trap_cause == 5'd25)));
     assign commit_intrat_dest[commit_index]     = rob_entry_commit[commit_index].wdest;
     assign commit_intrat_pdest[commit_index]    = rob_entry_commit[commit_index].pwdest;
 
-    assign commit_int_need_free[commit_index]   = (rob_can_commit[commit_index] & rob_entry_commit[commit_index].rfwen & (!interrupt_happen));
+    assign commit_int_need_free[commit_index]   = (rob_can_commit[commit_index] & rob_entry_commit[commit_index].rfwen & (!interrupt_happen) & ((!rob_entry_commit[commit_index].trap_flag) | (rob_entry_commit[commit_index].trap_cause == 5'd24) | (rob_entry_commit[commit_index].trap_cause == 5'd25)));
     assign commit_int_old_pdest[commit_index]   = rob_entry_commit[commit_index].old_pdest;
 end
 endgenerate
