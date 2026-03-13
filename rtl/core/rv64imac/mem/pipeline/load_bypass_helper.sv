@@ -87,12 +87,12 @@ FF_D_with_syn_rst #(
     .RST_DATA 	( 0  )
 )u_recv_stage_valid
 (
-    .clk      	( clk               ),
-    .rst_n    	( rst_n             ),
-    .syn_rst    ( redirect          ),
-    .wen        ( loadUnit_arready  ),
-    .data_in  	( loadUnit_arvalid  ),
-    .data_out 	( recv_stage_valid  )
+    .clk      	( clk                                       ),
+    .rst_n    	( rst_n                                     ),
+    .syn_rst    ( redirect                                  ),
+    .wen        ( ((!recv_stage_valid) | recv_stage_ready)  ),
+    .data_in  	( recv_valid                                ),
+    .data_out 	( recv_stage_valid                          )
 );
 
 FF_D_without_asyn_rst #(1 ) u_loaduncache_reg_o         (clk,recv_valid, addrcache(loadUnit_araddr),loaduncache_reg);
