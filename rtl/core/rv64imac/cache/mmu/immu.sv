@@ -50,8 +50,6 @@ localparam WAIT_RESP    = 2'h3;
 localparam SEND_ADDR    = 2'h2;
 logic [1:0]              stage_status;
 logic                    immu_miss_valid_reg;
-logic [127:0]            pte_reg;
-logic                    pte_error_reg;
 logic [63:0]             paddr_out;
 logic                    paddr_error_out;
 //跳过mmu阶段
@@ -205,7 +203,7 @@ assign tlb_sel              =   ({128{tlb_hit[0 ]}} & tlb_4K[0] ) |
                                 ({128{tlb_hit[45]}} & tlb_sp[5 ]) | 
                                 ({128{tlb_hit[46]}} & tlb_sp[6 ]) | 
                                 ({128{tlb_hit[47]}} & tlb_sp[7 ]) | 
-                                ({128{(stage_status == SEND_ADDR)}} & pte_reg);
+                                ({128{(stage_status == WAIT_RESP)}} & pte);
 
 assign page_4K_wen           = page_wen & (pte[2:0] == 3'h0);
 assign page_sp_wen           = page_wen & (pte[2:0] != 3'h0);
@@ -268,14 +266,12 @@ always_ff @(posedge clk or negedge rst_n) begin
         endcase
     end
 end
-FF_D_without_asyn_rst #(128)  u_pte            (clk,pte_valid,pte,pte_reg);
-FF_D_without_asyn_rst #(1)    u_pte_error      (clk,pte_valid,pte_error,pte_error_reg);
 assign page_wen         = (stage_status == WAIT_RESP) & (pte_valid) & (!pte_error);
 //**********************************************************************************************
 //?output
 assign immu_miss_valid  = immu_miss_valid_reg;
 assign vaddr_i          = vaddr;
-assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | (stage_status == SEND_ADDR) | (vaddr[63:39] != {25{vaddr[38]}})) & mmu_fifo_valid & (paddr_ready | (!paddr_valid)));
+assign mmu_fifo_ready   = ((stage_jump_mmu | (|tlb_hit) | ((stage_status == WAIT_RESP) & (pte_valid)) | (vaddr[63:39] != {25{vaddr[38]}})) & mmu_fifo_valid & (paddr_ready | (!paddr_valid)));
 FF_D_with_syn_rst #(
     .DATA_LEN 	(1  ),
     .RST_DATA 	(0  ))
@@ -301,6 +297,6 @@ assign paddr_out        =   (stage_jump_mmu) ? vaddr :
 assign paddr_error_out  =   ((vaddr[63:39] != {25{vaddr[38]}}) | 
                             (!tlb_sel[61]) | 
                             (current_priv_status[0] == tlb_sel[62]) | 
-                            ((stage_status == SEND_ADDR) & pte_error_reg)) & (!stage_jump_mmu);
+                            ((stage_status == SEND_ADDR) & pte_error)) & (!stage_jump_mmu);
 
 endmodule //immu
