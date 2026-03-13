@@ -322,8 +322,10 @@ assign atomicUnit_st_addr_misalign_o = (addr_misalign_flag  & (!atomic_lr(op)));
 assign atomicUnit_ld_page_error_o    = (page_error          & ( atomic_lr(op)));
 assign atomicUnit_st_page_error_o    = (page_error          & (!atomic_lr(op)));
 assign atomicUnit_load_error_o       = (((load_resp != 2'h1) | paddr_access_error) & ( atomic_lr(op)));
-assign atomicUnit_store_error_o      = ((((store_resp != 2'h1) | paddr_access_error) & (!atomic_sc(op))) | 
-                                        (((load_resp  != 2'h1) | paddr_access_error) & (!atomic_lr(op))));
+assign atomicUnit_store_error_o      = ((!atomic_lr(op)) & (paddr_access_error | 
+                                        ((store_resp == 2'h0) & (!atomic_sc(op))) | 
+                                        ((store_resp == 2'h2)) | ((store_resp == 2'h3)) | 
+                                        ((load_resp  != 2'h1) & (!atomic_sc(op)))));
 assign atomicUnit_rob_ptr_o          = rob_ptr;
 assign atomic_vaddr_o                = vaddr;
 assign atomicUnit_rfwen_o            = rfwen & (!atomicUnit_ld_addr_misalign_o) & (!atomicUnit_st_addr_misalign_o) & (!atomicUnit_ld_page_error_o) & 
