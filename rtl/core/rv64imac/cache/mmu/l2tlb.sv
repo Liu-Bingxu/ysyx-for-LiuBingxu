@@ -473,7 +473,7 @@ assign mmu_araddr               = mmu_araddr_wire;
 assign mmu_rready               = 1'b1;
 assign immu_miss_ready          = (stage_status == IDLE);
 assign store_dmmu_miss_ready    = (stage_status == IDLE) & (!immu_miss_valid);
-assign load_dmmu_miss_ready     = (stage_status == IDLE) & (!immu_miss_valid) & (!store_dmmu_miss_ready);
+assign load_dmmu_miss_ready     = (stage_status == IDLE) & (!immu_miss_valid) & (!store_dmmu_miss_valid);
 assign pte_valid                = (stage_status == OUT);
 assign pte                      = out_pte;
 assign pte_error                = out_error;
