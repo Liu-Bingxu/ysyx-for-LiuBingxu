@@ -883,7 +883,7 @@ u_axicb_crossbar_top(
     .slv3_awaddr   	(store_uncache_awaddr   ),
     .slv3_awlen    	(8'h0                   ),
     .slv3_awsize   	(3'h3                   ),
-    .slv3_awburst  	(2'h0                   ),
+    .slv3_awburst  	(2'h1                   ),
     .slv3_awlock   	(1'h0                   ),
     .slv3_awcache  	(4'h0                   ),
     .slv3_awprot   	(3'h0                   ),
@@ -907,7 +907,7 @@ u_axicb_crossbar_top(
     .slv3_araddr   	(load_uncache_araddr    ),
     .slv3_arlen    	(8'h0                   ),
     .slv3_arsize   	(3'h3                   ),
-    .slv3_arburst  	(2'h0                   ),
+    .slv3_arburst  	(2'h1                   ),
     .slv3_arlock   	(1'h0                   ),
     .slv3_arcache  	(4'h0                   ),
     .slv3_arprot   	(3'h0                   ),
@@ -1477,37 +1477,49 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
 end
 endgenerate
 
-wire io_valid0 = ((u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button != u_core_ooo_top.u_backend_top.u_rob.rob_ptr_top) & 
-                u_core_ooo_top.u_backend_top.u_rob.rob_entry[u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button].finish);
+rob_entry_t     rob_entry_commit0;
+rob_entry_t     rob_entry_commit1;
 
-wire io_valid1 = (((u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button + 1) != u_core_ooo_top.u_backend_top.u_rob.rob_ptr_top) & io_valid0 &
-                (!u_core_ooo_top.u_backend_top.u_rob.rob_entry[u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button + 1].trap_flag) &
-                (!u_core_ooo_top.u_backend_top.u_rob.rob_entry[u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button + 1].end_flag) &
-                u_core_ooo_top.u_backend_top.u_rob.rob_entry[u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button + 1].finish);
+logic [5:0] rob_ptr_commit0;
+logic [5:0] rob_ptr_commit1;
+
+assign rob_ptr_commit0 = u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0];
+assign rob_ptr_commit1 = (u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0] + 6'h1);
+
+assign rob_entry_commit0 = u_core_ooo_top.u_backend_top.u_rob.rob_entry[rob_ptr_commit0];
+assign rob_entry_commit1 = u_core_ooo_top.u_backend_top.u_rob.rob_entry[rob_ptr_commit1];
+
+wire io_valid0 = ((u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button != u_core_ooo_top.u_backend_top.u_rob.rob_ptr_top)  &
+                rob_entry_commit0.finish) & 
+                ((!rob_entry_commit0.trap_flag) | 
+                (rob_entry_commit0.trap_cause != 5'd26));
+
+wire io_valid1 = (((u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button + 1) != u_core_ooo_top.u_backend_top.u_rob.rob_ptr_top) & 
+                io_valid0 &
+                (!rob_entry_commit0.trap_flag) & 
+                (!rob_entry_commit0.end_flag) & 
+                (!rob_entry_commit1.trap_flag) &
+                (!rob_entry_commit1.end_flag) &
+                rob_entry_commit1.finish);
+
+logic [63:0] next_pc;
+assign next_pc = u_core_ooo_top.u_backend_top.u_csr.u_trap_control.csr_jump_flag ? 
+                    u_core_ooo_top.u_backend_top.u_csr.u_trap_control.csr_jump_addr : 
+                    u_core_ooo_top.u_backend_top.u_csr.u_trap_control.rob_commit_next_pc;
 
 DifftestInstrCommit u_DifftestInstrCommit0(
     .clock      	(clk                                                                ),
     .io_valid   	(io_valid0                                                          ),
-    .io_skip    	(rob_entry_io_skip[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]]             ),
-    .io_isRVC   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].rvc_flag    ),
-    .io_rfwen   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].rfwen       ),
+    .io_skip    	(rob_entry_io_skip[rob_ptr_commit0]                                 ),
+    .io_isRVC   	(rob_entry_commit0.rvc_flag                                         ),
+    .io_rfwen   	(rob_entry_commit0.rfwen                                            ),
     .io_fpwen   	(1'b0                                                               ),
     .io_vecwen  	(1'b0                                                               ),
-    .io_wpdest  	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].pwdest      ),
-    .io_wdest   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].wdest       ),
-    .io_pc      	(u_core_ooo_top.u_frontend_top.u_ftq.entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].ftq_ptr].start_pc + 
-                    {{(64 - BLOCK_BIT_NUM){1'b0}}, u_core_ooo_top.u_backend_top.u_rob.rob_entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].inst_offset}),
-    .io_instr  	    (rob_entry_inst[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]]             ),
-    .io_robIdx  	(u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]             ),
+    .io_wpdest  	(rob_entry_commit0.pwdest                                           ),
+    .io_wdest   	(rob_entry_commit0.wdest                                            ),
+    .io_pc      	(next_pc                                                            ),
+    .io_instr  	    (rob_entry_inst[rob_ptr_commit0]                                    ),
+    .io_robIdx  	(rob_ptr_commit0                                                    ),
     .io_lqIdx   	(7'h0                                                               ),
     .io_sqIdx   	(7'h0                                                               ),
 //     //todo 暂不支持查询是否访存指令
@@ -1523,29 +1535,19 @@ DifftestInstrCommit u_DifftestInstrCommit0(
 DifftestInstrCommit u_DifftestInstrCommit1(
     .clock      	(clk                                                                ),
     .io_valid   	(io_valid1                                                          ),
-    .io_skip    	(rob_entry_io_skip[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]]             ),
-    .io_isRVC   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].rvc_flag    ),
-    .io_rfwen   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].rfwen       ),
+    .io_skip    	(rob_entry_io_skip[rob_ptr_commit1]                                 ),
+    .io_isRVC   	(rob_entry_commit1.rvc_flag                                         ),
+    .io_rfwen   	(rob_entry_commit1.rfwen                                            ),
     .io_fpwen   	(1'b0                                                               ),
     .io_vecwen  	(1'b0                                                               ),
-    .io_wpdest  	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].pwdest      ),
-    .io_wdest   	(u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].wdest       ),
-    .io_pc      	(u_core_ooo_top.u_frontend_top.u_ftq.entry[
-                    u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].ftq_ptr].start_pc + 
-                    {{(64 - BLOCK_BIT_NUM){1'b0}}, u_core_ooo_top.u_backend_top.u_rob.rob_entry[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]].inst_offset}),
-    .io_instr  	    (rob_entry_inst[1 + 
-                    u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0]]             ),
-    .io_robIdx  	(u_core_ooo_top.u_backend_top.u_rob.rob_ptr_button[5:0] + 1         ),
+    .io_wpdest  	(rob_entry_commit0.pwdest                                           ),
+    .io_wdest   	(rob_entry_commit0.wdest                                            ),
+    .io_pc      	(next_pc                                                            ),
+    .io_instr  	    (rob_entry_inst[rob_ptr_commit1]                                    ),
+    .io_robIdx  	(rob_ptr_commit1                                                    ),
     .io_lqIdx   	(7'h0                                                               ),
     .io_sqIdx   	(7'h0                                                               ),
-//     //todo 暂不支持查询是否访存指令
+//     //todo 暂不支持查询是否访存指令      
     .io_isLoad  	(1'b0                                                               ),
     .io_isStore 	(1'b0                                                               ),
 
