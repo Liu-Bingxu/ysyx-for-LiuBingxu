@@ -134,8 +134,8 @@ always @(posedge clk or negedge rst_n) begin
                         state <= OUT;
                         cnt <= 7'h0;
                         div_o_valid_reg <= 1'b1;
-                        remainder_reg <= (div_signed & dividend[63]) ? {(~div_shfit_rem[127:64]) + 1'b1} : div_shfit_rem[127:64];
-                        quotient_reg <= (div_signed & (dividend[63] != divisor[63])) ? {(~quotient_reg) + 1'b1} : quotient_reg;
+                        remainder_reg <= (div_signed_reg & dividend_reg[63]) ? {(~div_shfit_rem[127:64]) + 1'b1} : div_shfit_rem[127:64];
+                        quotient_reg <= (div_signed_reg & (dividend_reg[63] != divisor_reg[63])) ? {(~quotient_reg) + 1'b1} : quotient_reg;
                     end
                 end
             end
