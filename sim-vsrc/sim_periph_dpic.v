@@ -257,15 +257,21 @@ always @(posedge aclk) begin
     end
 end
 
+function addr_legeal;
+    input [63:0] addr;
+    addr_legeal =   ((addr >= 64'hA000_0000) && (addr < 64'hA000_000C)) | 
+                    ((addr >= 64'hA000_0100) && (addr < 64'hA000_0110));
+endfunction
+
 assign mst_awready = (state == IDLE) & (!mst_arvalid);
 assign mst_wready  = (state == WRITE);
 assign mst_bvalid  = mst_bvalid_reg;
 assign mst_bid     = mst_id;
-assign mst_bresp   = 2'h0;
+assign mst_bresp   = (addr_legeal(mst_awaddr_reg)) ? 2'h0 : 2'h3;
 assign mst_arready = (state == IDLE);
 assign mst_rvalid  = mst_rvalid_reg;
 assign mst_rid     = mst_id;
-assign mst_rresp   = 2'h0;
+assign mst_rresp   = (addr_legeal(mst_araddr_reg)) ? 2'h0 : 2'h3;
 assign mst_rdata   = mst_rdata_reg;
 assign mst_rlast   = (mst_arlen_reg == 8'h0);
 
