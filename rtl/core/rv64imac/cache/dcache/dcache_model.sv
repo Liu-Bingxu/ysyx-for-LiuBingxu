@@ -210,7 +210,6 @@ always_ff@(posedge clk or negedge rst_n)begin
 end
 assign atomicUnit_awready  = 1'b1;
 assign atomicUnit_wready   = 1'b1;
-assign atomicUnit_bresp    = 2'h1;
 
 always_ff@(posedge clk or negedge rst_n)begin
     if(!rst_n)begin
