@@ -177,7 +177,7 @@ endfunction
 function logic addrcache;
     input logic [63:0] waddr;
 
-    assign addrcache = (waddr >= 64'h8000_0000) & (waddr < 64'hffff_ffff);
+    assign addrcache = (waddr >= 64'h8000_0000) & (waddr < 64'h9fff_ffff);
 
 endfunction
 
