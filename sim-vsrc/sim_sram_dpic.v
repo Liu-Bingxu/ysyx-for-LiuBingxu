@@ -53,9 +53,8 @@ module sim_sram_dpic#(
 import "DPI-C" function void Log_mem_read(longint addr);
 import "DPI-C" function void Log_mem_wirte(longint addr, longint data,byte wmask);
 
-import "DPI-C" function void sim_sram_read (
-    input   longint raddr,
-    output  longint rdata
+import "DPI-C" function longint sim_sram_read (
+    input   longint raddr
 );
 
 import "DPI-C" function void sim_sram_write (
@@ -160,7 +159,7 @@ always @(posedge aclk or negedge arst_n) begin
                 else if(mst_arvalid & mst_arready & mst_arlock)begin
                     state               <= READ;
                     mst_rvalid_reg      <= 1'b1;
-                    sim_sram_read(mst_araddr, mst_rdata_reg);
+                    mst_rdata_reg       <= sim_sram_read(mst_araddr);
                     Log_mem_read(mst_araddr);
                     reservation_valid   <= 1'b1;
                     reservation_addr    <= mst_araddr;
@@ -170,7 +169,7 @@ always @(posedge aclk or negedge arst_n) begin
                 else if(mst_arvalid & mst_arready)begin
                     state           <= READ;
                     mst_rvalid_reg  <= 1'b1;
-                    sim_sram_read(mst_araddr, mst_rdata_reg);
+                    mst_rdata_reg   <= sim_sram_read(mst_araddr);
                     Log_mem_read(mst_araddr);
                     mst_resp_reg    <= 2'h0;
                 end
@@ -182,7 +181,7 @@ always @(posedge aclk or negedge arst_n) begin
                         mst_rvalid_reg  <= 1'b0;
                     end
                     else begin
-                        sim_sram_read(mst_araddr_reg, mst_rdata_reg);
+                        mst_rdata_reg   <= sim_sram_read(mst_araddr_reg);
                         Log_mem_read(mst_araddr_reg);
                     end
                 end

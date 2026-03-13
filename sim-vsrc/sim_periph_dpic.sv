@@ -52,9 +52,8 @@ module sim_periph_dpic#(
     output                          mst_rlast
 );
 
-import "DPI-C" function void sim_periph_read (
-    input   longint raddr,
-    output  longint rdata
+import "DPI-C" function longint sim_periph_read (
+    input   longint raddr
 );
 
 import "DPI-C" function void sim_periph_write (
@@ -140,7 +139,7 @@ always @(posedge aclk or negedge arst_n) begin
                 else if(mst_arvalid & mst_arready)begin
                     state           <= READ;
                     mst_rvalid_reg  <= 1'b1;
-                    sim_periph_read(mst_araddr, mst_rdata_reg);
+                    mst_rdata_reg   <= sim_periph_read(mst_araddr);
                 end
             end
             READ: begin

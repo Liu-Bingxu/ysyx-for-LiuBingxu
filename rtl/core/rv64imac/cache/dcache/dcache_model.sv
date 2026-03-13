@@ -153,9 +153,8 @@ import sb_pkg::*;
 // import "DPI-C" function void Log_mem_read(longint addr);
 // import "DPI-C" function void Log_mem_wirte(longint addr, longint data,byte wmask);
 
-import "DPI-C" function void sim_sram_read (
-    input   longint raddr,
-    output  longint rdata
+import "DPI-C" function longint sim_sram_read (
+    input   longint raddr
 );
 
 import "DPI-C" function void sim_sram_write (
@@ -168,13 +167,9 @@ import "DPI-C" function void sim_sram_write (
 
 assign flush_i_ready = 1'b1;
 
-logic [63:0] atomicUnit_load_data;
 logic        atomic_re_valid;
 logic [2:0]  atomic_re_size;
 logic [63:0] atomicUnit_re_addr;
-always_comb begin
-    sim_sram_read(atomicUnit_araddr, atomicUnit_load_data);
-end
 
 always_ff@(posedge clk or negedge rst_n)begin
     if(!rst_n)begin
@@ -218,7 +213,7 @@ always_ff@(posedge clk or negedge rst_n)begin
     end
     else if(atomicUnit_arvalid & atomicUnit_arready)begin
         atomicUnit_rvalid  <= 1'b1;
-        atomicUnit_rdata   <= atomicUnit_load_data;
+        atomicUnit_rdata   <= sim_sram_read(atomicUnit_araddr);
     end
     else if(atomicUnit_rvalid & atomicUnit_rready)begin
         atomicUnit_rvalid  <= 1'b0;
@@ -248,11 +243,6 @@ assign sbuffer_req_ready = 1'b1;
 assign dcache_load_hit  = 1'b0;
 assign dcache_load_data = 64'h0;
 
-logic [63:0] load_load_data;
-always_comb begin
-    sim_sram_read(load_araddr, load_load_data);
-end
-
 always_ff@(posedge clk or negedge rst_n)begin
     if(!rst_n)begin
         load_rvalid  <= 1'b0;
@@ -264,7 +254,7 @@ always_ff@(posedge clk or negedge rst_n)begin
     end
     else if(load_arvalid & load_arready)begin
         load_rvalid  <= 1'b1;
-        load_rdata   <= load_load_data;
+        load_rdata   <= sim_sram_read(load_araddr);
     end
     else if(load_rvalid & load_rready)begin
         load_rvalid  <= 1'b0;
@@ -272,11 +262,6 @@ always_ff@(posedge clk or negedge rst_n)begin
 end
 assign load_arready  = 1'b1;
 assign load_rresp    = 2'h0;
-
-logic [63:0] mmu_load_data;
-always_comb begin
-    sim_sram_read(mmu_araddr, mmu_load_data);
-end
 
 always_ff@(posedge clk or negedge rst_n)begin
     if(!rst_n)begin
@@ -289,7 +274,7 @@ always_ff@(posedge clk or negedge rst_n)begin
     end
     else if(mmu_arvalid & mmu_arready)begin
         mmu_rvalid  <= 1'b1;
-        mmu_rdata   <= mmu_load_data;
+        mmu_rdata   <= sim_sram_read(mmu_araddr);
     end
     else if(mmu_rvalid & mmu_rready)begin
         mmu_rvalid  <= 1'b0;
