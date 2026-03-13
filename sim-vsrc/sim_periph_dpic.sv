@@ -9,6 +9,8 @@ module sim_periph_dpic#(
     input                           aclk,
     input                           arst_n,
 
+    input                           read_redirect,
+
     input                           mst_awvalid,
     output                          mst_awready,
     input  [AXI_ADDR_W    -1:0]     mst_awaddr,
@@ -71,13 +73,15 @@ reg [AXI_ADDR_W    -1:0]     mst_araddr_reg;
 reg [8             -1:0]     mst_arlen_reg;
 reg [AXI_DATA_W    -1:0]     mst_rdata_reg;
 
-reg [1:0]                    state;
+typedef enum logic [1:0] {  
+    IDLE  = 2'h0,
+    READ  = 2'h1,
+    WRITE = 2'h2,
+    WBACK = 2'h3
+} sim_periph_fsm_t;
+sim_periph_fsm_t             state;
 reg                          mst_bvalid_reg;
 reg                          mst_rvalid_reg;
-localparam  IDLE  = 2'h0;
-localparam  READ  = 2'h1;
-localparam  WRITE = 2'h2;
-localparam  WBACK = 2'h3;
 
 always @(posedge aclk or negedge arst_n) begin
     if(!arst_n)begin
@@ -140,7 +144,11 @@ always @(posedge aclk or negedge arst_n) begin
                 end
             end
             READ: begin
-                if(mst_rvalid & mst_rready)begin
+                if(read_redirect)begin
+                    state           <= IDLE;
+                    mst_rvalid_reg  <= 1'b0;
+                end
+                else if(mst_rvalid & mst_rready)begin
                     // sim_periph_read(mst_araddr_reg, mst_rdata_reg);
                     if(mst_rlast)begin
                         state           <= IDLE;

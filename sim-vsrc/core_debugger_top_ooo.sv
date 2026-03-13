@@ -1225,6 +1225,7 @@ sim_periph_dpic #(
 u_sim_periph_dpic(
     .aclk         	(clk           ),
     .arst_n       	(core_rst_n    ),
+    .read_redirect  ( u_core_ooo_top.u_backend_top.redirect),
     .mst_awvalid  	(mst3_awvalid  ),
     .mst_awready  	(mst3_awready  ),
     .mst_awaddr   	(mst3_awaddr   ),
