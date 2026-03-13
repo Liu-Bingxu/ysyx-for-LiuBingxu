@@ -95,9 +95,9 @@ FF_D_without_asyn_rst #(1 )             u_mret_o        (clk,send_valid, csr_mre
 FF_D_without_asyn_rst #(1 )             u_sret_o        (clk,send_valid, csr_sret_flag(op), csr_sret_o);
 FF_D_without_asyn_rst #(1 )             u_dret_o        (clk,send_valid, csr_dret_flag(op), csr_dret_o);
 FF_D_without_asyn_rst #(1 )             u_satp_change_o (clk,send_valid, csr_satp_change, csr_satp_change_o);
-FF_D_without_asyn_rst #(64)             u_result_o      (clk,send_valid, csr_res, csr_preg_wdata_o);
+FF_D_without_asyn_rst #(64)             u_result_o      (clk,send_valid, csr_rdata, csr_preg_wdata_o);
 FF_D_without_asyn_rst #(64)             u_jump_pc_o     (clk,send_valid, csr_jump_pc, csr_jump_pc_o);
-FF_D_without_asyn_rst #(64)             u_csr_wdata_o   (clk,send_valid, csr_rdata, csr_wdata_o);
+FF_D_without_asyn_rst #(64)             u_csr_wdata_o   (clk,send_valid, csr_res, csr_wdata_o);
 //*************************************************************************
 
 
