@@ -488,13 +488,15 @@ assign rob_resp = rob_resp_inner;
 genvar dispatch_index;
 generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_index = dispatch_index + 1) begin : U_gen_rob_can_dispatch
     if(dispatch_index == 0)begin : U_gen_rob_can_dispatch_0
-        assign rob_ptr_dispatch[dispatch_index]         = rob_first_ptr;
-        assign rob_can_dispatch_inner[dispatch_index]   = 1'b1;
+        assign rob_ptr_dispatch[dispatch_index]         = (rob_first_ptr - 1);
+        assign rob_can_dispatch_inner[dispatch_index]   = ((!rob_entry_dispatch[dispatch_index].block_forward_flag) | rob_entry_dispatch[dispatch_index].finish | 
+                                                        (!RobQueueValid(rob_ptr_button, rob_ptr_top, rob_ptr_dispatch[dispatch_index])));
     end
     else begin : U_gen_rob_can_dispatch_other
         assign rob_ptr_dispatch[dispatch_index]         = (rob_ptr_dispatch[dispatch_index - 1] + 1);
         assign rob_can_dispatch_inner[dispatch_index]   = rob_can_dispatch_inner[dispatch_index - 1] & 
-                    ((!rob_entry_dispatch[dispatch_index - 1].block_forward_flag) | rob_entry_dispatch[dispatch_index - 1].finish);
+                    ((!rob_entry_dispatch[dispatch_index].block_forward_flag) | rob_entry_dispatch[dispatch_index].finish | 
+                    (!RobQueueValid(rob_ptr_button, rob_ptr_top, rob_ptr_dispatch[dispatch_index])));
     end
     assign rob_entry_dispatch[dispatch_index]       = rob_entry[rob_ptr_dispatch[dispatch_index]];
 end

@@ -362,7 +362,7 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
 end
 endgenerate
 
-assign dispatch_ready                = ((rename_out_valid & dispatch_in_mask & inst_dispatch_success) == (rename_out_valid & dispatch_in_mask));
+assign dispatch_ready                = (((rename_out_valid & dispatch_in_mask & inst_dispatch_success) == (rename_out_valid & dispatch_in_mask)) & (rob_can_dispatch == {dispatch_width{1'b1}}));
 
 assign rob_first_ptr                 = rename_out[0].rob_ptr[rob_entry_w - 1 : 0];
 
