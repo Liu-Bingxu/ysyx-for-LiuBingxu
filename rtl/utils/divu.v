@@ -81,16 +81,16 @@ always @(posedge clk or negedge rst_n) begin
         remainder_reg <= 64'h0;
         div_shfit_rem <= 128'h0;
     end
+    else if(div_flush)begin
+        state <= IDLE;
+        div_o_valid_reg <= 1'b0;
+        quotient_reg <= 64'h0;
+        remainder_reg <= 64'h0;
+    end
     else begin
         case (state)
             IDLE: begin
-                if(div_flush)begin
-                    state <= IDLE;
-                    div_o_valid_reg <= 1'b0;
-                    quotient_reg <= 64'h0;
-                    remainder_reg <= 64'h0;
-                end
-                else if(div_valid)begin
+                if(div_valid)begin
                     if(divisor == 64'h0)begin
                         state <= OUT;
                         div_o_valid_reg <= 1'b1;
@@ -117,36 +117,22 @@ always @(posedge clk or negedge rst_n) begin
                 sub_num <= (div_signed_reg & divisor_reg[63]) ? (~divisor_reg + 1'b1) : divisor_reg;
             end
             DIV: begin
-                if(div_flush)begin
-                    state <= IDLE;
-                    div_o_valid_reg <= 1'b0;
-                    quotient_reg <= 64'h0;
-                    remainder_reg <= 64'h0;
+                if(cnt < 7'd64)begin
+                    cnt <= cnt + 1;
+                    quotient_reg <= {quotient_reg[62:0], quotient_bit};
+                    div_shfit_rem <= (quotient_bit) ? {rem_replace[63:0], div_shfit_rem[62:0], 1'b0} :
+                                        {div_shfit_rem[126:0], 1'b0};
                 end
                 else begin
-                    if(cnt < 7'd64)begin
-                        cnt <= cnt + 1;
-                        quotient_reg <= {quotient_reg[62:0], quotient_bit};
-                        div_shfit_rem <= (quotient_bit) ? {rem_replace[63:0], div_shfit_rem[62:0], 1'b0} :
-                                            {div_shfit_rem[126:0], 1'b0};
-                    end
-                    else begin
-                        state <= OUT;
-                        cnt <= 7'h0;
-                        div_o_valid_reg <= 1'b1;
-                        remainder_reg <= (div_signed_reg & dividend_reg[63]) ? {(~div_shfit_rem[127:64]) + 1'b1} : div_shfit_rem[127:64];
-                        quotient_reg <= (div_signed_reg & (dividend_reg[63] != divisor_reg[63])) ? {(~quotient_reg) + 1'b1} : quotient_reg;
-                    end
+                    state <= OUT;
+                    cnt <= 7'h0;
+                    div_o_valid_reg <= 1'b1;
+                    remainder_reg <= (div_signed_reg & dividend_reg[63]) ? {(~div_shfit_rem[127:64]) + 1'b1} : div_shfit_rem[127:64];
+                    quotient_reg <= (div_signed_reg & (dividend_reg[63] != divisor_reg[63])) ? {(~quotient_reg) + 1'b1} : quotient_reg;
                 end
             end
             OUT: begin
-                if(div_flush)begin
-                    state <= IDLE;
-                    div_o_valid_reg <= 1'b0;
-                    quotient_reg <= 64'h0;
-                    remainder_reg <= 64'h0;
-                end
-                else if(div_o_valid & div_o_ready)begin
+                if(div_o_valid & div_o_ready)begin
                     state <= IDLE;
                     div_o_valid_reg <= 1'b0;
                 end
