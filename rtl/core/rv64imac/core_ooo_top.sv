@@ -141,6 +141,8 @@ ls_rob_entry_ptr_t                      deq_rob_ptr;
 logic [decode_width-1:0]                decode_inst_ready;
 logic [rename_width-1:0]                sq_req;
 sq_entry_t [rename_width-1:0]           sq_req_entry;
+logic [rename_width-1:0]                lq_req;
+lq_entry_t [rename_width-1:0]           lq_req_entry;
 logic                                   loadUnit_in_valid;
 iq_mem_load_in_t                        loadUnit_in;
 logic                                   storeaddrUnit_in_valid;
@@ -161,7 +163,7 @@ intreg_t                                loadUnit_psrc_rdata;
 intreg_t                                storedataUnit_psrc_rdata;
 intreg_t                                storeaddrUnit_psrc_rdata;
 intreg_t [1:0]                          atomicUnit_psrc_rdata;
-logic                                   loadUnit_ready_o;
+logic                                   LoadQueue_ready_o;
 logic                                   StoreQueue_ready_o;
 logic                                   atomicUnit_ready_o;
 logic [wb_width-1:0]                    rfwen;
@@ -186,6 +188,7 @@ logic [63:0]                            jump_push_pc;
 // outports logic u_mem_top
 logic                                   flush_i_ready;
 sq_resp_t [rename_width-1:0]            sq_resp;
+lq_resp_t [rename_width-1:0]            lq_resp;
 logic                                   storeaddrUnit_in_ready;
 logic                                   storedataUnit_in_ready;
 logic                                   loadUnit_in_ready;
@@ -199,15 +202,15 @@ logic                                   StoreQueue_addr_misalign_o;
 logic                                   StoreQueue_page_error_o;
 rob_entry_ptr_t                         StoreQueue_rob_ptr_o;
 logic [63:0]                            StoreQueue_vaddr_o;
-logic                                   loadUnit_valid_o;
-logic                                   loadUnit_addr_misalign_o;
-logic                                   loadUnit_page_error_o;
-logic                                   loadUnit_load_error_o;
-logic                                   loadUnit_rfwen_o;
-pint_regdest_t                          loadUnit_pwdest_o;
-logic [63:0]                            loadUnit_preg_wdata_o;
-rob_entry_ptr_t                         loadUnit_rob_ptr_o;
-logic [63:0]                            loadUnit_vaddr_o;
+logic                                   LoadQueue_valid_o;
+logic                                   LoadQueue_addr_misalign_o;
+logic                                   LoadQueue_page_error_o;
+logic                                   LoadQueue_load_error_o;
+logic                                   LoadQueue_rfwen_o;
+pint_regdest_t                          LoadQueue_pwdest_o;
+logic [63:0]                            LoadQueue_preg_wdata_o;
+rob_entry_ptr_t                         LoadQueue_rob_ptr_o;
+logic [63:0]                            LoadQueue_vaddr_o;
 logic                                   atomicUnit_valid_o;
 logic                                   atomicUnit_ld_addr_misalign_o;
 logic                                   atomicUnit_st_addr_misalign_o;
@@ -220,8 +223,8 @@ logic [63:0]                            atomic_vaddr_o;
 logic                                   atomicUnit_rfwen_o;
 pint_regdest_t                          atomicUnit_pwdest_o;
 logic [63:0]                            atomicUnit_preg_wdata_o;
-logic                                   LoadQueue_flush_o;
-rob_entry_ptr_t                         LoadQueue_rob_ptr_o;
+logic                                   LoadQueueRAW_flush_o;
+rob_entry_ptr_t                         LoadQueueRAW_rob_ptr_o;
 logic                                   immu_miss_ready;
 logic                                   pte_valid;
 logic [127:0]                           pte;
@@ -313,6 +316,9 @@ backend_top u_backend_top(
 	.sq_req                        	( sq_req                         ),
 	.sq_req_entry                  	( sq_req_entry                   ),
 	.sq_resp                       	( sq_resp                        ),
+	.lq_req                        	( lq_req                         ),
+	.lq_req_entry                  	( lq_req_entry                   ),
+	.lq_resp                       	( lq_resp                        ),
 	.loadUnit_in_valid             	( loadUnit_in_valid              ),
 	.loadUnit_in_ready             	( loadUnit_in_ready              ),
 	.loadUnit_in                   	( loadUnit_in                    ),
@@ -348,16 +354,16 @@ backend_top u_backend_top(
 	.storeaddrUnit_psrc_rdata      	( storeaddrUnit_psrc_rdata       ),
 	.atomicUnit_psrc               	( atomicUnit_psrc                ),
 	.atomicUnit_psrc_rdata         	( atomicUnit_psrc_rdata          ),
-	.loadUnit_valid_o              	( loadUnit_valid_o               ),
-	.loadUnit_ready_o              	( loadUnit_ready_o               ),
-	.loadUnit_addr_misalign_o      	( loadUnit_addr_misalign_o       ),
-	.loadUnit_page_error_o         	( loadUnit_page_error_o          ),
-	.loadUnit_load_error_o         	( loadUnit_load_error_o          ),
-	.loadUnit_rob_ptr_o            	( loadUnit_rob_ptr_o             ),
-	.loadUnit_vaddr_o              	( loadUnit_vaddr_o               ),
-	.loadUnit_rfwen_o              	( loadUnit_rfwen_o               ),
-	.loadUnit_pwdest_o             	( loadUnit_pwdest_o              ),
-	.loadUnit_preg_wdata_o         	( loadUnit_preg_wdata_o          ),
+	.LoadQueue_valid_o              ( LoadQueue_valid_o              ),
+	.LoadQueue_ready_o              ( LoadQueue_ready_o              ),
+	.LoadQueue_addr_misalign_o      ( LoadQueue_addr_misalign_o      ),
+	.LoadQueue_page_error_o         ( LoadQueue_page_error_o         ),
+	.LoadQueue_load_error_o         ( LoadQueue_load_error_o         ),
+	.LoadQueue_rob_ptr_o            ( LoadQueue_rob_ptr_o            ),
+	.LoadQueue_vaddr_o              ( LoadQueue_vaddr_o              ),
+	.LoadQueue_rfwen_o              ( LoadQueue_rfwen_o              ),
+	.LoadQueue_pwdest_o             ( LoadQueue_pwdest_o             ),
+	.LoadQueue_preg_wdata_o         ( LoadQueue_preg_wdata_o         ),
 	.StoreQueue_valid_o            	( StoreQueue_valid_o             ),
 	.StoreQueue_ready_o            	( StoreQueue_ready_o             ),
 	.StoreQueue_addr_misalign_o    	( StoreQueue_addr_misalign_o     ),
@@ -377,8 +383,8 @@ backend_top u_backend_top(
 	.atomicUnit_rfwen_o            	( atomicUnit_rfwen_o             ),
 	.atomicUnit_pwdest_o           	( atomicUnit_pwdest_o            ),
 	.atomicUnit_preg_wdata_o       	( atomicUnit_preg_wdata_o        ),
-	.LoadQueue_flush_o             	( LoadQueue_flush_o              ),
-	.LoadQueue_rob_ptr_o           	( LoadQueue_rob_ptr_o            ),
+	.LoadQueueRAW_flush_o           ( LoadQueueRAW_flush_o           ),
+	.LoadQueueRAW_rob_ptr_o         ( LoadQueueRAW_rob_ptr_o         ),
 	.rfwen                         	( rfwen                          ),
 	.pwdest                        	( pwdest                         ),
 	.current_priv_status           	( current_priv_status            ),
@@ -431,6 +437,9 @@ u_mem_top(
 	.sq_req                        	( sq_req                         ),
 	.sq_req_entry                  	( sq_req_entry                   ),
 	.sq_resp                       	( sq_resp                        ),
+	.lq_req                        	( lq_req                         ),
+	.lq_req_entry                  	( lq_req_entry                   ),
+	.lq_resp                       	( lq_resp                        ),
 	.storeaddrUnit_in_valid        	( storeaddrUnit_in_valid         ),
 	.storeaddrUnit_in_ready        	( storeaddrUnit_in_ready         ),
 	.storeaddrUnit_in              	( storeaddrUnit_in               ),
@@ -459,16 +468,16 @@ u_mem_top(
 	.StoreQueue_page_error_o       	( StoreQueue_page_error_o        ),
 	.StoreQueue_rob_ptr_o          	( StoreQueue_rob_ptr_o           ),
 	.StoreQueue_vaddr_o            	( StoreQueue_vaddr_o             ),
-	.loadUnit_valid_o              	( loadUnit_valid_o               ),
-	.loadUnit_ready_o              	( loadUnit_ready_o               ),
-	.loadUnit_addr_misalign_o      	( loadUnit_addr_misalign_o       ),
-	.loadUnit_page_error_o         	( loadUnit_page_error_o          ),
-	.loadUnit_load_error_o         	( loadUnit_load_error_o          ),
-	.loadUnit_rfwen_o              	( loadUnit_rfwen_o               ),
-	.loadUnit_pwdest_o             	( loadUnit_pwdest_o              ),
-	.loadUnit_preg_wdata_o         	( loadUnit_preg_wdata_o          ),
-	.loadUnit_rob_ptr_o             ( loadUnit_rob_ptr_o             ),
-	.loadUnit_vaddr_o               ( loadUnit_vaddr_o               ),
+	.LoadQueue_valid_o              ( LoadQueue_valid_o              ),
+	.LoadQueue_ready_o              ( LoadQueue_ready_o              ),
+	.LoadQueue_addr_misalign_o      ( LoadQueue_addr_misalign_o      ),
+	.LoadQueue_page_error_o         ( LoadQueue_page_error_o         ),
+	.LoadQueue_load_error_o         ( LoadQueue_load_error_o         ),
+	.LoadQueue_rfwen_o              ( LoadQueue_rfwen_o              ),
+	.LoadQueue_pwdest_o             ( LoadQueue_pwdest_o             ),
+	.LoadQueue_preg_wdata_o         ( LoadQueue_preg_wdata_o         ),
+	.LoadQueue_rob_ptr_o            ( LoadQueue_rob_ptr_o            ),
+	.LoadQueue_vaddr_o              ( LoadQueue_vaddr_o              ),
 	.atomicUnit_valid_o            	( atomicUnit_valid_o             ),
 	.atomicUnit_ready_o            	( atomicUnit_ready_o             ),
 	.atomicUnit_ld_addr_misalign_o 	( atomicUnit_ld_addr_misalign_o  ),
@@ -482,8 +491,8 @@ u_mem_top(
 	.atomicUnit_rfwen_o            	( atomicUnit_rfwen_o             ),
 	.atomicUnit_pwdest_o           	( atomicUnit_pwdest_o            ),
 	.atomicUnit_preg_wdata_o       	( atomicUnit_preg_wdata_o        ),
-	.LoadQueue_flush_o             	( LoadQueue_flush_o              ),
-	.LoadQueue_rob_ptr_o           	( LoadQueue_rob_ptr_o            ),
+	.LoadQueueRAW_flush_o           ( LoadQueueRAW_flush_o           ),
+	.LoadQueueRAW_rob_ptr_o         ( LoadQueueRAW_rob_ptr_o         ),
 	.immu_miss_valid               	( immu_miss_valid                ),
 	.immu_miss_ready               	( immu_miss_ready                ),
 	.vaddr_i                       	( vaddr_i                        ),

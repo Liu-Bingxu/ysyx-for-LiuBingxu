@@ -71,13 +71,13 @@ import rob_pkg::*;
     input  [63:0]                                       alu_csr_fence_exu_next_pc_o,
 
     // load interface
-    input                                               loadUnit_valid_o,
-    output                                              loadUnit_ready_o,
-    input                                               loadUnit_addr_misalign_o,
-    input                                               loadUnit_page_error_o,
-    input                                               loadUnit_load_error_o,
-    input  rob_entry_ptr_t                              loadUnit_rob_ptr_o,
-    input  [63:0]                                       loadUnit_vaddr_o,
+    input                                               LoadQueue_valid_o,
+    output                                              LoadQueue_ready_o,
+    input                                               LoadQueue_addr_misalign_o,
+    input                                               LoadQueue_page_error_o,
+    input                                               LoadQueue_load_error_o,
+    input  rob_entry_ptr_t                              LoadQueue_rob_ptr_o,
+    input  [63:0]                                       LoadQueue_vaddr_o,
 
     // store interface
     input                                               StoreQueue_valid_o,
@@ -100,8 +100,8 @@ import rob_pkg::*;
     input  [63:0]                                       atomic_vaddr_o,
 
     // LoadQueueRAW interface
-    input                                               LoadQueue_flush_o,
-    input  rob_entry_ptr_t                              LoadQueue_rob_ptr_o,
+    input                                               LoadQueueRAW_flush_o,
+    input  rob_entry_ptr_t                              LoadQueueRAW_rob_ptr_o,
 
     // interface with gen_redirect
     output                                              rob_gen_redirect_valid,
@@ -194,7 +194,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
     logic       rob_entry_alu_div_exu_update_wen;
     logic       rob_entry_alu_bru_jump_exu_update_wen;
     logic       rob_entry_alu_csr_fence_exu_update_wen;
-    logic       rob_entry_loadUnit_update_wen;
+    logic       rob_entry_LoadQueue_update_wen;
     logic       rob_entry_StoreQueue_update_wen;
     logic       rob_entry_atomic_update_wen;
     logic       rob_entry_loadQueueRAW_update_wen;
@@ -204,7 +204,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
     rob_entry_t rob_entry_alu_div_exu_update;
     rob_entry_t rob_entry_alu_bru_jump_exu_update;
     rob_entry_t rob_entry_alu_csr_fence_exu_update;
-    rob_entry_t rob_entry_loadUnit_update;
+    rob_entry_t rob_entry_LoadQueue_update;
     rob_entry_t rob_entry_StoreQueue_update;
     rob_entry_t rob_entry_atomic_update;
     rob_entry_t rob_entry_loadQueueRAW_update;
@@ -295,31 +295,31 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
     assign rob_entry_alu_csr_fence_exu_update.ftq_ptr               = rob_entry[entry_index].ftq_ptr              ;
     assign rob_entry_alu_csr_fence_exu_update.inst_offset           = rob_entry[entry_index].inst_offset          ;
 
-    logic loadUnit_exc_gen;
-    assign loadUnit_exc_gen = (loadUnit_addr_misalign_o | loadUnit_page_error_o | loadUnit_load_error_o);
-    logic [4:0] loadUnit_exc_code;
-    assign loadUnit_exc_code =  ({5{loadUnit_addr_misalign_o}} & 5'h4) |
-                                ({5{loadUnit_page_error_o   }} & 5'hd) |
-                                ({5{loadUnit_load_error_o   }} & 5'h5);
-    assign rob_entry_loadUnit_update_wen                   = loadUnit_valid_o & loadUnit_ready_o &
-                                                            (entry_index == loadUnit_rob_ptr_o) & (!rob_entry[entry_index].finish) &
-                                                            ((!LoadQueue_flush_o) | (entry_index != LoadQueue_rob_ptr_o));
-    assign rob_entry_loadUnit_update.finish                = 1'b1                                        ;
-    assign rob_entry_loadUnit_update.rfwen                 = rob_entry[entry_index].rfwen                ;
-    assign rob_entry_loadUnit_update.wdest                 = rob_entry[entry_index].wdest                ;
-    assign rob_entry_loadUnit_update.old_pdest             = rob_entry[entry_index].old_pdest            ;
-    assign rob_entry_loadUnit_update.pwdest                = rob_entry[entry_index].pwdest               ;
-    assign rob_entry_loadUnit_update.no_intr_exec          = rob_entry[entry_index].no_intr_exec         ;
-    assign rob_entry_loadUnit_update.block_forward_flag    = rob_entry[entry_index].block_forward_flag   ;
-    assign rob_entry_loadUnit_update.rvc_flag              = rob_entry[entry_index].rvc_flag             ;
-    assign rob_entry_loadUnit_update.call                  = rob_entry[entry_index].call                 ;
-    assign rob_entry_loadUnit_update.ret                   = rob_entry[entry_index].ret                  ;
-    assign rob_entry_loadUnit_update.trap_flag             = loadUnit_exc_gen                            ;
-    assign rob_entry_loadUnit_update.trap_cause            = loadUnit_exc_code                           ;
-    assign rob_entry_loadUnit_update.trap_tval             = loadUnit_vaddr_o                            ;
-    assign rob_entry_loadUnit_update.end_flag              = rob_entry[entry_index].end_flag             ;
-    assign rob_entry_loadUnit_update.ftq_ptr               = rob_entry[entry_index].ftq_ptr              ;
-    assign rob_entry_loadUnit_update.inst_offset           = rob_entry[entry_index].inst_offset          ;
+    logic LoadQueue_exc_gen;
+    assign LoadQueue_exc_gen = (LoadQueue_addr_misalign_o | LoadQueue_page_error_o | LoadQueue_load_error_o);
+    logic [4:0] LoadQueue_exc_code;
+    assign LoadQueue_exc_code =  ({5{LoadQueue_addr_misalign_o}} & 5'h4) |
+                                ({5{LoadQueue_page_error_o   }} & 5'hd) |
+                                ({5{LoadQueue_load_error_o   }} & 5'h5);
+    assign rob_entry_LoadQueue_update_wen                   = LoadQueue_valid_o & LoadQueue_ready_o &
+                                                            (entry_index == LoadQueue_rob_ptr_o) & (!rob_entry[entry_index].finish) &
+                                                            ((!LoadQueueRAW_flush_o) | (entry_index != LoadQueueRAW_rob_ptr_o));
+    assign rob_entry_LoadQueue_update.finish                = 1'b1                                        ;
+    assign rob_entry_LoadQueue_update.rfwen                 = rob_entry[entry_index].rfwen                ;
+    assign rob_entry_LoadQueue_update.wdest                 = rob_entry[entry_index].wdest                ;
+    assign rob_entry_LoadQueue_update.old_pdest             = rob_entry[entry_index].old_pdest            ;
+    assign rob_entry_LoadQueue_update.pwdest                = rob_entry[entry_index].pwdest               ;
+    assign rob_entry_LoadQueue_update.no_intr_exec          = rob_entry[entry_index].no_intr_exec         ;
+    assign rob_entry_LoadQueue_update.block_forward_flag    = rob_entry[entry_index].block_forward_flag   ;
+    assign rob_entry_LoadQueue_update.rvc_flag              = rob_entry[entry_index].rvc_flag             ;
+    assign rob_entry_LoadQueue_update.call                  = rob_entry[entry_index].call                 ;
+    assign rob_entry_LoadQueue_update.ret                   = rob_entry[entry_index].ret                  ;
+    assign rob_entry_LoadQueue_update.trap_flag             = LoadQueue_exc_gen                           ;
+    assign rob_entry_LoadQueue_update.trap_cause            = LoadQueue_exc_code                          ;
+    assign rob_entry_LoadQueue_update.trap_tval             = LoadQueue_vaddr_o                           ;
+    assign rob_entry_LoadQueue_update.end_flag              = rob_entry[entry_index].end_flag             ;
+    assign rob_entry_LoadQueue_update.ftq_ptr               = rob_entry[entry_index].ftq_ptr              ;
+    assign rob_entry_LoadQueue_update.inst_offset           = rob_entry[entry_index].inst_offset          ;
 
     logic StoreQueue_exc_gen;
     assign StoreQueue_exc_gen = (StoreQueue_addr_misalign_o | StoreQueue_page_error_o);
@@ -374,7 +374,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
     assign rob_entry_atomic_update.ftq_ptr               = rob_entry[entry_index].ftq_ptr              ;
     assign rob_entry_atomic_update.inst_offset           = rob_entry[entry_index].inst_offset          ;
 
-    assign rob_entry_loadQueueRAW_update_wen                = LoadQueue_flush_o & (entry_index == LoadQueue_rob_ptr_o);
+    assign rob_entry_loadQueueRAW_update_wen                = LoadQueueRAW_flush_o & (entry_index == LoadQueueRAW_rob_ptr_o);
     assign rob_entry_loadQueueRAW_update.finish             = 1'b1                                                                                              ;
     assign rob_entry_loadQueueRAW_update.rfwen              = rob_entry[entry_index].rfwen                                                                      ;
     assign rob_entry_loadQueueRAW_update.wdest              = rob_entry[entry_index].wdest                                                                      ;
@@ -397,7 +397,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
                             (rob_entry_alu_div_exu_update_wen       ) |
                             (rob_entry_alu_bru_jump_exu_update_wen  ) |
                             (rob_entry_alu_csr_fence_exu_update_wen ) |
-                            (rob_entry_loadUnit_update_wen          ) |
+                            (rob_entry_LoadQueue_update_wen         ) |
                             (rob_entry_StoreQueue_update_wen        ) |
                             (rob_entry_atomic_update_wen            ) |
                             (rob_entry_loadQueueRAW_update_wen      );
@@ -406,7 +406,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
                             ({ROB_ENTRY_W{rob_entry_alu_div_exu_update_wen       }} & rob_entry_alu_div_exu_update       ) |
                             ({ROB_ENTRY_W{rob_entry_alu_bru_jump_exu_update_wen  }} & rob_entry_alu_bru_jump_exu_update  ) |
                             ({ROB_ENTRY_W{rob_entry_alu_csr_fence_exu_update_wen }} & rob_entry_alu_csr_fence_exu_update ) |
-                            ({ROB_ENTRY_W{rob_entry_loadUnit_update_wen          }} & rob_entry_loadUnit_update          ) |
+                            ({ROB_ENTRY_W{rob_entry_LoadQueue_update_wen         }} & rob_entry_LoadQueue_update         ) |
                             ({ROB_ENTRY_W{rob_entry_StoreQueue_update_wen        }} & rob_entry_StoreQueue_update        ) |
                             ({ROB_ENTRY_W{rob_entry_atomic_update_wen            }} & rob_entry_atomic_update            ) |
                             ({ROB_ENTRY_W{rob_entry_loadQueueRAW_update_wen      }} & rob_entry_loadQueueRAW_update      );
@@ -505,12 +505,12 @@ assign alu_mul_exu_ready_o         = 1'b1;
 assign alu_div_exu_ready_o         = 1'b1;
 assign alu_bru_jump_exu_ready_o    = 1'b1;
 assign alu_csr_fence_exu_ready_o   = 1'b1;
-assign loadUnit_ready_o            = 1'b1;
+assign LoadQueue_ready_o           = 1'b1;
 assign StoreQueue_ready_o          = 1'b1;
 assign atomicUnit_ready_o          = 1'b1;
 
 assign rob_ftq_ptr                 = rob_ftq_ptr_inner[commit_width - 1];
-assign rob_entry_lq_raw            = rob_entry[LoadQueue_rob_ptr_o];
+assign rob_entry_lq_raw            = rob_entry[LoadQueueRAW_rob_ptr_o];
 assign rob_ftq_ptr_lq_raw          = rob_entry_lq_raw.ftq_ptr;
 
 assign rob_gen_redirect_valid      = (rob_commit_valid_inner[commit_width - 1] & rob_trap_flag_inner[commit_width - 1] &

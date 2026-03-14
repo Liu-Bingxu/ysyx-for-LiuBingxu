@@ -42,6 +42,11 @@ import core_setting_pkg::*;
     output  sq_entry_t [rename_width - 1 : 0]           sq_req_entry,
     input   sq_resp_t  [rename_width - 1 : 0]           sq_resp,
 
+    // LoadQueue interface
+    output             [rename_width - 1 : 0]           lq_req,
+    output  lq_entry_t [rename_width - 1 : 0]           lq_req_entry,
+    input   lq_resp_t  [rename_width - 1 : 0]           lq_resp,
+
     // dispatch interface
     output             [rename_width - 1 : 0]           rename_out_valid,
     output rename_out_t[rename_width - 1 : 0]           rename_out,
@@ -54,6 +59,7 @@ rename_out_t[rename_width - 1 : 0]           rename_reg;
 logic       [rename_width - 1 : 0]           rename_free_list_fire;
 logic       [rename_width - 1 : 0]           rename_rob_fire;
 logic       [rename_width - 1 : 0]           rename_sq_fire;
+logic       [rename_width - 1 : 0]           rename_lq_fire;
 
 logic       [rename_width - 1 : 0]           rename_rob_finish;
 
@@ -73,9 +79,13 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     // StoreQueue interface
     assign sq_req[rename_index]                     = decode_out_valid[rename_index] & send2store(decode_out[rename_index].futype) & (!rename_rob_finish[rename_index]);
 
+    // LoadQueue interface
+    assign lq_req[rename_index]                     = decode_out_valid[rename_index] & send2load(decode_out[rename_index].futype) & (!rename_rob_finish[rename_index]);
+
     assign rename_free_list_fire[rename_index]      = ((!rename_int_req[rename_index]) | rename_int_resp[rename_index].rename_valid);
     assign rename_rob_fire[rename_index]            = ((!rob_req[rename_index]) | rob_resp[rename_index].valid);
     assign rename_sq_fire[rename_index]             = ((!sq_req[rename_index])  | sq_resp[rename_index].valid);
+    assign rename_lq_fire[rename_index]             = ((!lq_req[rename_index])  | lq_resp[rename_index].valid);
 
     assign rename_rob_finish[rename_index]          =   (decode_out[rename_index].trap_flag) | 
                                                         ((decode_out[rename_index].rfwen == 1'h0) & use_wdest(decode_out[rename_index].futype));
@@ -114,7 +124,9 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     assign rename_inst[rename_index].pwdest              = rename_int_resp[rename_index].rename_dest            ;
     assign rename_inst[rename_index].imm                 = decode_out[rename_index].imm                         ;
     assign rename_inst[rename_index].rob_ptr             = rob_resp[rename_index].rob_ptr                       ;
-    assign rename_inst[rename_index].sq_ptr              = sq_resp[rename_index].sq_ptr                         ;
+    assign rename_inst[rename_index].lsq_ptr             = (sq_req[rename_index]) ? 
+                                                            sq_resp[rename_index].sq_ptr : 
+                                                            lq_resp[rename_index].lq_ptr                        ;
     assign rename_inst[rename_index].no_spec_exec        = decode_out[rename_index].no_spec_exec                ;
     assign rename_inst[rename_index].rvc_flag            = decode_out[rename_index].rvc_flag                    ;
     assign rename_inst[rename_index].end_flag            = decode_out[rename_index].end_flag                    ;
@@ -161,6 +173,19 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     assign sq_req_entry[rename_index].data_finish           = 0                                           ;
     assign sq_req_entry[rename_index].mem_wdata             = 0                                           ;
     /*verilator lint_on ENUMVALUE*/
+
+    /*verilator lint_off ENUMVALUE*/
+    assign lq_req_entry[rename_index].rob_ptr               = rob_resp[rename_index].rob_ptr              ;
+    assign lq_req_entry[rename_index].op                    = decode_out[rename_index].fuoptype           ;
+    assign lq_req_entry[rename_index].pwdest                = rename_int_resp[rename_index].rename_dest   ;
+    assign lq_req_entry[rename_index].load_finish           = 0                                           ;
+    assign lq_req_entry[rename_index].send_addr_finish      = 0                                           ;
+    assign lq_req_entry[rename_index].addr_misalign         = 0                                           ;
+    assign lq_req_entry[rename_index].page_error            = 0                                           ;
+    assign lq_req_entry[rename_index].addr_finish           = 0                                           ;
+    assign lq_req_entry[rename_index].mem_paddr             = 0                                           ;
+    assign lq_req_entry[rename_index].mem_vaddr             = 0                                           ;
+    /*verilator lint_on ENUMVALUE*/
     //**********************************************************************************************
     //!output
     // valid
@@ -183,7 +208,7 @@ end
 endgenerate
 
 assign rename_ready = rename_fire;
-assign rename_fire  = ((|decode_out_valid) & (&rename_free_list_fire) & (&rename_rob_fire) & (&rename_sq_fire) & 
+assign rename_fire  = ((|decode_out_valid) & (&rename_free_list_fire) & (&rename_rob_fire) & (&rename_sq_fire) & (&rename_lq_fire) & 
                         ((!(|rename_out_valid)) | dispatch_ready));
 assign rename_hold  = ((!rename_fire) & (|decode_out_valid));
 

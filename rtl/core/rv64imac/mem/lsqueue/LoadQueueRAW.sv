@@ -9,18 +9,18 @@ import lsq_pkg::*;
 
     input ls_rob_entry_ptr_t                            deq_rob_ptr,
 
-    input                                               loadUnit_enq_lqRAW_o,
-    input  [63:0]                                       loadUnit_raddr_o,
-    input  [2:0]                                        loadUnit_rsize_o,
-    input  ls_rob_entry_ptr_t                           loadUnit_enq_rob_ptr_o,
+    input                                               LoadQueue_enq_lqRAW_o,
+    input  [63:0]                                       LoadQueue_raddr_o,
+    input  [2:0]                                        LoadQueue_rsize_o,
+    input  ls_rob_entry_ptr_t                           LoadQueue_enq_rob_ptr_o,
 
     input                                               storeaddrUnit_check_RAW_o,
     input  [63:0]                                       storeaddrUnit_waddr_o,
     input  [2:0]                                        storeaddrUnit_wsize_o,
     input  ls_rob_entry_ptr_t                           storeaddrUnit_rob_ptr_o,
 
-    output                                              LoadQueue_flush_o,
-    output rob_entry_ptr_t                              LoadQueue_rob_ptr_o
+    output                                              LoadQueueRAW_flush_o,
+    output rob_entry_ptr_t                              LoadQueueRAW_rob_ptr_o
 );
 
 logic          [LQRAW_entry_num - 1 : 0]     loadqueue_valid;
@@ -32,9 +32,9 @@ ls_rob_entry_ptr_t [LQRAW_entry_num - 1 : 0] loadqueueRAW_flush_rob_ptr/* verila
 logic [LQRAW_entry_w - 1 : 0] w_ptr;
 
 lq_RAW_entry_t enq_loadqueue;
-assign enq_loadqueue.loadUnit_raddr_o      = loadUnit_raddr_o       ;
-assign enq_loadqueue.loadUnit_rsize_o      = loadUnit_rsize_o       ;
-assign enq_loadqueue.loadUnit_rob_ptr_o    = loadUnit_enq_rob_ptr_o ;
+assign enq_loadqueue.loadUnit_raddr_o      = LoadQueue_raddr_o       ;
+assign enq_loadqueue.loadUnit_rsize_o      = LoadQueue_rsize_o       ;
+assign enq_loadqueue.loadUnit_rob_ptr_o    = LoadQueue_enq_rob_ptr_o ;
 
 FF_D_with_syn_rst #(
     .DATA_LEN 	( LQRAW_entry_w ),
@@ -44,7 +44,7 @@ FF_D_with_syn_rst #(
     .clk        ( clk                   ),
     .rst_n      ( rst_n                 ),
     .syn_rst    ( redirect              ),
-    .wen        ( loadUnit_enq_lqRAW_o  ),
+    .wen        ( LoadQueue_enq_lqRAW_o ),
     .data_in    ( w_ptr + 1'b1          ),
     .data_out   ( w_ptr                 )
 );
@@ -117,7 +117,7 @@ assign store_wmask          = 8'h0 |
 genvar entry_index;
 generate for(entry_index = 0 ; entry_index < LQRAW_entry_num; entry_index = entry_index + 1) begin : U_load_queue
     logic enqueue;
-    assign enqueue              = loadUnit_enq_lqRAW_o & (entry_index == w_ptr);
+    assign enqueue              = LoadQueue_enq_lqRAW_o & (entry_index == w_ptr);
     FF_D_with_syn_rst #(
         .DATA_LEN 	( 1  ),
         .RST_DATA 	( 0  )
@@ -198,8 +198,8 @@ generate for(entry_index = 0 ; entry_index < LQRAW_entry_num; entry_index = entr
 end
 endgenerate
 
-assign LoadQueue_flush_o    = (loadqueue_flush_valid[LQRAW_entry_num - 1] & reg_storeaddrUnit_check_RAW_o);
-assign LoadQueue_rob_ptr_o  = loadqueueRAW_flush_rob_ptr[LQRAW_entry_num - 1][rob_entry_w - 1 : 0];
+assign LoadQueueRAW_flush_o    = (loadqueue_flush_valid[LQRAW_entry_num - 1] & reg_storeaddrUnit_check_RAW_o);
+assign LoadQueueRAW_rob_ptr_o  = loadqueueRAW_flush_rob_ptr[LQRAW_entry_num - 1][rob_entry_w - 1 : 0];
 
 
 

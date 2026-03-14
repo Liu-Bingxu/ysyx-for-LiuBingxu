@@ -100,7 +100,7 @@ FF_D_with_syn_rst #(
 );
 
 FF_D_with_syn_rst #(
-    .DATA_LEN 	( rob_entry_w + 1   ),
+    .DATA_LEN 	( SQ_entry_w + 1    ),
     .RST_DATA 	( 0                 )
 )u_sq_r_ptr
 (
@@ -209,7 +209,7 @@ generate for(entry_index = 0 ; entry_index < SQ_entry_num; entry_index = entry_i
     FF_D_without_asyn_rst #(SQ_ENTRY_W)    u_entry     (clk,sq_entry_wen, sq_entry_nxt, sq_entry[entry_index]);
 
     logic Queue_entry_use_for_bypass;
-    assign Queue_entry_use_for_bypass = (QueueValid(sq_r_ptr, sq_w_ptr, entry_index) & sq_entry[entry_index].addr_finish & 
+    assign Queue_entry_use_for_bypass = (StoreQueueValid(sq_r_ptr, sq_w_ptr, entry_index) & sq_entry[entry_index].addr_finish & 
                                     (sq_entry[entry_index].mem_waddr[63:3] == load_paddr2sq[63:3]) & rob_is_older(sq_entry[entry_index].rob_ptr, load_rob_ptr, deq_rob_ptr));
 
     if(entry_index == 0)begin : U_gen_sq_bypass_0

@@ -249,14 +249,12 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
     assign dispatch_vec_gen[dispatch_index].alu_csr_fence_exu_in.inst_offset    = rename_out[dispatch_index].inst_offset                    ;
 
     assign dispatch_vec_gen[dispatch_index].loadUnit_in_valid       = (dispatch_in_use[dispatch_index] & send2load(rename_out[dispatch_index].futype));
-    assign dispatch_vec_gen[dispatch_index].loadUnit_in.fuoptype    = rename_out[dispatch_index].fuoptype       ;
     assign dispatch_vec_gen[dispatch_index].loadUnit_in.psrc1       = rename_out[dispatch_index].psrc1          ;
     assign dispatch_vec_gen[dispatch_index].loadUnit_in.src1_type   = rename_out[dispatch_index].src1_type      ;
     assign dispatch_vec_gen[dispatch_index].loadUnit_in.src1_status = (rename_out[dispatch_index].src1_type != src_reg) ? reg_status_fire: 
                                                                         dispatch_psrc1_status[dispatch_index]   ;
-    assign dispatch_vec_gen[dispatch_index].loadUnit_in.pwdest      = rename_out[dispatch_index].pwdest         ;
     assign dispatch_vec_gen[dispatch_index].loadUnit_in.imm         = rename_out[dispatch_index].imm            ;
-    assign dispatch_vec_gen[dispatch_index].loadUnit_in.rob_ptr     = rename_out[dispatch_index].rob_ptr        ;
+    assign dispatch_vec_gen[dispatch_index].loadUnit_in.lq_ptr      = rename_out[dispatch_index].lsq_ptr        ;
 
     assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in_valid          = (dispatch_in_use[dispatch_index] & send2store(rename_out[dispatch_index].futype) & store_can_dispatch);
     assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.psrc1          = rename_out[dispatch_index].psrc1      ;
@@ -264,14 +262,14 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
     assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.src1_status    = (rename_out[dispatch_index].src1_type != src_reg) ? reg_status_fire: 
                                                                         dispatch_psrc1_status[dispatch_index]       ;
     assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.imm            = rename_out[dispatch_index].imm        ;
-    assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.sq_ptr         = rename_out[dispatch_index].sq_ptr     ;
+    assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.sq_ptr         = rename_out[dispatch_index].lsq_ptr    ;
 
     assign dispatch_vec_gen[dispatch_index].storedataUnit_in_valid          = (dispatch_in_use[dispatch_index] & send2store(rename_out[dispatch_index].futype) & store_can_dispatch);
     assign dispatch_vec_gen[dispatch_index].storedataUnit_in.psrc2          = rename_out[dispatch_index].psrc2      ;
     assign dispatch_vec_gen[dispatch_index].storedataUnit_in.src2_type      = rename_out[dispatch_index].src2_type  ;
     assign dispatch_vec_gen[dispatch_index].storedataUnit_in.src2_status    = (rename_out[dispatch_index].src2_type != src_reg) ? reg_status_fire: 
                                                                         dispatch_psrc2_status[dispatch_index]       ;
-    assign dispatch_vec_gen[dispatch_index].storedataUnit_in.sq_ptr         = rename_out[dispatch_index].sq_ptr     ;
+    assign dispatch_vec_gen[dispatch_index].storedataUnit_in.sq_ptr         = rename_out[dispatch_index].lsq_ptr    ;
 
     assign dispatch_vec_gen[dispatch_index].atomicUnit_in_valid     = (dispatch_in_use[dispatch_index] & send2amo(rename_out[dispatch_index].futype));
     assign dispatch_vec_gen[dispatch_index].atomicUnit_in.fuoptype  = rename_out[dispatch_index].fuoptype                       ;

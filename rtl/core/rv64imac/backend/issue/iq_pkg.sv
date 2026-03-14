@@ -156,33 +156,27 @@ typedef struct packed {
 } iq_csr_entry_t;
 
 typedef struct packed {
-    FuOpType_t                              fuoptype;           // 该指令fu操作符
-
     pint_regsrc_t                           psrc1;              // 源物理寄存器号1
     src_type_t                              src1_type;          // 源操作数1类型
     reg_status_t                            src1_status;        // 源操作数1状态
-    pint_regdest_t                          pwdest;             // 目的物理寄存器号
 
     logic [31:0]                            imm;                // 32位需符号拓展立即数
 
-    ls_rob_entry_ptr_t                      rob_ptr;            // rob指针
+    LQ_entry_ptr_t                          lq_ptr;             // lq指针
 } iq_mem_load_in_t;
 
-localparam IQ_MEM_LOAD_ENTRY_W = 9 + int_preg_width + 2 + 1 + int_preg_width + 32 + rob_entry_w + 1;
+localparam IQ_MEM_LOAD_ENTRY_W = int_preg_width + 2 + 1 + 32 + LQ_entry_w;
 typedef struct packed {
     //! TODO 暂时不考虑年龄，考虑后期优化
     // age_t                                   age;                // 指令年龄
 
-    FuOpType_t                              fuoptype;           // 该指令fu操作符
-
     pint_regsrc_t                           psrc1;              // 源物理寄存器号1
     src_type_t                              src1_type;          // 源操作数1类型
     reg_status_t                            src1_status;        // 源操作数1状态
-    pint_regdest_t                          pwdest;             // 目的物理寄存器号
 
     logic [31:0]                            imm;                // 32位需符号拓展立即数
 
-    ls_rob_entry_ptr_t                      rob_ptr;            // rob指针
+    LQ_entry_ptr_t                          lq_ptr;             // lq指针
 } iq_mem_load_entry_t;
 
 typedef struct packed {
@@ -341,15 +335,12 @@ typedef struct packed {
 } iq_fence_out_t;
 
 typedef struct packed {
-    FuOpType_t                              fuoptype;           // 该指令fu操作符
-
     pint_regsrc_t                           psrc1;              // 源物理寄存器号1
     src_type_t                              src1_type;          // 源操作数1类型
-    pint_regdest_t                          pwdest;             // 目的物理寄存器号
 
     logic [31:0]                            imm;                // 32位需符号拓展立即数
 
-    ls_rob_entry_ptr_t                      rob_ptr;            // rob指针
+    LQ_entry_ptr_t                          lq_ptr;             // lq指针
 } iq_mem_load_out_t;
 
 typedef struct packed {

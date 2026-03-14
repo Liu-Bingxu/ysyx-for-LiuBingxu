@@ -48,9 +48,14 @@ import core_setting_pkg::*;
     input  ls_rob_entry_ptr_t                           deq_rob_ptr,
 
     input                                               rename_fire,
+
     input              [rename_width - 1 : 0]           sq_req,
     input   sq_entry_t [rename_width - 1 : 0]           sq_req_entry,
     output  sq_resp_t  [rename_width - 1 : 0]           sq_resp,
+
+    input              [rename_width - 1 : 0]           lq_req,
+    input   lq_entry_t [rename_width - 1 : 0]           lq_req_entry,
+    output  lq_resp_t  [rename_width - 1 : 0]           lq_resp,
 
     input                                               storeaddrUnit_in_valid,
     output                                              storeaddrUnit_in_ready,
@@ -96,16 +101,16 @@ import core_setting_pkg::*;
     output [63:0]                                       StoreQueue_vaddr_o,
 
     // load report port
-    output                                              loadUnit_valid_o,
-    input                                               loadUnit_ready_o,
-    output                                              loadUnit_addr_misalign_o,
-    output                                              loadUnit_page_error_o,
-    output                                              loadUnit_load_error_o,
-    output                                              loadUnit_rfwen_o,
-    output pint_regdest_t                               loadUnit_pwdest_o,
-    output [63:0]                                       loadUnit_preg_wdata_o,
-    output rob_entry_ptr_t                              loadUnit_rob_ptr_o,
-    output [63:0]                                       loadUnit_vaddr_o,
+    output                                              LoadQueue_valid_o,
+    input                                               LoadQueue_ready_o,
+    output                                              LoadQueue_addr_misalign_o,
+    output                                              LoadQueue_page_error_o,
+    output                                              LoadQueue_load_error_o,
+    output                                              LoadQueue_rfwen_o,
+    output pint_regdest_t                               LoadQueue_pwdest_o,
+    output [63:0]                                       LoadQueue_preg_wdata_o,
+    output rob_entry_ptr_t                              LoadQueue_rob_ptr_o,
+    output [63:0]                                       LoadQueue_vaddr_o,
 
     // atomic report port
     output                                              atomicUnit_valid_o,
@@ -123,8 +128,8 @@ import core_setting_pkg::*;
     output [63:0]                                       atomicUnit_preg_wdata_o,
 
     // LoadQueueRAW report port
-    output                                              LoadQueue_flush_o,
-    output rob_entry_ptr_t                              LoadQueue_rob_ptr_o,
+    output                                              LoadQueueRAW_flush_o,
+    output rob_entry_ptr_t                              LoadQueueRAW_rob_ptr_o,
 
     //interface with immu
     input                                               immu_miss_valid,
@@ -258,7 +263,22 @@ logic [127:0]               sbuffer_req_wdata;
 logic                       sbuffer_resp_ready;
 logic [sb_line_bit-1:0]     sbuffer_req_index;
 
+// outports logic u_LoadQueue
+load_optype_t               loadUnit_op_query;
+logic                       loadUnit_ready_o;
+logic                       LoadQueue_arvalid;
+logic [2:0]                 LoadQueue_arsize;
+logic [63:0]                LoadQueue_araddr;
+ls_rob_entry_ptr_t          LoadQueue_rob_ptr;
+LQ_entry_ptr_t              LoadQueue_lq_ptr;
+logic                       LoadQueue_enq_lqRAW_o;
+logic [63:0]                LoadQueue_raddr_o;
+logic [2:0]                 LoadQueue_rsize_o;
+ls_rob_entry_ptr_t          LoadQueue_enq_rob_ptr_o;
+logic                       LoadQueue_rready;
+
 // outports logic u_loadUnit
+LQ_entry_ptr_t              loadUnit_lq_ptr_query;
 logic                       loadUnit_mmu_valid  ;
 logic                       loadUnit_mmu_ready  ;
 logic  [64:0]               loadUnit_vaddr      ;
@@ -266,31 +286,29 @@ logic                       loadUnit_paddr_valid;
 logic                       loadUnit_paddr_ready;
 logic [63:0]                loadUnit_paddr      ;
 logic                       loadUnit_paddr_error;
-logic                       loadUnit_arvalid;
-logic [2:0]                 loadUnit_arsize;
-logic [63:0]                loadUnit_araddr;
-ls_rob_entry_ptr_t          loadUnit_rob_ptr;
-logic                       loadUnit_enq_lqRAW_o;
-logic [63:0]                loadUnit_raddr_o;
-logic [2:0]                 loadUnit_rsize_o;
-ls_rob_entry_ptr_t          loadUnit_enq_rob_ptr_o;
-logic                       loadUnit_rready;
+logic                       loadUnit_valid_o;
+logic                       loadUnit_addr_misalign_o;
+logic                       loadUnit_page_error_o;
+logic [63:0]                loadUnit_paddr_o;
+logic [63:0]                loadUnit_vaddr_o;
+LQ_entry_ptr_t              loadUnit_lq_ptr_o;
 
 // outports logic load_bypass_helper
-logic                       loadUnit_arready;
+logic                       LoadQueue_arready;
 logic [63:0]                dcache_load_paddr;
 logic [63:0]                load_paddr2sq;
 logic [7:0]                 load_rstrb2sq;
 ls_rob_entry_ptr_t          load_rob_ptr;
 logic [63:0]                load_paddr2sb;
 logic [7:0]                 load_rstrb2sb;
-logic                       loadUnit_rvalid;
-logic [1:0]                 loadUnit_rresp;
-logic [63:0]                loadUnit_rdata;
+logic                       LoadQueue_rvalid;
+logic [1:0]                 LoadQueue_rresp;
+logic [63:0]                LoadQueue_rdata;
 logic                       load_arvalid;
 logic [2:0]                 load_arsize;
 logic [63:0]                load_araddr;
 logic                       load_rready;
+LQ_entry_ptr_t              LoadQueue_lq_ptr_update;
 
 // outports logic u_atomicUnit
 logic                       stomic_running;
@@ -527,6 +545,51 @@ sbuffer u_sbuffer(
 	.sbuffer_resp_index             ( sbuffer_resp_index            )
 );
 
+LoadQueue u_LoadQueue(
+	.clk                        ( clk                        ),
+	.rst_n                      ( rst_n                      ),
+	.redirect                   ( redirect                   ),
+	.top_rob_ptr                ( top_rob_ptr                ),
+	.rename_fire                ( rename_fire                ),
+	.lq_req                     ( lq_req                     ),
+	.lq_req_entry               ( lq_req_entry               ),
+	.lq_resp                    ( lq_resp                    ),
+    .loadUnit_lq_ptr_query      ( loadUnit_lq_ptr_query      ),
+    .loadUnit_op_query          ( loadUnit_op_query          ),
+	.loadUnit_valid_o           ( loadUnit_valid_o           ),
+	.loadUnit_ready_o           ( loadUnit_ready_o           ),
+	.loadUnit_addr_misalign_o   ( loadUnit_addr_misalign_o   ),
+	.loadUnit_page_error_o      ( loadUnit_page_error_o      ),
+	.loadUnit_paddr_o           ( loadUnit_paddr_o           ),
+	.loadUnit_vaddr_o           ( loadUnit_vaddr_o           ),
+	.loadUnit_lq_ptr_o          ( loadUnit_lq_ptr_o          ),
+	.LoadQueue_arvalid          ( LoadQueue_arvalid          ),
+	.LoadQueue_arready          ( LoadQueue_arready          ),
+	.LoadQueue_arsize           ( LoadQueue_arsize           ),
+	.LoadQueue_araddr           ( LoadQueue_araddr           ),
+	.LoadQueue_rob_ptr          ( LoadQueue_rob_ptr          ),
+	.LoadQueue_lq_ptr           ( LoadQueue_lq_ptr           ),
+	.LoadQueue_enq_lqRAW_o      ( LoadQueue_enq_lqRAW_o      ),
+	.LoadQueue_raddr_o          ( LoadQueue_raddr_o          ),
+	.LoadQueue_rsize_o          ( LoadQueue_rsize_o          ),
+	.LoadQueue_enq_rob_ptr_o    ( LoadQueue_enq_rob_ptr_o    ),
+	.LoadQueue_rvalid           ( LoadQueue_rvalid           ),
+	.LoadQueue_rready           ( LoadQueue_rready           ),
+	.LoadQueue_rresp            ( LoadQueue_rresp            ),
+	.LoadQueue_rdata            ( LoadQueue_rdata            ),
+	.LoadQueue_lq_ptr_update    ( LoadQueue_lq_ptr_update    ),
+	.LoadQueue_valid_o          ( LoadQueue_valid_o          ),
+	.LoadQueue_ready_o          ( LoadQueue_ready_o          ),
+	.LoadQueue_addr_misalign_o  ( LoadQueue_addr_misalign_o  ),
+	.LoadQueue_page_error_o     ( LoadQueue_page_error_o     ),
+	.LoadQueue_load_error_o     ( LoadQueue_load_error_o     ),
+	.LoadQueue_rfwen_o          ( LoadQueue_rfwen_o          ),
+	.LoadQueue_pwdest_o         ( LoadQueue_pwdest_o         ),
+	.LoadQueue_preg_wdata_o     ( LoadQueue_preg_wdata_o     ),
+	.LoadQueue_rob_ptr_o        ( LoadQueue_rob_ptr_o        ),
+	.LoadQueue_vaddr_o          ( LoadQueue_vaddr_o          )
+);
+
 loadUnit u_loadUnit(
 	.clk                        ( clk                       ),
 	.rst_n                      ( rst_n                     ),
@@ -538,6 +601,8 @@ loadUnit u_loadUnit(
 	.pwdest                     ( pwdest                    ),
 	.loadUnit_psrc              ( loadUnit_psrc             ),
 	.loadUnit_psrc_rdata        ( loadUnit_psrc_rdata       ),
+    .loadUnit_lq_ptr_query      ( loadUnit_lq_ptr_query     ),
+    .loadUnit_op_query          ( loadUnit_op_query         ),
 	.loadUnit_mmu_valid         ( loadUnit_mmu_valid        ),
 	.loadUnit_mmu_ready         ( loadUnit_mmu_ready        ),
 	.loadUnit_vaddr             ( loadUnit_vaddr            ),
@@ -545,73 +610,59 @@ loadUnit u_loadUnit(
 	.loadUnit_paddr_ready       ( loadUnit_paddr_ready      ),
 	.loadUnit_paddr             ( loadUnit_paddr            ),
 	.loadUnit_paddr_error       ( loadUnit_paddr_error      ),
-	.loadUnit_arvalid           ( loadUnit_arvalid          ),
-	.loadUnit_arready           ( loadUnit_arready          ),
-	.loadUnit_arsize            ( loadUnit_arsize           ),
-	.loadUnit_araddr            ( loadUnit_araddr           ),
-	.loadUnit_rob_ptr           ( loadUnit_rob_ptr          ),
-	.loadUnit_enq_lqRAW_o       ( loadUnit_enq_lqRAW_o      ),
-	.loadUnit_raddr_o           ( loadUnit_raddr_o          ),
-	.loadUnit_rsize_o           ( loadUnit_rsize_o          ),
-	.loadUnit_enq_rob_ptr_o     ( loadUnit_enq_rob_ptr_o    ),
-	.loadUnit_rvalid            ( loadUnit_rvalid           ),
-	.loadUnit_rready            ( loadUnit_rready           ),
-	.loadUnit_rresp             ( loadUnit_rresp            ),
-	.loadUnit_rdata             ( loadUnit_rdata            ),
 	.loadUnit_valid_o           ( loadUnit_valid_o          ),
 	.loadUnit_ready_o           ( loadUnit_ready_o          ),
 	.loadUnit_addr_misalign_o   ( loadUnit_addr_misalign_o  ),
 	.loadUnit_page_error_o      ( loadUnit_page_error_o     ),
-	.loadUnit_load_error_o      ( loadUnit_load_error_o     ),
-	.loadUnit_rfwen_o           ( loadUnit_rfwen_o          ),
-	.loadUnit_pwdest_o          ( loadUnit_pwdest_o         ),
-	.loadUnit_preg_wdata_o      ( loadUnit_preg_wdata_o     ),
-	.loadUnit_rob_ptr_o         ( loadUnit_rob_ptr_o        ),
-	.loadUnit_vaddr_o           ( loadUnit_vaddr_o          )
+    .loadUnit_paddr_o           ( loadUnit_paddr_o          ),
+	.loadUnit_vaddr_o           ( loadUnit_vaddr_o          ),
+    .loadUnit_lq_ptr_o          ( loadUnit_lq_ptr_o         )
 );
 
 load_bypass_helper u_load_bypass_helper(
-	.clk               	    ( clk                   ),
-	.rst_n             	    ( rst_n                 ),
-	.redirect          	    ( redirect              ),
-	.loadUnit_arvalid  	    ( loadUnit_arvalid      ),
-	.loadUnit_arready  	    ( loadUnit_arready      ),
-	.loadUnit_arsize   	    ( loadUnit_arsize       ),
-	.loadUnit_araddr   	    ( loadUnit_araddr       ),
-	.loadUnit_rob_ptr       ( loadUnit_rob_ptr      ),
-	.dcache_load_paddr 	    ( dcache_load_paddr     ),
-	.dcache_load_hit   	    ( dcache_load_hit       ),
-	.dcache_load_data  	    ( dcache_load_data      ),
-	.load_paddr2sq     	    ( load_paddr2sq         ),
-	.load_rstrb2sq     	    ( load_rstrb2sq         ),
-	.load_rob_ptr     	    ( load_rob_ptr          ),
-	.sq_load_data      	    ( sq_load_data          ),
-	.sq_load_rstrb     	    ( sq_load_rstrb         ),
-	.sq_wait           	    ( sq_wait               ),
-	.load_paddr2sb     	    ( load_paddr2sb         ),
-	.load_rstrb2sb     	    ( load_rstrb2sb         ),
-	.sb_load_data      	    ( sb_load_data          ),
-	.sb_load_rstrb     	    ( sb_load_rstrb         ),
-	.loadUnit_rvalid   	    ( loadUnit_rvalid       ),
-	.loadUnit_rready   	    ( loadUnit_rready       ),
-	.loadUnit_rresp    	    ( loadUnit_rresp        ),
-	.loadUnit_rdata    	    ( loadUnit_rdata        ),
-	.load_arvalid      	    ( load_arvalid          ),
-	.load_arready      	    ( load_arready          ),
-	.load_arsize       	    ( load_arsize           ),
-	.load_araddr       	    ( load_araddr           ),
-	.load_rvalid       	    ( load_rvalid           ),
-	.load_rready       	    ( load_rready           ),
-	.load_rresp        	    ( load_rresp            ),
-	.load_rdata        	    ( load_rdata            ),
-    .load_uncache_arvalid   ( load_uncache_arvalid  ),
-    .load_uncache_arready   ( load_uncache_arready  ),
-    .load_uncache_arsize    ( load_uncache_arsize   ),
-    .load_uncache_araddr    ( load_uncache_araddr   ),
-    .load_uncache_rvalid    ( load_uncache_rvalid   ),
-    .load_uncache_rready    ( load_uncache_rready   ),
-    .load_uncache_rresp     ( load_uncache_rresp    ),
-    .load_uncache_rdata     ( load_uncache_rdata    )
+	.clk               	        ( clk                       ),
+	.rst_n             	        ( rst_n                     ),
+	.redirect          	        ( redirect                  ),
+	.LoadQueue_arvalid  	    ( LoadQueue_arvalid         ),
+	.LoadQueue_arready  	    ( LoadQueue_arready         ),
+	.LoadQueue_arsize   	    ( LoadQueue_arsize          ),
+	.LoadQueue_araddr   	    ( LoadQueue_araddr          ),
+	.LoadQueue_rob_ptr          ( LoadQueue_rob_ptr         ),
+    .LoadQueue_lq_ptr           ( LoadQueue_lq_ptr          ),
+	.dcache_load_paddr 	        ( dcache_load_paddr         ),
+	.dcache_load_hit   	        ( dcache_load_hit           ),
+	.dcache_load_data  	        ( dcache_load_data          ),
+	.load_paddr2sq     	        ( load_paddr2sq             ),
+	.load_rstrb2sq     	        ( load_rstrb2sq             ),
+	.load_rob_ptr     	        ( load_rob_ptr              ),
+	.sq_load_data      	        ( sq_load_data              ),
+	.sq_load_rstrb     	        ( sq_load_rstrb             ),
+	.sq_wait           	        ( sq_wait                   ),
+	.load_paddr2sb     	        ( load_paddr2sb             ),
+	.load_rstrb2sb     	        ( load_rstrb2sb             ),
+	.sb_load_data      	        ( sb_load_data              ),
+	.sb_load_rstrb     	        ( sb_load_rstrb             ),
+	.LoadQueue_rvalid   	    ( LoadQueue_rvalid          ),
+	.LoadQueue_rready   	    ( LoadQueue_rready          ),
+	.LoadQueue_rresp    	    ( LoadQueue_rresp           ),
+	.LoadQueue_rdata    	    ( LoadQueue_rdata           ),
+    .LoadQueue_lq_ptr_update    ( LoadQueue_lq_ptr_update   ),
+	.load_arvalid      	        ( load_arvalid              ),
+	.load_arready      	        ( load_arready              ),
+	.load_arsize       	        ( load_arsize               ),
+	.load_araddr       	        ( load_araddr               ),
+	.load_rvalid       	        ( load_rvalid               ),
+	.load_rready       	        ( load_rready               ),
+	.load_rresp        	        ( load_rresp                ),
+	.load_rdata        	        ( load_rdata                ),
+    .load_uncache_arvalid       ( load_uncache_arvalid      ),
+    .load_uncache_arready       ( load_uncache_arready      ),
+    .load_uncache_arsize        ( load_uncache_arsize       ),
+    .load_uncache_araddr        ( load_uncache_araddr       ),
+    .load_uncache_rvalid        ( load_uncache_rvalid       ),
+    .load_uncache_rready        ( load_uncache_rready       ),
+    .load_uncache_rresp         ( load_uncache_rresp        ),
+    .load_uncache_rdata         ( load_uncache_rdata        )
 );
 
 LoadQueueRAW u_LoadQueueRAW(
@@ -619,16 +670,16 @@ LoadQueueRAW u_LoadQueueRAW(
 	.rst_n                      ( rst_n                      ),
 	.redirect                   ( redirect                   ),
 	.deq_rob_ptr                ( deq_rob_ptr                ),
-	.loadUnit_enq_lqRAW_o       ( loadUnit_enq_lqRAW_o       ),
-	.loadUnit_raddr_o           ( loadUnit_raddr_o           ),
-	.loadUnit_rsize_o           ( loadUnit_rsize_o           ),
-	.loadUnit_enq_rob_ptr_o     ( loadUnit_enq_rob_ptr_o     ),
+	.LoadQueue_enq_lqRAW_o      ( LoadQueue_enq_lqRAW_o      ),
+	.LoadQueue_raddr_o          ( LoadQueue_raddr_o          ),
+	.LoadQueue_rsize_o          ( LoadQueue_rsize_o          ),
+	.LoadQueue_enq_rob_ptr_o    ( LoadQueue_enq_rob_ptr_o    ),
 	.storeaddrUnit_check_RAW_o  ( storeaddrUnit_check_RAW_o  ),
 	.storeaddrUnit_waddr_o      ( storeaddrUnit_waddr_o      ),
 	.storeaddrUnit_wsize_o      ( storeaddrUnit_wsize_o      ),
 	.storeaddrUnit_rob_ptr_o    ( storeaddrUnit_rob_ptr_o    ),
-	.LoadQueue_flush_o          ( LoadQueue_flush_o          ),
-	.LoadQueue_rob_ptr_o        ( LoadQueue_rob_ptr_o        )
+	.LoadQueueRAW_flush_o       ( LoadQueueRAW_flush_o       ),
+	.LoadQueueRAW_rob_ptr_o     ( LoadQueueRAW_rob_ptr_o     )
 );
 
 atomicUnit u_atomicUnit(

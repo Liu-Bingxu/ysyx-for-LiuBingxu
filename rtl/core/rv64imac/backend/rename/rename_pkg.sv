@@ -33,7 +33,7 @@ typedef struct packed {
     logic [31:0]                            imm;                // 32位需符号拓展立即数
 
     ls_rob_entry_ptr_t                      rob_ptr;            // rob指针
-    SQ_entry_ptr_t                          sq_ptr;             // lsq指针
+    LSQ_entry_ptr_t                         lsq_ptr;            // lsq指针
 
     logic                                   no_spec_exec;       // 不可乱序执行标志
     logic                                   rvc_flag;           // 双字节指令标志
