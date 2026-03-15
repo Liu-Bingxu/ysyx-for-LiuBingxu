@@ -538,7 +538,9 @@ assign rob_trap_valid              = (rob_commit_valid_inner[commit_width - 1] &
                                     (rob_trap_cause_inner[commit_width - 1] != 5'd25) &
                                     (rob_trap_cause_inner[commit_width - 1] != 5'd26));
 assign rob_trap_cause              = {59'h0, rob_trap_cause_inner[commit_width - 1]};
-assign rob_trap_tval               = (rob_trap_cause_inner[commit_width - 1] != 5'h1) ? rob_trap_tval_inner[commit_width - 1] :
-                                    (rob_trap_tval_inner[commit_width - 1] == 64'h1) ? (rob_commit_pc + 64'h2) : (rob_commit_pc + 64'h4);
+assign rob_trap_tval               = (rob_trap_cause_inner[commit_width - 1] == 5'h3) ? rob_commit_pc : 
+                                    (((rob_trap_cause_inner[commit_width - 1] == 5'hC) | (rob_trap_cause_inner[commit_width - 1] == 5'h1)) ? 
+                                    ((rob_trap_tval_inner[commit_width - 1] == 64'hC) ? (rob_commit_pc + 64'h2) : (rob_commit_pc + 64'h4)) : 
+                                    rob_trap_tval_inner[commit_width - 1]);
 
 endmodule //rob
