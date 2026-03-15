@@ -15,6 +15,7 @@ typedef logic [SQ_entry_w     : 0] SQ_entry_ptr_inner_t;
 
 localparam LQRAW_entry_w   = 6;
 localparam LQRAW_entry_num = 2 ** LQRAW_entry_w;
+typedef logic [LQRAW_entry_w - 1 : 0] LQRAW_entry_ptr_t;
 
 localparam LQ_entry_w   = 6;
 localparam LQ_entry_num = 2 ** LQ_entry_w;
@@ -54,19 +55,55 @@ typedef struct packed {
     ls_rob_entry_ptr_t                      loadUnit_rob_ptr_o;
 } lq_RAW_entry_t;
 
-localparam LQ_ENTRY_W = rob_entry_w + 1 + 9 + int_preg_width + 1 + 1 + 1 + 1 + 1 + 64 + 64;
+typedef enum logic [2:0] {  
+    lq_not_addr     = 'h0,
+    lq_get_addr     = 'h1,
+    lq_send_addr    = 'h2,
+    lq_send_rob     = 'h3,
+    lq_commit       = 'h4
+}lq_entry_status_t;
+
+localparam LQ_ENTRY_W = rob_entry_w + 1 + 9 + int_preg_width + 3 + 1 + 1 + 64 + 64;
 typedef struct packed {
     ls_rob_entry_ptr_t                      rob_ptr;
     load_optype_t                           op;
     pint_regdest_t                          pwdest;
-    logic                                   load_finish;
-    logic                                   send_addr_finish;
+    lq_entry_status_t                       lq_entry_status;
     logic                                   addr_misalign;
     logic                                   page_error;
-    logic                                   addr_finish;
     logic [63:0]                            mem_paddr;
     logic [63:0]                            mem_vaddr;
 } lq_entry_t;
+
+task automatic Load_commit_judge(
+    input  rob_entry_ptr_t          top_rob_ptr,
+    input  [commit_width - 1 : 0]   rob_commit_instret,
+    //! TODO 使用不用的位作assert检查
+    /* verilator lint_off UNUSEDSIGNAL */
+    input  lq_entry_t               lq_entry_self,
+    /* verilator lint_on UNUSEDSIGNAL */
+    output                          lq_wen_update,
+    output lq_entry_t               lq_entry_update);
+
+    rob_entry_ptr_t [commit_width - 1 : 0] rob_ptr_update;
+    logic           [commit_width - 1 : 0] wen_update;
+    //! 由于不好作参数化，所以用此行为级建模
+    integer i;
+    for(i = 0; i < commit_width; i = i + 1)begin
+        assign rob_ptr_update[i]    = (top_rob_ptr + i[rob_entry_w - 1 : 0]);
+        assign wen_update[i]        = ((rob_ptr_update[i] == lq_entry_self.rob_ptr[rob_entry_w - 1 : 0]) & rob_commit_instret[i]);
+    end
+
+    assign lq_wen_update                     = (|wen_update)               ;
+    assign lq_entry_update.rob_ptr           = lq_entry_self.rob_ptr       ;
+    assign lq_entry_update.op                = lq_entry_self.op            ;
+    assign lq_entry_update.pwdest            = lq_entry_self.pwdest        ;
+    assign lq_entry_update.lq_entry_status   = lq_commit                   ;
+    assign lq_entry_update.addr_misalign     = lq_entry_self.addr_misalign ;
+    assign lq_entry_update.page_error        = lq_entry_self.page_error    ;
+    assign lq_entry_update.mem_paddr         = lq_entry_self.mem_paddr     ;
+    assign lq_entry_update.mem_vaddr         = lq_entry_self.mem_vaddr     ;
+endtask //automatic
 
 function logic LoadQueueValid;
     input LQ_entry_ptr_inner_t      lq_r_ptr;

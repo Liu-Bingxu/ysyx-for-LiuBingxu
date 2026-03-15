@@ -46,6 +46,7 @@ import core_setting_pkg::*;
 
     input  rob_entry_ptr_t                              top_rob_ptr,
     input  ls_rob_entry_ptr_t                           deq_rob_ptr,
+    input  [commit_width - 1 : 0]                       rob_commit_instret,
 
     input                                               rename_fire,
 
@@ -550,6 +551,7 @@ LoadQueue u_LoadQueue(
 	.rst_n                      ( rst_n                      ),
 	.redirect                   ( redirect                   ),
 	.top_rob_ptr                ( top_rob_ptr                ),
+    .rob_commit_instret         ( rob_commit_instret         ),
 	.rename_fire                ( rename_fire                ),
 	.lq_req                     ( lq_req                     ),
 	.lq_req_entry               ( lq_req_entry               ),
@@ -670,6 +672,7 @@ LoadQueueRAW u_LoadQueueRAW(
 	.rst_n                      ( rst_n                      ),
 	.redirect                   ( redirect                   ),
 	.deq_rob_ptr                ( deq_rob_ptr                ),
+    .rob_commit_instret         ( rob_commit_instret         ),
 	.LoadQueue_enq_lqRAW_o      ( LoadQueue_enq_lqRAW_o      ),
 	.LoadQueue_raddr_o          ( LoadQueue_raddr_o          ),
 	.LoadQueue_rsize_o          ( LoadQueue_rsize_o          ),

@@ -178,11 +178,9 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     assign lq_req_entry[rename_index].rob_ptr               = rob_resp[rename_index].rob_ptr              ;
     assign lq_req_entry[rename_index].op                    = decode_out[rename_index].fuoptype           ;
     assign lq_req_entry[rename_index].pwdest                = rename_int_resp[rename_index].rename_dest   ;
-    assign lq_req_entry[rename_index].load_finish           = 0                                           ;
-    assign lq_req_entry[rename_index].send_addr_finish      = 0                                           ;
+    assign lq_req_entry[rename_index].lq_entry_status       = lq_not_addr                                 ;
     assign lq_req_entry[rename_index].addr_misalign         = 0                                           ;
     assign lq_req_entry[rename_index].page_error            = 0                                           ;
-    assign lq_req_entry[rename_index].addr_finish           = 0                                           ;
     assign lq_req_entry[rename_index].mem_paddr             = 0                                           ;
     assign lq_req_entry[rename_index].mem_vaddr             = 0                                           ;
     /*verilator lint_on ENUMVALUE*/

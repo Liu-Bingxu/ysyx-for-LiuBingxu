@@ -12,6 +12,7 @@ import rob_pkg::*;
 
     output rob_entry_ptr_t                              top_rob_ptr,
     output ls_rob_entry_ptr_t                           deq_rob_ptr,
+    output [commit_width - 1 : 0]                       rob_commit_instret,
 
     output [FTQ_ENTRY_BIT_NUM - 1 : 0]                  rob_ftq_ptr,
     /* verilator lint_off UNUSEDSIGNAL */
@@ -155,6 +156,8 @@ logic                                       rob_call_inner[commit_width - 1 : 0]
 logic                                       rob_ret_inner[commit_width - 1 : 0]/* verilator split_var */;
 logic [FTQ_ENTRY_BIT_NUM - 1 : 0]           rob_ftq_ptr_inner[commit_width - 1 : 0]/* verilator split_var */;
 logic [BLOCK_BIT_NUM - 1:0]                 rob_inst_offset_inner[commit_width - 1 : 0]/* verilator split_var */;
+
+logic [commit_width - 1 : 0]                rob_commit_instret_inner;
 
 ls_rob_entry_ptr_t                          rob_ptr_top_nxt;
 assign rob_ptr_top_nxt = (rob_resp_inner[rename_width - 1].valid) ? (rob_ptr_resp[rename_width - 1] + 1) : rob_ptr_resp[rename_width - 1];
@@ -459,11 +462,14 @@ generate for(commit_index = 0 ; commit_index < commit_width; commit_index = comm
 
     assign commit_int_need_free[commit_index]   = (rob_can_commit[commit_index] & rob_entry_commit[commit_index].rfwen & (!interrupt_happen) & ((!rob_entry_commit[commit_index].trap_flag) | (rob_entry_commit[commit_index].trap_cause == 5'd24) | (rob_entry_commit[commit_index].trap_cause == 5'd25)));
     assign commit_int_old_pdest[commit_index]   = rob_entry_commit[commit_index].old_pdest;
+
+    assign rob_commit_instret_inner[commit_index] = rob_can_commit[commit_index]& (!interrupt_happen) & ((!rob_entry_commit[commit_index].trap_flag) | (rob_entry_commit[commit_index].trap_cause == 5'd24) | (rob_entry_commit[commit_index].trap_cause == 5'd25));
 end
 endgenerate
 
-assign top_rob_ptr = rob_ptr_button[rob_entry_w - 1 : 0];
-assign deq_rob_ptr = rob_ptr_button;
+assign top_rob_ptr          = rob_ptr_button[rob_entry_w - 1 : 0];
+assign deq_rob_ptr          = rob_ptr_button;
+assign rob_commit_instret   = rob_commit_instret_inner;
 
 genvar resp_index;
 generate for(resp_index = 0 ; resp_index < rename_width; resp_index = resp_index + 1) begin : U_gen_rob_resp

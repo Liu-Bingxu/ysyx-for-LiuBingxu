@@ -25,6 +25,7 @@ import core_setting_pkg::*;
 
     output rob_entry_ptr_t                          top_rob_ptr,
     output ls_rob_entry_ptr_t                       deq_rob_ptr,
+    output [commit_width - 1 : 0]                   rob_commit_instret,
 
     input  ibuf_inst_o_entry[decode_width - 1 :0]   ibuf_inst_o,
     output [decode_width - 1 :0]                    decode_inst_ready,
@@ -435,6 +436,7 @@ rob u_rob(
 	.redirect                        	( redirect                         ),
 	.top_rob_ptr                     	( top_rob_ptr                      ),
 	.deq_rob_ptr                     	( deq_rob_ptr                      ),
+    .rob_commit_instret                 ( rob_commit_instret               ),
 	.rob_ftq_ptr                     	( rob_ftq_ptr                      ),
 	.rob_ftq_entry                   	( rob_ftq_entry                    ),
     .rob_ftq_ptr_lq_raw                 ( rob_ftq_ptr_lq_raw               ),
@@ -707,6 +709,7 @@ u_csr(
     .sepc_o                         ( sepc_o                         ),
     .dpc_o                          ( dpc_o                          ),
 	.rob_can_interrupt             	( rob_can_interrupt              ),
+    .rob_commit_instret             ( rob_commit_instret             ),
 	.rob_commit_valid              	( rob_commit_valid               ),
 	.rob_commit_pc                 	( rob_commit_pc                  ),
 	.rob_commit_next_pc            	( rob_commit_next_pc             ),

@@ -36,6 +36,7 @@ import core_setting_pkg::*;
 // interface with rob 
     // common
     input                           rob_can_interrupt,
+    input  [commit_width - 1 : 0]   rob_commit_instret,
     input                           rob_commit_valid,
     input  [63:0]                   rob_commit_pc,
     input  [63:0]                   rob_commit_next_pc,
@@ -126,15 +127,20 @@ wire            csr_mie_wen;
 wire            csr_sie_wen;
 
 //?Performance_Monitor
-wire [63:0]     Performance_Monitor[1:31];
-wire            csr_MPerformance_Monitor_wen[1:31];
-wire            MPerformance_Monitor_inc[1:31];
-genvar          csr_MPerformance_Monitor_index;
+wire [63:0]     Performance_Monitor[2:31];
+wire            csr_MPerformance_Monitor_wen[2:31];
+wire            MPerformance_Monitor_inc[2:31];
+genvar          csr_MPerformance_Monitor_gen_index;
+genvar          csr_MPerformance_Monitor_inc_index;
+
+wire [63:0]     minstret;
+wire            csr_minstret_wen;
 
 //?mhpmevent
 wire [63:0]     mhpmevent[3:31];
 wire            csr_mhpmevent_wen[3:31];
-genvar          csr_mhpmevent_index;
+genvar          csr_mhpmevent_gen_index;
+genvar          csr_mhpmevent_inc_index;
 
 //?mcounteren
 wire [63:0] 	mcounteren;
@@ -328,39 +334,48 @@ csr_mie u_csr_mie(
 );
 
 generate 
-for(csr_MPerformance_Monitor_index = 1 ; csr_MPerformance_Monitor_index < 32; csr_MPerformance_Monitor_index = csr_MPerformance_Monitor_index + 1) begin : csr_Performance_Monitor
+for(csr_MPerformance_Monitor_gen_index = 2 ; csr_MPerformance_Monitor_gen_index < 32; csr_MPerformance_Monitor_gen_index = csr_MPerformance_Monitor_gen_index + 1) begin : csr_Performance_Monitor
 
-if(csr_MPerformance_Monitor_index == 1)begin: U_gen_monitor_0
+if(csr_MPerformance_Monitor_gen_index == 2)begin: U_gen_monitor_0
     csr_MPerformance_Monitor u_csr_MPerformance_Monitor(
-        .clk                          	( clk                                                           ),
-        .csr_MPerformance_Monitor_wen 	( csr_MPerformance_Monitor_wen[csr_MPerformance_Monitor_index]  ),
-        .MPerformance_Monitor_hibit   	( mcountinhibit[0]                                              ),
-        .MPerformance_Monitor_inc     	( MPerformance_Monitor_inc[csr_MPerformance_Monitor_index]      ),
-        .csr_wdata                    	( csr_wdata                                                     ),
-        .MPerformance_Monitor         	( Performance_Monitor[csr_MPerformance_Monitor_index]           )
+        .clk                          	( clk                                                               ),
+        .csr_MPerformance_Monitor_wen 	( csr_MPerformance_Monitor_wen[csr_MPerformance_Monitor_gen_index]  ),
+        .MPerformance_Monitor_hibit   	( mcountinhibit[0]                                                  ),
+        .MPerformance_Monitor_inc     	( MPerformance_Monitor_inc[csr_MPerformance_Monitor_gen_index]      ),
+        .csr_wdata                    	( csr_wdata                                                         ),
+        .MPerformance_Monitor         	( Performance_Monitor[csr_MPerformance_Monitor_gen_index]           )
     );
 end
 else begin: U_gen_monitor_another
     csr_MPerformance_Monitor u_csr_MPerformance_Monitor(
-        .clk                          	( clk                                                           ),
-        .csr_MPerformance_Monitor_wen 	( csr_MPerformance_Monitor_wen[csr_MPerformance_Monitor_index]  ),
-        .MPerformance_Monitor_hibit   	( mcountinhibit[csr_MPerformance_Monitor_index]                 ),
-        .MPerformance_Monitor_inc     	( MPerformance_Monitor_inc[csr_MPerformance_Monitor_index]      ),
-        .csr_wdata                    	( csr_wdata                                                     ),
-        .MPerformance_Monitor         	( Performance_Monitor[csr_MPerformance_Monitor_index]           )
+        .clk                          	( clk                                                               ),
+        .csr_MPerformance_Monitor_wen 	( csr_MPerformance_Monitor_wen[csr_MPerformance_Monitor_gen_index]  ),
+        .MPerformance_Monitor_hibit   	( mcountinhibit[csr_MPerformance_Monitor_gen_index]                 ),
+        .MPerformance_Monitor_inc     	( MPerformance_Monitor_inc[csr_MPerformance_Monitor_gen_index]      ),
+        .csr_wdata                    	( csr_wdata                                                         ),
+        .MPerformance_Monitor         	( Performance_Monitor[csr_MPerformance_Monitor_gen_index]           )
     );
 end
 end
 endgenerate
 
+csr_minstret u_csr_minstret(
+    .clk                ( clk                   ),
+    .csr_minstret_wen 	( csr_minstret_wen      ),
+    .minstret_hibit   	( mcountinhibit[2]      ),
+    .rob_commit_instret ( rob_commit_instret    ),
+    .csr_wdata          ( csr_wdata             ),
+    .minstret         	( minstret              )
+);
+
 generate 
-for(csr_mhpmevent_index = 3 ; csr_mhpmevent_index < 32; csr_mhpmevent_index = csr_mhpmevent_index + 1) begin : csr_hpmevent_index
+for(csr_mhpmevent_gen_index = 3 ; csr_mhpmevent_gen_index < 32; csr_mhpmevent_gen_index = csr_mhpmevent_gen_index + 1) begin : csr_hpmevent_index
 
 csr_mhpmevent u_csr_mhpmevent(
-    .clk               	( clk                                       ),
-    .csr_mhpmevent_wen 	( csr_mhpmevent_wen[csr_mhpmevent_index]    ),
-    .csr_wdata         	( csr_wdata                                 ),
-    .mhpmevent         	( mhpmevent[csr_mhpmevent_index]            )
+    .clk               	( clk                                           ),
+    .csr_mhpmevent_wen 	( csr_mhpmevent_wen[csr_mhpmevent_gen_index]    ),
+    .csr_wdata         	( csr_wdata                                     ),
+    .mhpmevent         	( mhpmevent[csr_mhpmevent_gen_index]            )
 );
 
 end
@@ -604,24 +619,25 @@ assign csr_sip_wen              = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_
 assign csr_mie_wen              = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == 12'h304);
 assign csr_sie_wen              = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == 12'h104);
 generate 
-for(csr_MPerformance_Monitor_index = 1 ; csr_MPerformance_Monitor_index < 32; csr_MPerformance_Monitor_index = csr_MPerformance_Monitor_index + 1) begin : csr_Performance_Monitor_wen
-    if(csr_MPerformance_Monitor_index == 1)begin: U_gen_monitor_cycle
-        assign csr_MPerformance_Monitor_wen[1] = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == 12'hB00);
-        assign MPerformance_Monitor_inc[1]     = 1'b1;
+for(csr_MPerformance_Monitor_inc_index = 2 ; csr_MPerformance_Monitor_inc_index < 32; csr_MPerformance_Monitor_inc_index = csr_MPerformance_Monitor_inc_index + 1) begin : csr_Performance_Monitor_wen
+    if(csr_MPerformance_Monitor_inc_index == 2)begin: U_gen_monitor_cycle
+        assign csr_MPerformance_Monitor_wen[2] = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == 12'hB00);
+        assign MPerformance_Monitor_inc[2]     = 1'b1;
     end
-    else if(csr_MPerformance_Monitor_index == 2)begin: U_gen_monitor_inst
-        assign csr_MPerformance_Monitor_wen[2] = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == 12'hB02);
-        assign MPerformance_Monitor_inc[2]     = alu_csr_fence_exu_valid_o;
-    end
+    // else if(csr_MPerformance_Monitor_inc_index == 2)begin: U_gen_monitor_inst
+    //     assign csr_MPerformance_Monitor_wen[2] = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == 12'hB02);
+    //     assign MPerformance_Monitor_inc[2]     = alu_csr_fence_exu_valid_o;
+    // end
     else begin: U_gen_monitor_another
-        assign csr_MPerformance_Monitor_wen[csr_MPerformance_Monitor_index] = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == (12'hB00 + csr_MPerformance_Monitor_index));
-        // assign MPerformance_Monitor_inc[csr_MPerformance_Monitor_index]     = 1'b0;
+        assign csr_MPerformance_Monitor_wen[csr_MPerformance_Monitor_inc_index] = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == (12'hB00 + csr_MPerformance_Monitor_inc_index));
+        // assign MPerformance_Monitor_inc[csr_MPerformance_Monitor_inc_index]     = 1'b0;
     end
 end
 endgenerate
+assign csr_minstret_wen = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == 12'hB02);
 generate 
-for(csr_mhpmevent_index = 3 ; csr_mhpmevent_index < 32; csr_mhpmevent_index = csr_mhpmevent_index + 1) begin : csr_hpmevent_index_wen
-    assign csr_mhpmevent_wen[csr_mhpmevent_index]                       = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == (12'h320 + csr_mhpmevent_index));
+for(csr_mhpmevent_inc_index = 3 ; csr_mhpmevent_inc_index < 32; csr_mhpmevent_inc_index = csr_mhpmevent_inc_index + 1) begin : csr_hpmevent_index_wen
+    assign csr_mhpmevent_wen[csr_mhpmevent_inc_index]                       = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == (12'h320 + csr_mhpmevent_inc_index));
 end
 endgenerate
 assign csr_mcountinhibit_wen    = alu_csr_fence_exu_valid_o & alu_csr_fence_exu_csrwen_o & (!(trap_m_mode_valid | trap_s_mode_valid)) & (alu_csr_fence_exu_csr_index_o == 12'h320);
@@ -655,7 +671,7 @@ always @(*) begin
         MIDELEG           : csr_rdata_reg = mideleg;
         MIP               : csr_rdata_reg = mip;
         MIE               : csr_rdata_reg = mie;
-        MCYCLE            : csr_rdata_reg = Performance_Monitor[1];
+        MCYCLE            : csr_rdata_reg = Performance_Monitor[2];
         MINSTRET          : csr_rdata_reg = Performance_Monitor[2];
         MHPMCOUNTER3      : csr_rdata_reg = Performance_Monitor[3];
         MHPMCOUNTER4      : csr_rdata_reg = Performance_Monitor[4];
@@ -735,8 +751,8 @@ always @(*) begin
         STVAL             : csr_rdata_reg = stval;
         SENVCFG           : csr_rdata_reg = senvcfg;
         SATP              : csr_rdata_reg = satp;
-        CYCLE             : csr_rdata_reg = Performance_Monitor[1];
-        INSTRET           : csr_rdata_reg = Performance_Monitor[2];
+        CYCLE             : csr_rdata_reg = Performance_Monitor[2];
+        INSTRET           : csr_rdata_reg = minstret;
         HPMCOUNTER3       : csr_rdata_reg = Performance_Monitor[3];
         HPMCOUNTER4       : csr_rdata_reg = Performance_Monitor[4];
         HPMCOUNTER5       : csr_rdata_reg = Performance_Monitor[5];

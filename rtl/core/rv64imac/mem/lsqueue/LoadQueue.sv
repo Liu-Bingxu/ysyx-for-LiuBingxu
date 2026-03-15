@@ -11,6 +11,7 @@ import core_setting_pkg::*;
     input                                               redirect,
 
     input  rob_entry_ptr_t                              top_rob_ptr,
+    input  [commit_width - 1 : 0]                       rob_commit_instret,
 
     input                                               rename_fire,
     input              [rename_width - 1 : 0]           lq_req,
@@ -150,11 +151,13 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
     logic       lq_entry_loadaddr_update_wen;
     logic       lq_entry_load_send_addr_update_wen;
     logic       lq_entry_loadfinish_update_wen;
+    logic       lq_entry_loadcommit_update_wen;
     lq_entry_t  lq_entry_nxt;
     lq_entry_t  lq_entry_enq;
     lq_entry_t  lq_entry_loadaddr_update;
     lq_entry_t  lq_entry_load_send_addr_update;
     lq_entry_t  lq_entry_loadfinish_update;
+    lq_entry_t  lq_entry_loadcommit_update;
 
     LoadQueue_enq u_LoadQueue_enq(
         .rename_fire       	( rename_fire        ),
@@ -165,16 +168,25 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
         .lq_entry_enq_wen 	( lq_entry_enq_wen   ),
         .lq_entry_enq     	( lq_entry_enq       )
     );
+    logic lq_commit_maybe_finish;
+    always_comb begin
+        Load_commit_judge(
+            top_rob_ptr,
+            rob_commit_instret,
+            lq_entry[entry_index],
+            lq_commit_maybe_finish,
+            lq_entry_loadcommit_update
+        );
+    end
+    assign lq_entry_loadcommit_update_wen = lq_commit_maybe_finish & LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index);
 
     assign lq_entry_loadaddr_update_wen                     = loadUnit_valid_o & loadUnit_ready_o & (entry_index == loadUnit_lq_ptr_o);
     assign lq_entry_loadaddr_update.rob_ptr                 = lq_entry[entry_index].rob_ptr                        ;
     assign lq_entry_loadaddr_update.op                      = lq_entry[entry_index].op                             ;
     assign lq_entry_loadaddr_update.pwdest                  = lq_entry[entry_index].pwdest                         ;
-    assign lq_entry_loadaddr_update.load_finish             = lq_entry[entry_index].load_finish                    ;
-    assign lq_entry_loadaddr_update.send_addr_finish        = lq_entry[entry_index].send_addr_finish               ;
+    assign lq_entry_loadaddr_update.lq_entry_status         = lq_get_addr                                          ;
     assign lq_entry_loadaddr_update.addr_misalign           = loadUnit_addr_misalign_o                             ;
     assign lq_entry_loadaddr_update.page_error              = loadUnit_page_error_o                                ;
-    assign lq_entry_loadaddr_update.addr_finish             = 1'b1                                                 ;
     assign lq_entry_loadaddr_update.mem_paddr               = loadUnit_paddr_o                                     ;
     assign lq_entry_loadaddr_update.mem_vaddr               = loadUnit_vaddr_o                                     ;
 
@@ -182,11 +194,9 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
     assign lq_entry_load_send_addr_update.rob_ptr           = lq_entry[entry_index].rob_ptr                        ;
     assign lq_entry_load_send_addr_update.op                = lq_entry[entry_index].op                             ;
     assign lq_entry_load_send_addr_update.pwdest            = lq_entry[entry_index].pwdest                         ;
-    assign lq_entry_load_send_addr_update.load_finish       = lq_entry[entry_index].load_finish                    ;
-    assign lq_entry_load_send_addr_update.send_addr_finish  = 1'b1                                                 ;
+    assign lq_entry_load_send_addr_update.lq_entry_status   = lq_send_addr                                         ;
     assign lq_entry_load_send_addr_update.addr_misalign     = lq_entry[entry_index].addr_misalign                  ;
     assign lq_entry_load_send_addr_update.page_error        = lq_entry[entry_index].page_error                     ;
-    assign lq_entry_load_send_addr_update.addr_finish       = lq_entry[entry_index].addr_finish                    ;
     assign lq_entry_load_send_addr_update.mem_paddr         = lq_entry[entry_index].mem_paddr                      ;
     assign lq_entry_load_send_addr_update.mem_vaddr         = lq_entry[entry_index].mem_vaddr                      ;
 
@@ -194,37 +204,37 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
     assign lq_entry_loadfinish_update.rob_ptr               = lq_entry[entry_index].rob_ptr                        ;
     assign lq_entry_loadfinish_update.op                    = lq_entry[entry_index].op                             ;
     assign lq_entry_loadfinish_update.pwdest                = lq_entry[entry_index].pwdest                         ;
-    assign lq_entry_loadfinish_update.load_finish           = 1'b1                                                 ;
-    assign lq_entry_loadfinish_update.send_addr_finish      = lq_entry[entry_index].send_addr_finish               ;
+    assign lq_entry_loadfinish_update.lq_entry_status       = lq_send_rob                                          ;
     assign lq_entry_loadfinish_update.addr_misalign         = lq_entry[entry_index].addr_misalign                  ;
     assign lq_entry_loadfinish_update.page_error            = lq_entry[entry_index].page_error                     ;
-    assign lq_entry_loadfinish_update.addr_finish           = lq_entry[entry_index].addr_finish                    ;
     assign lq_entry_loadfinish_update.mem_paddr             = lq_entry[entry_index].mem_paddr                      ;
     assign lq_entry_loadfinish_update.mem_vaddr             = lq_entry[entry_index].mem_vaddr                      ;
 
     assign lq_entry_wen =   (lq_entry_enq_wen                      ) | 
                             (lq_entry_loadaddr_update_wen          ) | 
                             (lq_entry_load_send_addr_update_wen    ) | 
-                            (lq_entry_loadfinish_update_wen        );
+                            (lq_entry_loadfinish_update_wen        ) | 
+                            (lq_entry_loadcommit_update_wen        );
     assign lq_entry_nxt =   ({LQ_ENTRY_W{lq_entry_enq_wen                   }} & lq_entry_enq                   ) | 
                             ({LQ_ENTRY_W{lq_entry_loadaddr_update_wen       }} & lq_entry_loadaddr_update       ) | 
                             ({LQ_ENTRY_W{lq_entry_load_send_addr_update_wen }} & lq_entry_load_send_addr_update ) | 
-                            ({LQ_ENTRY_W{lq_entry_loadfinish_update_wen     }} & lq_entry_loadfinish_update     );
+                            ({LQ_ENTRY_W{lq_entry_loadfinish_update_wen     }} & lq_entry_loadfinish_update     ) | 
+                            ({LQ_ENTRY_W{lq_entry_loadcommit_update_wen     }} & lq_entry_loadcommit_update     );
 
     FF_D_without_asyn_rst #(LQ_ENTRY_W)    u_entry     (clk,lq_entry_wen, lq_entry_nxt, lq_entry[entry_index]);
 
     logic issue_valid;
-    assign issue_valid = (LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index) & lq_entry[entry_index].addr_finish & (!lq_entry[entry_index].load_finish) & 
-                        (!lq_entry[entry_index].addr_misalign) & (!lq_entry[entry_index].page_error) & (!lq_entry[entry_index].send_addr_finish) & 
+    assign issue_valid = (LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index) & (lq_entry[entry_index].lq_entry_status == lq_get_addr) & 
+                        (!lq_entry[entry_index].addr_misalign) & (!lq_entry[entry_index].page_error) & 
                         (addrcache(lq_entry[entry_index].mem_paddr) | (lq_entry[entry_index].rob_ptr[rob_entry_w - 1 : 0] == top_rob_ptr)));
 
     logic commit_valid;
-    assign commit_valid = (LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index) & lq_entry[entry_index].addr_finish & (!lq_entry[entry_index].load_finish) & 
+    assign commit_valid = (LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index) & (lq_entry[entry_index].lq_entry_status == lq_get_addr) & 
                         (lq_entry[entry_index].addr_misalign | lq_entry[entry_index].page_error));
 
     assign lq_entry_r_ptr_step_use[entry_index]         = lq_entry[lq_ptr_r_ptr_step_inner[entry_index][LQ_entry_w - 1 : 0]];
     assign valid_r_ptr_step_inner[entry_index]          = (((lq_ptr_r_ptr_step_inner[entry_index] < lq_w_ptr) | (lq_ptr_r_ptr_step_inner[entry_index][LQ_entry_w] & (!lq_w_ptr[LQ_entry_w]))) & 
-                                                            lq_entry_r_ptr_step_use[entry_index].load_finish);
+                                                            (lq_entry_r_ptr_step_use[entry_index].lq_entry_status == lq_commit));
 
     if(entry_index == 0)begin : U_gen_lq_misc_0
         assign valid_issue_eq_inner[entry_index]        = issue_valid;

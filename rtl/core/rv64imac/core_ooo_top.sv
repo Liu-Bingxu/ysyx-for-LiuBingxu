@@ -138,6 +138,7 @@ logic                                   stip;
 // outports logic u_backend_top
 rob_entry_ptr_t                         top_rob_ptr;
 ls_rob_entry_ptr_t                      deq_rob_ptr;
+logic [commit_width - 1 : 0]            rob_commit_instret;
 logic [decode_width-1:0]                decode_inst_ready;
 logic [rename_width-1:0]                sq_req;
 sq_entry_t [rename_width-1:0]           sq_req_entry;
@@ -311,6 +312,7 @@ backend_top u_backend_top(
     .rename_fire                    ( rename_fire                    ),
 	.top_rob_ptr                   	( top_rob_ptr                    ),
 	.deq_rob_ptr                   	( deq_rob_ptr                    ),
+    .rob_commit_instret             ( rob_commit_instret             ),
 	.ibuf_inst_o                   	( ibuf_inst_o                    ),
 	.decode_inst_ready             	( decode_inst_ready              ),
 	.sq_req                        	( sq_req                         ),
@@ -433,6 +435,7 @@ u_mem_top(
 	.sflush_vma_valid              	( sflush_vma_valid               ),
 	.top_rob_ptr                   	( top_rob_ptr                    ),
 	.deq_rob_ptr                   	( deq_rob_ptr                    ),
+    .rob_commit_instret             ( rob_commit_instret             ),
 	.rename_fire                   	( rename_fire                    ),
 	.sq_req                        	( sq_req                         ),
 	.sq_req_entry                  	( sq_req_entry                   ),

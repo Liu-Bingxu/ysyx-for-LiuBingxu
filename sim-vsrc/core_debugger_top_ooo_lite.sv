@@ -386,8 +386,8 @@ DifftestArchIntRegState u_DifftestArchIntRegState(
 );
 
 DifftestPerformRegState u_DifftestPerformRegState(
-    .io_value_0  	(u_core_ooo_top.u_backend_top.u_csr.Performance_Monitor[1 ]   ),
-    .io_value_1  	(u_core_ooo_top.u_backend_top.u_csr.Performance_Monitor[2 ]   ),
+    .io_value_0  	(u_core_ooo_top.u_backend_top.u_csr.Performance_Monitor[2 ]   ),
+    .io_value_1  	(u_core_ooo_top.u_backend_top.u_csr.minstret                  ),
     .io_value_3  	(u_core_ooo_top.u_backend_top.u_csr.Performance_Monitor[3 ]   ),
     .io_value_4  	(u_core_ooo_top.u_backend_top.u_csr.Performance_Monitor[4 ]   ),
     .io_value_5  	(u_core_ooo_top.u_backend_top.u_csr.Performance_Monitor[5 ]   ),
@@ -599,8 +599,8 @@ DifftestTrapEvent u_DifftestTrapEvent(
     .enable        (u_core_ooo_top.u_backend_top.u_csr.u_trap_control.trap_m_interrupt |
                     u_core_ooo_top.u_backend_top.u_csr.u_trap_control.trap_s_interrupt      ),
     .io_hasTrap    (1'b0                                                                    ),
-    .io_cycleCnt   (u_core_ooo_top.u_backend_top.u_csr.Performance_Monitor[1]               ),
-    .io_instrCnt   (u_core_ooo_top.u_backend_top.u_csr.Performance_Monitor[2]               ),
+    .io_cycleCnt   (u_core_ooo_top.u_backend_top.u_csr.Performance_Monitor[2]               ),
+    .io_instrCnt   (u_core_ooo_top.u_backend_top.u_csr.minstret                             ),
     .io_hasWFI     (1'b0                                                                    ),
     .io_code       (u_core_ooo_top.u_backend_top.u_csr.u_trap_control.cause                 ),
     .io_pc         (u_core_ooo_top.u_backend_top.u_csr.u_trap_control.next_pc               ),
