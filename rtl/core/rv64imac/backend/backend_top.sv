@@ -358,6 +358,7 @@ rename u_rename(
 	.clk                 	( clk                  ),
 	.rst_n               	( rst_n                ),
 	.redirect               ( redirect             ),
+	.rob_can_dispatch       ( rob_can_dispatch     ),
 	.decode_out_valid    	( decode_out_valid     ),
 	.decode_out          	( decode_out           ),
 	.rename_ready        	( rename_ready         ),

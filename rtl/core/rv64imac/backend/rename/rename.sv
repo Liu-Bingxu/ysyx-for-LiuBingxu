@@ -11,6 +11,8 @@ import core_setting_pkg::*;
 
     input                                               redirect,
 
+    input              [dispatch_width - 1 : 0]         rob_can_dispatch,
+
     input              [decode_width - 1 : 0]           decode_out_valid,
     input  decode_out_t[decode_width - 1 : 0]           decode_out,
     output                                              rename_ready,
@@ -207,7 +209,7 @@ endgenerate
 
 assign rename_ready = rename_fire;
 assign rename_fire  = ((|decode_out_valid) & (&rename_free_list_fire) & (&rename_rob_fire) & (&rename_sq_fire) & (&rename_lq_fire) & 
-                        ((!(|rename_out_valid)) | dispatch_ready));
+                        ((!(|rename_out_valid)) | dispatch_ready) & (rob_can_dispatch == {dispatch_width{1'b1}}));
 assign rename_hold  = ((!rename_fire) & (|decode_out_valid));
 
 assign rename_out_valid = rename_valid;
