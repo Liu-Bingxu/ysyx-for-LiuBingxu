@@ -141,7 +141,7 @@ assign lq_ptr_commit        =   (valid_commit_eq_inner[LQ_entry_num - 1] & valid
 assign lq_ptr_report        = LoadQueue_rvalid ? LoadQueue_lq_ptr_update : lq_ptr_commit;
 
 assign valid_r_ptr_step     = (|valid_r_ptr_step_inner);
-assign lq_ptr_r_ptr_step    = lq_ptr_r_ptr_step_inner[LQ_entry_num - 1];
+assign lq_ptr_r_ptr_step    = valid_r_ptr_step_inner[LQ_entry_num - 1] ? (lq_ptr_r_ptr_step_inner[LQ_entry_num - 1] + 1) : lq_ptr_r_ptr_step_inner[LQ_entry_num - 1];
 
 genvar entry_index;
 generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_index + 1) begin : U_gen_lq_entry
@@ -223,7 +223,8 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
                         (lq_entry[entry_index].addr_misalign | lq_entry[entry_index].page_error));
 
     assign lq_entry_r_ptr_step_use[entry_index]         = lq_entry[lq_ptr_r_ptr_step_inner[entry_index][LQ_entry_w - 1 : 0]];
-    assign valid_r_ptr_step_inner[entry_index]          = ((lq_ptr_r_ptr_step_inner[entry_index] < lq_w_ptr) & lq_entry_r_ptr_step_use[entry_index].load_finish);
+    assign valid_r_ptr_step_inner[entry_index]          = (((lq_ptr_r_ptr_step_inner[entry_index] < lq_w_ptr) | (lq_ptr_r_ptr_step_inner[entry_index][LQ_entry_w] & (!lq_w_ptr[LQ_entry_w]))) & 
+                                                            lq_entry_r_ptr_step_use[entry_index].load_finish);
 
     if(entry_index == 0)begin : U_gen_lq_misc_0
         assign valid_issue_eq_inner[entry_index]        = issue_valid;
