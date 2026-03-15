@@ -44,34 +44,6 @@ import core_setting_pkg::*;
     output  [63:0]                                      loadUnit_paddr_o,
     output  [63:0]                                      loadUnit_vaddr_o,
     output LQ_entry_ptr_t                               loadUnit_lq_ptr_o
-
-    // output                                              loadUnit_arvalid,
-    // input                                               loadUnit_arready,
-    // output  [2:0]                                       loadUnit_arsize,
-    // output  [63:0]                                      loadUnit_araddr,
-    // output ls_rob_entry_ptr_t                           loadUnit_rob_ptr,
-
-    // output                                              loadUnit_enq_lqRAW_o,
-    // output [63:0]                                       loadUnit_raddr_o,
-    // output [2:0]                                        loadUnit_rsize_o,
-    // output ls_rob_entry_ptr_t                           loadUnit_enq_rob_ptr_o,
-    
-    // // stage3: send result to rob & regfile
-    // input                                               loadUnit_rvalid,
-    // output                                              loadUnit_rready,
-    // input  [1:0]                                        loadUnit_rresp,
-    // input  [63:0]                                       loadUnit_rdata,
-
-    // output                                              loadUnit_valid_o,
-    // input                                               loadUnit_ready_o,
-    // output                                              loadUnit_addr_misalign_o,
-    // output                                              loadUnit_page_error_o,
-    // output                                              loadUnit_load_error_o,
-    // output                                              loadUnit_rfwen_o,
-    // output pint_regdest_t                               loadUnit_pwdest_o,
-    // output [63:0]                                       loadUnit_preg_wdata_o,
-    // output rob_entry_ptr_t                              loadUnit_rob_ptr_o,
-    // output [63:0]                                       loadUnit_vaddr_o
 );
 
 logic                   out1_valid;
@@ -187,7 +159,7 @@ FF_D_without_asyn_rst #(64)             u_stage2_vaddr_o   (clk,send_valid_stage
 FF_D_without_asyn_rst #(LQ_entry_w)     u_stage2_lq_ptr_o  (clk,send_valid_stage2, stage1_in.lq_ptr, stage2_in.lq_ptr);
 //*******************************stage2: send pa to dcache get data and check page error******************************************
 // load stage2
-assign stage2_ready = loadUnit_paddr_valid & loadUnit_paddr_ready;
+assign stage2_ready = ((loadUnit_paddr_valid & loadUnit_paddr_ready) | stage2_in.addr_misalign_flag);
 
 logic send_valid_stage3;
 assign send_valid_stage3 = stage2_valid & stage2_ready;
@@ -205,49 +177,16 @@ FF_D_with_syn_rst #(
 );
 
 assign loadUnit_paddr_ready = ((!stage3_valid) | stage3_ready);
-// assign loadUnit_arvalid     = loadUnit_paddr_valid & ((!stage3_valid) | stage3_ready) & (!stage2_in.addr_misalign_flag) & (!loadUnit_paddr_error);
-// assign loadUnit_arsize      = load_size(stage2_in.op);
-// assign loadUnit_araddr      = loadUnit_paddr;
-// assign loadUnit_rob_ptr     = stage2_in.rob_ptr;
 
 FF_D_without_asyn_rst #(1 )             u_stage3_misalign_o(clk,send_valid_stage3, stage2_in.addr_misalign_flag, stage3_in.addr_misalign_flag);
 FF_D_without_asyn_rst #(1 )             u_stage3_perror_o  (clk,send_valid_stage3, loadUnit_paddr_error, stage3_in.page_error_flag);
 FF_D_without_asyn_rst #(64)             u_stage3_paddr_o   (clk,send_valid_stage3, loadUnit_paddr, stage3_in.paddr);
 FF_D_without_asyn_rst #(64)             u_stage3_vaddr_o   (clk,send_valid_stage3, stage2_in.vaddr, stage3_in.vaddr);
 FF_D_without_asyn_rst #(LQ_entry_w)     u_stage3_lq_ptr_o  (clk,send_valid_stage3, stage2_in.lq_ptr, stage3_in.lq_ptr);
-
-// assign loadUnit_enq_lqRAW_o     = (loadUnit_arvalid & loadUnit_arready);
-// assign loadUnit_raddr_o         = loadUnit_paddr;
-// assign loadUnit_rsize_o         = load_size(stage2_in.op);
-// assign loadUnit_enq_rob_ptr_o   = stage2_in.rob_ptr;
 //*******************************stage3: send paddr & vaddr to LoadQueue******************************************
 // load stage3
 assign stage3_ready = loadUnit_ready_o;
 
-// logic [63:0] load_data;
-
-// memory_load_move u_memory_load_move(
-//     .pre_data    	( loadUnit_rdata            ),
-//     .data_offset 	( stage3_in.paddr[2:0]      ),
-//     .is_byte     	( load_byte(stage3_in.op)   ),
-//     .is_half     	( load_half(stage3_in.op)   ),
-//     .is_word     	( load_word(stage3_in.op)   ),
-//     .is_double   	( load_double(stage3_in.op) ),
-//     .is_sign     	( load_signed(stage3_in.op) ),
-//     .data        	( load_data                 )
-// );
-
-// assign loadUnit_rready          = loadUnit_ready_o;
-// assign loadUnit_valid_o         = (loadUnit_rvalid | loadUnit_addr_misalign_o | loadUnit_page_error_o);
-
-// assign loadUnit_addr_misalign_o = stage3_in.addr_misalign_flag;
-// assign loadUnit_page_error_o    = stage3_in.page_error_flag;
-// assign loadUnit_load_error_o    = ((loadUnit_rresp != 2'h0) & (!stage3_in.addr_misalign_flag) & (!stage3_in.page_error_flag));
-// assign loadUnit_rfwen_o         = (!(stage3_in.addr_misalign_flag | stage3_in.page_error_flag | loadUnit_load_error_o));
-// assign loadUnit_pwdest_o        = stage3_in.pwdest;
-// assign loadUnit_preg_wdata_o    = load_data;
-// assign loadUnit_rob_ptr_o       = stage3_in.rob_ptr;
-// assign loadUnit_vaddr_o         = stage3_in.vaddr;
 assign loadUnit_valid_o         = stage3_valid;
 assign loadUnit_addr_misalign_o = stage3_in.addr_misalign_flag;
 assign loadUnit_page_error_o    = stage3_in.page_error_flag;
