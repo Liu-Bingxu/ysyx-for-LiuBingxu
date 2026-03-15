@@ -160,7 +160,7 @@ FF_D_without_asyn_rst #(rob_entry_w + 1)u_stage2_rob_ptr_o (clk,send_valid_stage
 assign stage2_ready = storeaddrUnit_valid_o & storeaddrUnit_ready_o;
 
 assign storeaddrUnit_paddr_ready        = storeaddrUnit_ready_o;
-assign storeaddrUnit_valid_o            = (storeaddrUnit_paddr_valid | storeaddrUnit_addr_misalign_o);
+assign storeaddrUnit_valid_o            = ((storeaddrUnit_paddr_valid | storeaddrUnit_addr_misalign_o) & stage2_valid);
 
 assign storeaddrUnit_addr_misalign_o    = stage2_in.addr_misalign_flag;
 assign storeaddrUnit_page_error_o       = storeaddrUnit_paddr_error;
