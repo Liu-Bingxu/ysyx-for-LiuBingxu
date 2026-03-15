@@ -203,7 +203,7 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
         .data_in  	( send_valid                            ),
         .data_out 	( rename_valid[rename_index]            )
     );
-    FF_D_without_asyn_rst #(RENAME_O_W) u_rename_o (clk,send_valid, rename_inst[rename_index], rename_reg[rename_index]);
+    FF_D_without_asyn_rst #(RENAME_O_W) u_rename_o (clk, decode_out_valid[rename_index] & rename_ready, rename_inst[rename_index], rename_reg[rename_index]);
 end
 endgenerate
 
