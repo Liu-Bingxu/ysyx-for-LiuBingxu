@@ -9,8 +9,6 @@ module sim_periph_dpic#(
     input                           aclk,
     input                           arst_n,
 
-    input                           read_redirect,
-
     input                           mst_awvalid,
     output                          mst_awready,
     input  [AXI_ADDR_W    -1:0]     mst_awaddr,
@@ -143,11 +141,7 @@ always @(posedge aclk or negedge arst_n) begin
                 end
             end
             READ: begin
-                if(read_redirect)begin
-                    state           <= IDLE;
-                    mst_rvalid_reg  <= 1'b0;
-                end
-                else if(mst_rvalid & mst_rready)begin
+                if(mst_rvalid & mst_rready)begin
                     // sim_periph_read(mst_araddr_reg, mst_rdata_reg);
                     if(mst_rlast)begin
                         state           <= IDLE;

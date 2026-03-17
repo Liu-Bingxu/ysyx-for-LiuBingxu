@@ -80,9 +80,59 @@ logic  [7:0]    sb_load_rstrb_reg;
 
 LQ_entry_ptr_t  LoadQueue_lq_ptr_reg;
 
+logic           mmio_wait;
+logic           mmio_send;
+logic           mmio_arvalid_hold;
+
+logic           mmio_arvalid_hold_set;
+logic           mmio_arvalid_hold_clr;
+logic           mmio_arvalid_hold_wen;
+logic           mmio_arvalid_hold_nxt;
+assign mmio_arvalid_hold_set = (load_uncache_arvalid & (!load_uncache_arready));
+assign mmio_arvalid_hold_clr = (load_uncache_arvalid & load_uncache_arready);
+assign mmio_arvalid_hold_wen = (mmio_arvalid_hold_set | mmio_arvalid_hold_clr);
+assign mmio_arvalid_hold_nxt = (mmio_arvalid_hold_set | (!mmio_arvalid_hold_clr));
+FF_D_with_wen #(
+    .DATA_LEN 	( 1  ),
+    .RST_DATA 	( 0  )
+)u_mmio_arvalid_hold
+(
+    .clk      	( clk                   ),
+    .rst_n    	( rst_n                 ),
+    .wen        ( mmio_arvalid_hold_wen ),
+    .data_in  	( mmio_arvalid_hold_nxt ),
+    .data_out 	( mmio_arvalid_hold     )
+);
+logic [2:0]      load_uncache_arsize_hold;
+logic [63:0]     load_uncache_araddr_hold;
+FF_D_without_asyn_rst #(3 )         u_load_uncache_arsize_hold     (clk,mmio_arvalid_hold_set, load_uncache_arsize, load_uncache_arsize_hold);
+FF_D_without_asyn_rst #(64)         u_load_uncache_araddr_hold     (clk,mmio_arvalid_hold_set, load_uncache_araddr, load_uncache_araddr_hold);
+
+logic           mmio_send_set;
+logic           mmio_send_clr;
+logic           mmio_send_wen;
+logic           mmio_send_nxt;
+assign mmio_send_set = (load_uncache_arvalid & load_uncache_arready);
+assign mmio_send_clr = (load_uncache_rvalid & load_uncache_rready);
+assign mmio_send_wen = (mmio_send_set | mmio_send_clr);
+assign mmio_send_nxt = (mmio_send_set | (!mmio_send_clr));
+FF_D_with_wen #(
+    .DATA_LEN 	( 1  ),
+    .RST_DATA 	( 0  )
+)u_mmio_send
+(
+    .clk      	( clk           ),
+    .rst_n    	( rst_n         ),
+    .wen        ( mmio_send_wen ),
+    .data_in  	( mmio_send_nxt ),
+    .data_out 	( mmio_send     )
+);
+
+assign mmio_wait = (mmio_send & (!(load_uncache_rvalid & load_uncache_rready)));
+
 assign sq_sb_can_cover      = (load_rstrb == (sq_load_rstrb | sb_load_rstrb));
 
-assign LoadQueue_arready = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (sq_sb_can_cover | dcache_load_hit | (addrcache(LoadQueue_araddr) ? load_arready : load_uncache_arready));
+assign LoadQueue_arready = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (!mmio_wait) & (sq_sb_can_cover | dcache_load_hit | (addrcache(LoadQueue_araddr) ? load_arready : load_uncache_arready));
 assign recv_stage_ready = LoadQueue_rvalid & LoadQueue_rready;
 
 logic recv_valid;
@@ -175,15 +225,15 @@ assign rdata_inner3 = data_splicing_64(rdata_inner2, sq_load_data_reg, sq_load_r
 assign LoadQueue_rdata          = rdata_inner3;
 assign LoadQueue_lq_ptr_update  = LoadQueue_lq_ptr_reg;
 
-assign load_arvalid         = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (!sq_sb_can_cover) & (!dcache_load_hit) & addrcache(LoadQueue_araddr) & LoadQueue_arvalid;
+assign load_arvalid         = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (!mmio_wait) & (!sq_sb_can_cover) & (!dcache_load_hit) & addrcache(LoadQueue_araddr) & LoadQueue_arvalid;
 assign load_arsize          = LoadQueue_arsize;
 assign load_araddr          = LoadQueue_araddr;
 
-assign load_uncache_arvalid = ((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (!sq_sb_can_cover) & (!dcache_load_hit) & (!addrcache(LoadQueue_araddr)) & LoadQueue_arvalid;
-assign load_uncache_arsize  = LoadQueue_arsize;
-assign load_uncache_araddr  = LoadQueue_araddr;
+assign load_uncache_arvalid = ((((!recv_stage_valid) | recv_stage_ready) & (!sq_wait) & (!mmio_wait) & (!sq_sb_can_cover) & (!dcache_load_hit) & (!addrcache(LoadQueue_araddr)) & LoadQueue_arvalid) | mmio_arvalid_hold);
+assign load_uncache_arsize  = mmio_arvalid_hold ? load_uncache_arsize_hold : LoadQueue_arsize;
+assign load_uncache_araddr  = mmio_arvalid_hold ? load_uncache_araddr_hold : LoadQueue_araddr;
 
 assign load_rready          = recv_stage_valid & (!sq_sb_can_cover_reg) & (!dcache_load_hit_reg) & loaduncache_reg;
-assign load_uncache_rready  = recv_stage_valid & (!sq_sb_can_cover_reg) & (!dcache_load_hit_reg) & (!loaduncache_reg);
+assign load_uncache_rready  = mmio_send;
 
 endmodule
