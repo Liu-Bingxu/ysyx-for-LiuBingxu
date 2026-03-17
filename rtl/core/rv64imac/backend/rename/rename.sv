@@ -179,6 +179,7 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     /*verilator lint_off ENUMVALUE*/
     assign lq_req_entry[rename_index].rob_ptr               = rob_resp[rename_index].rob_ptr              ;
     assign lq_req_entry[rename_index].op                    = decode_out[rename_index].fuoptype           ;
+    assign lq_req_entry[rename_index].rfwen                 = decode_out[rename_index].rfwen              ;
     assign lq_req_entry[rename_index].pwdest                = rename_int_resp[rename_index].rename_dest   ;
     assign lq_req_entry[rename_index].lq_entry_status       = lq_not_addr                                 ;
     assign lq_req_entry[rename_index].addr_misalign         = 0                                           ;

@@ -87,7 +87,8 @@ endfunction
 
 function logic use_wdest;
     input FuType_t futype;
-    assign use_wdest = ((futype == fu_alu) | (futype == fu_div) | (futype == fu_mul) | (futype == fu_load));
+    //! 移除对load的提前完成，考虑load不写入的情况下，可能会出现异常和对mmio读取产生副作用
+    assign use_wdest = ((futype == fu_alu) | (futype == fu_div) | (futype == fu_mul));
 endfunction
 
 localparam DECODE_O_W = 4 + 9 + 5 + 2 + 5 + 2 + 2 + 5 + 32 + 7 + 4 + 32 + 1 + FTQ_ENTRY_BIT_NUM + BLOCK_BIT_NUM;

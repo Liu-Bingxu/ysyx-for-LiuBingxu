@@ -119,6 +119,7 @@ generate for(entry_index = 0 ; entry_index < LQRAW_entry_num; entry_index = entr
     /* verilator lint_on UNUSEDSIGNAL */
     assign send_ptr.rob_ptr           = loadqueue[entry_index].loadUnit_rob_ptr_o;
     assign send_ptr.op                = op_lb;
+    assign send_ptr.rfwen             = 0;
     assign send_ptr.pwdest            = 0;
     assign send_ptr.lq_entry_status   = lq_send_rob;
     assign send_ptr.addr_misalign     = 0;

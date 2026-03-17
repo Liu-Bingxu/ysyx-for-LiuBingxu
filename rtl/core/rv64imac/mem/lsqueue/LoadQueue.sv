@@ -183,6 +183,7 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
     assign lq_entry_loadaddr_update_wen                     = loadUnit_valid_o & loadUnit_ready_o & (entry_index == loadUnit_lq_ptr_o);
     assign lq_entry_loadaddr_update.rob_ptr                 = lq_entry[entry_index].rob_ptr                        ;
     assign lq_entry_loadaddr_update.op                      = lq_entry[entry_index].op                             ;
+    assign lq_entry_loadaddr_update.rfwen                   = lq_entry[entry_index].rfwen                          ;
     assign lq_entry_loadaddr_update.pwdest                  = lq_entry[entry_index].pwdest                         ;
     assign lq_entry_loadaddr_update.lq_entry_status         = lq_get_addr                                          ;
     assign lq_entry_loadaddr_update.addr_misalign           = loadUnit_addr_misalign_o                             ;
@@ -193,6 +194,7 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
     assign lq_entry_load_send_addr_update_wen               = LoadQueue_arvalid & LoadQueue_arready & (entry_index == lq_ptr_issue);
     assign lq_entry_load_send_addr_update.rob_ptr           = lq_entry[entry_index].rob_ptr                        ;
     assign lq_entry_load_send_addr_update.op                = lq_entry[entry_index].op                             ;
+    assign lq_entry_load_send_addr_update.rfwen             = lq_entry[entry_index].rfwen                          ;
     assign lq_entry_load_send_addr_update.pwdest            = lq_entry[entry_index].pwdest                         ;
     assign lq_entry_load_send_addr_update.lq_entry_status   = lq_send_addr                                         ;
     assign lq_entry_load_send_addr_update.addr_misalign     = lq_entry[entry_index].addr_misalign                  ;
@@ -203,6 +205,7 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
     assign lq_entry_loadfinish_update_wen                   = LoadQueue_valid_o & LoadQueue_ready_o & (entry_index == lq_ptr_report);
     assign lq_entry_loadfinish_update.rob_ptr               = lq_entry[entry_index].rob_ptr                        ;
     assign lq_entry_loadfinish_update.op                    = lq_entry[entry_index].op                             ;
+    assign lq_entry_loadfinish_update.rfwen                 = lq_entry[entry_index].rfwen                          ;
     assign lq_entry_loadfinish_update.pwdest                = lq_entry[entry_index].pwdest                         ;
     assign lq_entry_loadfinish_update.lq_entry_status       = lq_send_rob                                          ;
     assign lq_entry_loadfinish_update.addr_misalign         = lq_entry[entry_index].addr_misalign                  ;
@@ -319,7 +322,8 @@ assign LoadQueue_valid_o            = (LoadQueue_rvalid | valid_commit);
 assign LoadQueue_addr_misalign_o    = lq_entry_commit_use.addr_misalign;
 assign LoadQueue_page_error_o       = lq_entry_commit_use.page_error   ;
 assign LoadQueue_load_error_o       = LoadQueue_rvalid ? (LoadQueue_rresp != 2'h0) : 1'b0;
-assign LoadQueue_rfwen_o            = LoadQueue_rvalid ? (!(LoadQueue_addr_misalign_o | LoadQueue_page_error_o | LoadQueue_load_error_o)) : 1'b0;
+assign LoadQueue_rfwen_o            = (lq_entry_commit_use.rfwen & (LoadQueue_rvalid ? 
+                                    (!(LoadQueue_addr_misalign_o | LoadQueue_page_error_o | LoadQueue_load_error_o)) : 1'b0));
 assign LoadQueue_pwdest_o           = lq_entry_commit_use.pwdest                        ;
 assign LoadQueue_preg_wdata_o       = load_data                                         ;
 assign LoadQueue_rob_ptr_o          = lq_entry_commit_use.rob_ptr[rob_entry_w - 1 : 0]  ;

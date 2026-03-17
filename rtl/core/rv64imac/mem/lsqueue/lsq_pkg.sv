@@ -63,10 +63,11 @@ typedef enum logic [2:0] {
     lq_commit       = 'h4
 }lq_entry_status_t;
 
-localparam LQ_ENTRY_W = rob_entry_w + 1 + 9 + int_preg_width + 3 + 1 + 1 + 64 + 64;
+localparam LQ_ENTRY_W = rob_entry_w + 1 + 9 + 1 + int_preg_width + 3 + 1 + 1 + 64 + 64;
 typedef struct packed {
     ls_rob_entry_ptr_t                      rob_ptr;
     load_optype_t                           op;
+    logic                                   rfwen;
     pint_regdest_t                          pwdest;
     lq_entry_status_t                       lq_entry_status;
     logic                                   addr_misalign;
@@ -97,6 +98,7 @@ task automatic Load_commit_judge(
     assign lq_wen_update                     = (|wen_update)               ;
     assign lq_entry_update.rob_ptr           = lq_entry_self.rob_ptr       ;
     assign lq_entry_update.op                = lq_entry_self.op            ;
+    assign lq_entry_update.rfwen             = lq_entry_self.rfwen         ;
     assign lq_entry_update.pwdest            = lq_entry_self.pwdest        ;
     assign lq_entry_update.lq_entry_status   = lq_commit                   ;
     assign lq_entry_update.addr_misalign     = lq_entry_self.addr_misalign ;
