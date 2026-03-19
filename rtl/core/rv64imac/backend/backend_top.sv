@@ -182,14 +182,14 @@ pint_regdest_t  [rename_width-1:0] 	rename_intrat_pdest;
 logic           [rename_width-1:0] 	rename_int_req;
 logic           [rename_width-1:0] 	rob_req;
 rob_entry_t     [rename_width-1:0] 	rob_req_entry;
+logic           [rename_width-1:0]  pdest_valid;
+pint_regdest_t  [rename_width-1:0]  pdest;
 logic           [rename_width-1:0] 	rename_out_valid;
 rename_out_t    [rename_width-1:0] 	rename_out;
 
 // outports wire u_dispatch
 logic                      	        dispatch_ready;
 rob_entry_ptr_t                     rob_first_ptr;
-logic [dispatch_width-1:0] 	        pdest_valid;
-pint_regdest_t [dispatch_width-1:0] pdest;
 pint_regsrc_t [dispatch_width-1:0] 	dispatch_psrc1;
 pint_regsrc_t [dispatch_width-1:0] 	dispatch_psrc2;
 logic                      	        alu_mul_exu_in_valid;
@@ -381,6 +381,8 @@ rename u_rename(
 	.lq_req              	( lq_req               ),
 	.lq_req_entry        	( lq_req_entry         ),
 	.lq_resp             	( lq_resp              ),
+	.pdest_valid            ( pdest_valid          ),
+	.pdest                  ( pdest                ),
 	.rename_out_valid    	( rename_out_valid     ),
 	.rename_out          	( rename_out           ),
 	.dispatch_ready      	( dispatch_ready       )
@@ -399,8 +401,6 @@ dispatch u_dispatch(
 	.dispatch_ready             	( dispatch_ready                ),
     .rob_first_ptr                  ( rob_first_ptr                 ),
 	.rob_can_dispatch           	( rob_can_dispatch              ),
-	.pdest_valid                	( pdest_valid                   ),
-	.pdest                      	( pdest                         ),
 	.dispatch_psrc1             	( dispatch_psrc1                ),
 	.dispatch_psrc2             	( dispatch_psrc2                ),
 	.dispatch_psrc1_status      	( dispatch_psrc1_status         ),
@@ -668,6 +668,7 @@ int_pstatus u_int_pstatus(
 	.clk                   	( clk                    ),
 	.rst_n                 	( rst_n                  ),
 	.redirect              	( redirect               ),
+	.rename_fire         	( rename_fire            ),
 	.rfwen                 	( rfwen                  ),
 	.pwdest                	( pwdest                 ),
 	.pdest_valid           	( pdest_valid            ),

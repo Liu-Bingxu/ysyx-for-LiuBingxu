@@ -26,10 +26,6 @@ import core_setting_pkg::*;
     output rob_entry_ptr_t                          rob_first_ptr,
     input              [dispatch_width - 1 : 0]     rob_can_dispatch,
 
-    // pint_ststus interface
-    output               [dispatch_width - 1 : 0]   pdest_valid,
-    output pint_regdest_t[dispatch_width - 1 : 0]   pdest,
-
     output pint_regsrc_t [dispatch_width - 1 : 0]   dispatch_psrc1,
     output pint_regsrc_t [dispatch_width - 1 : 0]   dispatch_psrc2,
     input  reg_status_t  [dispatch_width - 1 : 0]   dispatch_psrc1_status,
@@ -357,8 +353,6 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
                                                             (dispatch_vec_gen[dispatch_index].storeaddrUnit_in_valid        & (!dispatch_vec_issue[dispatch_index - 1].storeaddrUnit_in_valid)      & storeaddrUnit_in_ready) | 
                                                             (dispatch_vec_gen[dispatch_index].atomicUnit_in_valid           & (!dispatch_vec_issue[dispatch_index - 1].atomicUnit_in_valid)         & atomicUnit_in_ready);
     end
-    assign pdest_valid[dispatch_index]  = (inst_dispatch_success[dispatch_index] & rename_out[dispatch_index].rfwen);
-    assign pdest      [dispatch_index]  = rename_out[dispatch_index].pwdest;
 end
 endgenerate
 

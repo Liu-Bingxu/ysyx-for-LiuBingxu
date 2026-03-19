@@ -7,6 +7,8 @@ import core_setting_pkg::*;
 
     input                                               redirect,
 
+    output                                              rename_fire,
+
     input                [wb_width - 1 : 0]             rfwen,
     input  pint_regdest_t[wb_width - 1 : 0]             pwdest,
 
@@ -29,7 +31,7 @@ generate for(reg_index = 1 ; reg_index < 96; reg_index = reg_index + 1) begin : 
     logic regfile_status_clr;
     logic regfile_status_set;
     assign regfile_status_set = pint_wb_flag(rfwen, pwdest, reg_index);
-    assign regfile_status_clr = pint_dp_flag(pdest_valid, pdest, reg_index);
+    assign regfile_status_clr = pint_dp_flag((pdest_valid & {rename_width{rename_fire}}), pdest, reg_index);
 
     assign regfile_status_wen[reg_index]    = (regfile_status_set | regfile_status_clr);
     assign regfile_status_nxt[reg_index]    = (regfile_status_set | (!regfile_status_clr));

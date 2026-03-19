@@ -49,6 +49,10 @@ import core_setting_pkg::*;
     output  lq_entry_t [rename_width - 1 : 0]           lq_req_entry,
     input   lq_resp_t  [rename_width - 1 : 0]           lq_resp,
 
+    // pint_ststus interface
+    output               [rename_width - 1 : 0]         pdest_valid,
+    output pint_regdest_t[rename_width - 1 : 0]         pdest,
+
     // dispatch interface
     output             [rename_width - 1 : 0]           rename_out_valid,
     output rename_out_t[rename_width - 1 : 0]           rename_out,
@@ -187,6 +191,8 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     assign lq_req_entry[rename_index].mem_paddr             = 0                                           ;
     assign lq_req_entry[rename_index].mem_vaddr             = 0                                           ;
     /*verilator lint_on ENUMVALUE*/
+    assign pdest_valid[rename_index]                        = decode_out[rename_index].rfwen              ;
+    assign pdest[rename_index]                              = rename_int_resp[rename_index].rename_dest   ;
     //**********************************************************************************************
     //!output
     // valid
