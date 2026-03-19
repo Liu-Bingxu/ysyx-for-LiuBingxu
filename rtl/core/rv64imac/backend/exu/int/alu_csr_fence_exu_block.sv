@@ -169,12 +169,12 @@ FF_D_with_syn_rst #(
     .RST_DATA 	( 0  )
 )u_alu_valid_i
 (
-    .clk      	( clk           ),
-    .rst_n    	( rst_n         ),
-    .syn_rst    ( redirect      ),
-    .wen        ( out1_ready    ),
-    .data_in  	( out1_valid    ),
-    .data_out 	( alu_valid_i   )
+    .clk      	( clk                               ),
+    .rst_n    	( rst_n                             ),
+    .syn_rst    ( redirect                          ),
+    .wen        ( ((!alu_valid_i) | alu_ready_i)    ),
+    .data_in  	( send_valid_alu                    ),
+    .data_out 	( alu_valid_i                       )
 );
 intreg_t alu_src1;
 intreg_t alu_src2;

@@ -79,12 +79,12 @@ FF_D_with_syn_rst #(
     .RST_DATA 	( 0  )
 )u_csr_valid_o
 (
-    .clk      	( clk           ),
-    .rst_n    	( rst_n         ),
-    .syn_rst    ( redirect      ),
-    .wen        ( csr_ready_i   ),
-    .data_in  	( csr_valid_i   ),
-    .data_out 	( csr_valid_o   )
+    .clk      	( clk                               ),
+    .rst_n    	( rst_n                             ),
+    .syn_rst    ( redirect                          ),
+    .wen        ( ((!csr_valid_o) | csr_ready_o)    ),
+    .data_in  	( send_valid                        ),
+    .data_out 	( csr_valid_o                       )
 );
 FF_D_without_asyn_rst #(rob_entry_w)    u_rob_ptr_o     (clk,send_valid, rob_ptr, csr_rob_ptr_o);
 FF_D_without_asyn_rst #(int_preg_width) u_pwdest_o      (clk,send_valid, pwdest, csr_pwdest_o);

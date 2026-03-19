@@ -107,12 +107,12 @@ FF_D_with_syn_rst #(
     .RST_DATA 	( 0  )
 )u_alu_valid_o
 (
-    .clk      	( clk           ),
-    .rst_n    	( rst_n         ),
-    .syn_rst    ( redirect      ),
-    .wen        ( alu_ready_i   ),
-    .data_in  	( alu_valid_i   ),
-    .data_out 	( alu_valid_o   )
+    .clk      	( clk                               ),
+    .rst_n    	( rst_n                             ),
+    .syn_rst    ( redirect                          ),
+    .wen        ( ((!alu_valid_o) | alu_ready_o)    ),
+    .data_in  	( send_valid                        ),
+    .data_out 	( alu_valid_o                       )
 );
 FF_D_without_asyn_rst #(int_preg_width) u_pwdest_o (clk,send_valid, pwdest, alu_pwdest_o);
 FF_D_without_asyn_rst #(rob_entry_w)    u_rob_ptr_o(clk,send_valid, rob_ptr, alu_rob_ptr_o);

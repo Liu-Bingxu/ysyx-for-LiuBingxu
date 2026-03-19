@@ -98,12 +98,12 @@ FF_D_with_syn_rst #(
     .RST_DATA 	( 0  )
 )u_stage1_valid
 (
-    .clk      	( clk           ),
-    .rst_n    	( rst_n         ),
-    .syn_rst    ( redirect      ),
-    .wen        ( out1_ready    ),
-    .data_in  	( out1_valid    ),
-    .data_out 	( stage1_valid  )
+    .clk      	( clk                               ),
+    .rst_n    	( rst_n                             ),
+    .syn_rst    ( redirect                          ),
+    .wen        ( ((!stage1_valid) | stage1_ready)  ),
+    .data_in  	( send_valid_stage1                 ),
+    .data_out 	( stage1_valid                      )
 );
 
 intreg_t stage1_src1;

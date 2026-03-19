@@ -335,8 +335,8 @@ logic[81:0] carry2_4_reg;
 logic[73:0] carry2_5_reg;
 logic pipeline1_wen;
 logic pipeline1_nxt;
-assign pipeline1_wen = mul_ready_i;
-assign pipeline1_nxt = mul_valid_i;
+assign pipeline1_wen = ((!pipeline1_valid) | pipeline1_ready);
+assign pipeline1_nxt = mul_valid_i & mul_ready_i;
 FF_D_with_syn_rst #(
     .DATA_LEN(1 ),
     .RST_DATA(0 )
@@ -466,8 +466,8 @@ logic[127:0] sum5_0_reg;
 logic[127:0] carry5_0_reg;
 logic pipeline2_wen;
 logic pipeline2_nxt;
-assign pipeline2_wen = pipeline1_ready;
-assign pipeline2_nxt = pipeline1_valid;
+assign pipeline2_wen = ((!pipeline2_valid) | pipeline2_ready);
+assign pipeline2_nxt = pipeline1_valid & pipeline1_ready;
 FF_D_with_syn_rst #(
     .DATA_LEN(1 ),
     .RST_DATA(0 )

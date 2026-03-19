@@ -58,12 +58,12 @@ FF_D_with_syn_rst #(
     .RST_DATA 	( 0  )
 )u_jump_valid_o
 (
-    .clk      	( clk           ),
-    .rst_n    	( rst_n         ),
-    .syn_rst    ( redirect      ),
-    .wen        ( jump_ready_i  ),
-    .data_in  	( jump_valid_i  ),
-    .data_out 	( jump_valid_o  )
+    .clk      	( clk                               ),
+    .rst_n    	( rst_n                             ),
+    .syn_rst    ( redirect                          ),
+    .wen        ( ((!jump_valid_o) | jump_ready_o)  ),
+    .data_in  	( send_valid                        ),
+    .data_out 	( jump_valid_o                      )
 );
 FF_D_without_asyn_rst #(rob_entry_w)    u_rob_ptr_o     (clk,send_valid, rob_ptr, jump_rob_ptr_o);
 FF_D_without_asyn_rst #(1 )             u_token_miss_o  (clk,send_valid, token_miss, jump_token_miss_o);

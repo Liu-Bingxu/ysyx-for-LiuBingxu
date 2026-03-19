@@ -84,12 +84,12 @@ FF_D_with_syn_rst #(
     .RST_DATA 	( 0  )
 )u_bru_valid_o
 (
-    .clk      	( clk           ),
-    .rst_n    	( rst_n         ),
-    .syn_rst    ( redirect      ),
-    .wen        ( bru_ready_i   ),
-    .data_in  	( bru_valid_i   ),
-    .data_out 	( bru_valid_o   )
+    .clk      	( clk                               ),
+    .rst_n    	( rst_n                             ),
+    .syn_rst    ( redirect                          ),
+    .wen        ( ((!bru_valid_o) | bru_ready_o)    ),
+    .data_in  	( send_valid                        ),
+    .data_out 	( bru_valid_o                       )
 );
 FF_D_without_asyn_rst #(rob_entry_w)u_rob_ptr_o(clk,send_valid, rob_ptr, bru_rob_ptr_o);
 FF_D_without_asyn_rst #(1 ) u_token_miss_o  (clk,send_valid, token_miss, bru_token_miss_o);

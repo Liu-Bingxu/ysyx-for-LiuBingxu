@@ -57,12 +57,12 @@ FF_D_with_syn_rst #(
     .RST_DATA 	( 0  )
 )u_storedataUnit_valid_o
 (
-    .clk      	( clk                   ),
-    .rst_n    	( rst_n                 ),
-    .syn_rst    ( redirect              ),
-    .wen        ( out1_ready            ),
-    .data_in  	( out1_valid            ),
-    .data_out 	( storedataUnit_valid_o )
+    .clk      	( clk                                                   ),
+    .rst_n    	( rst_n                                                 ),
+    .syn_rst    ( redirect                                              ),
+    .wen        ( ((!storedataUnit_valid_o) | storedataUnit_ready_o)    ),
+    .data_in  	( send_valid_storedata                                  ),
+    .data_out 	( storedataUnit_valid_o                                 )
 );
 intreg_t storedata_src2;
 
