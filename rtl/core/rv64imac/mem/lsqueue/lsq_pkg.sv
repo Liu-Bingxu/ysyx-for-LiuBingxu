@@ -86,16 +86,15 @@ task automatic Load_commit_judge(
     output                          lq_wen_update,
     output lq_entry_t               lq_entry_update);
 
-    rob_entry_ptr_t [commit_width - 1 : 0] rob_ptr_update;
-    logic           [commit_width - 1 : 0] wen_update;
+    logic                           wen_update;
     //! 由于不好作参数化，所以用此行为级建模
     integer i;
+    wen_update = 0;
     for(i = 0; i < commit_width; i = i + 1)begin
-        assign rob_ptr_update[i]    = (top_rob_ptr + i[rob_entry_w - 1 : 0]);
-        assign wen_update[i]        = ((rob_ptr_update[i] == lq_entry_self.rob_ptr[rob_entry_w - 1 : 0]) & rob_commit_instret[i]);
+        wen_update = (wen_update | (((top_rob_ptr + i[rob_entry_w - 1 : 0]) == lq_entry_self.rob_ptr[rob_entry_w - 1 : 0]) & rob_commit_instret[i]));
     end
 
-    assign lq_wen_update                     = (|wen_update)               ;
+    assign lq_wen_update                     = wen_update                  ;
     assign lq_entry_update.rob_ptr           = lq_entry_self.rob_ptr       ;
     assign lq_entry_update.op                = lq_entry_self.op            ;
     assign lq_entry_update.rfwen             = lq_entry_self.rfwen         ;
@@ -107,7 +106,7 @@ task automatic Load_commit_judge(
     assign lq_entry_update.mem_vaddr         = lq_entry_self.mem_vaddr     ;
 endtask //automatic
 
-function logic LoadQueueValid;
+function automatic logic LoadQueueValid;
     input LQ_entry_ptr_inner_t      lq_r_ptr;
     input LQ_entry_ptr_inner_t      lq_w_ptr;
     input LQ_entry_ptr_t            test_lq_ptr;
@@ -121,7 +120,7 @@ function logic LoadQueueValid;
 
 endfunction
 
-function logic StoreQueueValid;
+function automatic logic StoreQueueValid;
     input SQ_entry_ptr_inner_t      sq_r_ptr;
     input SQ_entry_ptr_inner_t      sq_w_ptr;
     input SQ_entry_ptr_t            test_sq_ptr;
@@ -135,7 +134,7 @@ function logic StoreQueueValid;
 
 endfunction
 
-// function logic lsq_is_older;
+// function automatic logic lsq_is_older;
 //     input SQ_entry_ptr_t      a_sq_ptr;
 //     input SQ_entry_ptr_t      b_sq_ptr;
 //     input SQ_entry_ptr_t      deq_sq_ptr;
