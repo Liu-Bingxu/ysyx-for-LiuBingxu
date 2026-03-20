@@ -191,7 +191,7 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     assign lq_req_entry[rename_index].mem_paddr             = 0                                           ;
     assign lq_req_entry[rename_index].mem_vaddr             = 0                                           ;
     /*verilator lint_on ENUMVALUE*/
-    assign pdest_valid[rename_index]                        = decode_out[rename_index].rfwen              ;
+    assign pdest_valid[rename_index]                        = rename_int_req[rename_index]                ;
     assign pdest[rename_index]                              = rename_int_resp[rename_index].rename_dest   ;
     //**********************************************************************************************
     //!output
