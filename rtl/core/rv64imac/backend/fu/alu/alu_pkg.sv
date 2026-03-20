@@ -28,67 +28,67 @@ typedef enum logic [8:0]{
 
 /* verilator lint_off UNUSEDSIGNAL */
 
-function logic shift_word;
+function automatic logic shift_word;
     input alu_optype_t alu_op;
     shift_word = alu_op[2];
 endfunction
 
-function logic shift_al;
+function automatic logic shift_al;
     input alu_optype_t alu_op;
     shift_al = alu_op[1];
 endfunction
 
-function logic shift_lr;
+function automatic logic shift_lr;
     input alu_optype_t alu_op;
     shift_lr = alu_op[0];
 endfunction
 
-function logic logic_and;
+function automatic logic logic_and;
     input alu_optype_t alu_op;
     logic_and = alu_op[0];
 endfunction
 
-function logic logic_or;
+function automatic logic logic_or;
     input alu_optype_t alu_op;
     logic_or = alu_op[1];
 endfunction
 
-function logic logic_xor;
+function automatic logic logic_xor;
     input alu_optype_t alu_op;
     logic_xor = alu_op[2];
 endfunction
 
-function logic sub_flag;
+function automatic logic sub_flag;
     input alu_optype_t alu_op;
     sub_flag = alu_op[5];
 endfunction
 
-function logic shift_flag;
+function automatic logic shift_flag;
     input alu_optype_t alu_op;
     shift_flag = alu_op[3];
 endfunction
 
-function logic logic_flag;
+function automatic logic logic_flag;
     input alu_optype_t alu_op;
     logic_flag = alu_op[4];
 endfunction
 
-function logic set_flag;
+function automatic logic set_flag;
     input alu_optype_t alu_op;
     set_flag = (!alu_op[6]) & (alu_op[5]);
 endfunction
 
-function logic add_sub_flag;
+function automatic logic add_sub_flag;
     input alu_optype_t alu_op;
     add_sub_flag = alu_op[6];
 endfunction
 
-function logic set_signed;
+function automatic logic set_signed;
     input alu_optype_t alu_op;
     set_signed = alu_op[0];
 endfunction
 
-function logic add_sub_word;
+function automatic logic add_sub_word;
     input alu_optype_t alu_op;
     add_sub_word = alu_op[2];
 endfunction

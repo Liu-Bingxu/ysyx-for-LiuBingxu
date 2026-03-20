@@ -9,7 +9,7 @@ typedef logic [63:0] intreg_t;
 typedef logic [int_preg_width - 1:0] pint_regsrc_t;
 typedef logic [int_preg_width - 1:0] pint_regdest_t;
 
-function logic pint_wb_flag;
+function automatic logic pint_wb_flag;
     input                [wb_width - 1 : 0]             rfwen;
     input  pint_regdest_t[wb_width - 1 : 0]             pwdest;
     input  pint_regdest_t                               pint_index;
@@ -21,7 +21,7 @@ function logic pint_wb_flag;
     end
 endfunction
 
-function logic pint_dp_flag;
+function automatic logic pint_dp_flag;
     input                [rename_width - 1 : 0]         pdest_valid;
     input  pint_regdest_t[rename_width - 1 : 0]         pdest;
     input  pint_regdest_t                               pint_index;

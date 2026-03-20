@@ -12,22 +12,22 @@ typedef enum logic [8:0]{
 
 /* verilator lint_off UNUSEDSIGNAL */
 
-function logic [1:0] mul_sign;
+function automatic logic [1:0] mul_sign;
     input mul_optype_t op;
     mul_sign = op[1:0];
 endfunction
 
-function logic mul_low;
+function automatic logic mul_low;
     input mul_optype_t op;
     mul_low = op[2];
 endfunction
 
-function logic mul_high;
+function automatic logic mul_high;
     input mul_optype_t op;
     mul_high = op[3];
 endfunction
 
-function logic mul_word;
+function automatic logic mul_word;
     input mul_optype_t op;
     mul_word = op[4];
 endfunction

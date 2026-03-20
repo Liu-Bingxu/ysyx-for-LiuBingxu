@@ -478,8 +478,8 @@ assign pte_valid                = (stage_status == OUT);
 assign pte                      = out_pte;
 assign pte_error                = out_error;
 //**********************************************************************************************
-//?function
-function [127:0] tlb_page_sel;
+//?function automatic
+function automatic [127:0] tlb_page_sel;
     input [MMU_WAY-1:0] sel;
     input [127:0]        tlb_page_rdata[0:MMU_WAY-1];
     integer index;

@@ -520,8 +520,8 @@ assign icache_arsize    = 3'h3;
 assign icache_arburst   = 2'h1;
 assign icache_rready    = 1'b1;
 //**********************************************************************************************
-//?function
-function [127:0] icache_line_sel;
+//?function automatic
+function automatic [127:0] icache_line_sel;
     input [ICACHE_WAY-1:0]  sel;
     input [127:0]           icache_line_rdata[0:ICACHE_WAY-1];
     integer index;

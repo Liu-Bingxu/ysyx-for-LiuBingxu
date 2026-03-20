@@ -17,37 +17,37 @@ typedef enum logic [8:0]{
 
 /* verilator lint_off UNUSEDSIGNAL */
 
-function logic csr_mret_flag;
+function automatic logic csr_mret_flag;
     input csr_optype_t op;
     csr_mret_flag = op[8];
 endfunction
 
-function logic csr_sret_flag;
+function automatic logic csr_sret_flag;
     input csr_optype_t op;
     csr_sret_flag = op[7];
 endfunction
 
-function logic csr_dret_flag;
+function automatic logic csr_dret_flag;
     input csr_optype_t op;
     csr_dret_flag = op[6];
 endfunction
 
-function logic csr_acc_flag;
+function automatic logic csr_acc_flag;
     input csr_optype_t op;
     csr_acc_flag = op[3];
 endfunction
 
-function logic csr_swap;
+function automatic logic csr_swap;
     input csr_optype_t op;
     csr_swap = op[0];
 endfunction
 
-function logic csr_set;
+function automatic logic csr_set;
     input csr_optype_t op;
     csr_set = op[1];
 endfunction
 
-function logic csr_clear;
+function automatic logic csr_clear;
     input csr_optype_t op;
     csr_clear = op[2];
 endfunction

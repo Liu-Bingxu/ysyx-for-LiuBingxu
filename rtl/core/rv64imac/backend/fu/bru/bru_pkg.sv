@@ -12,22 +12,22 @@ typedef enum logic [8:0]{
 
 /* verilator lint_off UNUSEDSIGNAL */
 
-function logic branch_eq;
+function automatic logic branch_eq;
     input bru_optype_t op;
     branch_eq = op[0];
 endfunction
 
-function logic branch_lt;
+function automatic logic branch_lt;
     input bru_optype_t op;
     branch_lt = op[1];
 endfunction
 
-function logic branch_ltu;
+function automatic logic branch_ltu;
     input bru_optype_t op;
     branch_ltu = op[2];
 endfunction
 
-function logic branch_reverse;
+function automatic logic branch_reverse;
     input bru_optype_t op;
     branch_reverse = op[3];
 endfunction

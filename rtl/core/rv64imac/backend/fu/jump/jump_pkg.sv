@@ -9,17 +9,17 @@ typedef enum logic [8:0]{
 
 /* verilator lint_off UNUSEDSIGNAL */
 
-function logic jump_auipc;
+function automatic logic jump_auipc;
     input jump_optype_t op;
     jump_auipc = op[0];
 endfunction
 
-function logic jump_jal;
+function automatic logic jump_jal;
     input jump_optype_t op;
     jump_jal = op[1];
 endfunction
 
-function logic jump_jalr;
+function automatic logic jump_jalr;
     input jump_optype_t op;
     jump_jalr = op[2];
 endfunction

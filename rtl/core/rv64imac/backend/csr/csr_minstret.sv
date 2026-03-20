@@ -11,7 +11,7 @@ import core_setting_pkg::*;
 
 reg  [63:0]     minstret_reg;
 
-function logic [63:0] instret_pop_count;
+function automatic logic [63:0] instret_pop_count;
     input [commit_width - 1 : 0]   vec;
     //! 由于不好作参数化，所以用此行为级建模
     integer i;

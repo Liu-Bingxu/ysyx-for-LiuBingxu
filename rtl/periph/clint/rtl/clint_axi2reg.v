@@ -277,8 +277,8 @@ assign mst_rresp    = {mst_resp_reg, 1'b0};
 assign mst_rdata    = mst_rdata_reg;
 assign mst_rlast    = mst_rlast_reg;
 //**********************************************************************************************
-//?function
-function [31:0] reg_data_sel;
+//?function automatic
+function automatic [31:0] reg_data_sel;
     input                   mtime_sel_l;
     input                   mtime_sel_h;
     input [HART_NUM-1:0]    msip_sel;
@@ -315,7 +315,7 @@ function [31:0] reg_data_sel;
     end
 endfunction
 
-function [31:0] reg_wdata_sel;
+function automatic [31:0] reg_wdata_sel;
     input                   mtime_sel_l;
     input                   mtime_sel_h;
     input [HART_NUM-1:0]    msip_sel;

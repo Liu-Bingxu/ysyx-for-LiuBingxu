@@ -41,7 +41,7 @@ typedef struct packed {
     logic [BLOCK_BIT_NUM - 1:0]             inst_offset;        // 指令与ftq中起始pc的偏移
 } rob_entry_t;
 
-function logic RobQueueValid;
+function automatic logic RobQueueValid;
     input ls_rob_entry_ptr_t      rob_r_ptr;
     input ls_rob_entry_ptr_t      rob_w_ptr;
     input rob_entry_ptr_t         test_rob_ptr;
@@ -55,7 +55,7 @@ function logic RobQueueValid;
 
 endfunction
 
-function logic rob_is_older;
+function automatic logic rob_is_older;
     input ls_rob_entry_ptr_t      a_rob_ptr;
     input ls_rob_entry_ptr_t      b_rob_ptr;
     input ls_rob_entry_ptr_t      deq_rob_ptr;

@@ -46,127 +46,127 @@ typedef enum logic [8:0]{
 }amo_optype_t;
 
 /* verilator lint_off UNUSEDSIGNAL */
-function logic load_byte;
+function automatic logic load_byte;
     input load_optype_t op;
     load_byte = (op[1:0] == 2'h0);
 endfunction
 
-function logic load_half;
+function automatic logic load_half;
     input load_optype_t op;
     load_half = (op[1:0] == 2'h1);
 endfunction
 
-function logic load_word;
+function automatic logic load_word;
     input load_optype_t op;
     load_word = (op[1:0] == 2'h2);
 endfunction
 
-function logic load_double;
+function automatic logic load_double;
     input load_optype_t op;
     load_double = (op[1:0] == 2'h3);
 endfunction
 
-function logic load_signed;
+function automatic logic load_signed;
     input load_optype_t op;
     load_signed = (!op[2]);
 endfunction
 
-function logic[2:0] load_size;
+function automatic logic[2:0] load_size;
     input load_optype_t op;
     load_size = {1'b0, op[1:0]};
 endfunction
 
-function logic store_byte;
+function automatic logic store_byte;
     input store_optype_t op;
     store_byte = (op[1:0] == 2'h0);
 endfunction
 
-function logic store_half;
+function automatic logic store_half;
     input store_optype_t op;
     store_half = (op[1:0] == 2'h1);
 endfunction
 
-function logic store_word;
+function automatic logic store_word;
     input store_optype_t op;
     store_word = (op[1:0] == 2'h2);
 endfunction
 
-function logic store_double;
+function automatic logic store_double;
     input store_optype_t op;
     store_double = (op[1:0] == 2'h3);
 endfunction
 
-function logic[2:0] store_size;
+function automatic logic[2:0] store_size;
     input store_optype_t op;
     store_size = {1'b0, op[1:0]};
 endfunction
 
-function logic atomic_word;
+function automatic logic atomic_word;
     input amo_optype_t op;
     atomic_word = (op[1:0] == 2'h2);
 endfunction
 
-function logic atomic_double;
+function automatic logic atomic_double;
     input amo_optype_t op;
     atomic_double = (op[1:0] == 2'h3);
 endfunction
 
-function logic[2:0] atomic_size;
+function automatic logic[2:0] atomic_size;
     input amo_optype_t op;
     atomic_size = {1'b0, op[1:0]};
 endfunction
 
-function logic atomic_lr;
+function automatic logic atomic_lr;
     input amo_optype_t op;
     atomic_lr = (op[5:2] == 4'h0);
 endfunction
 
-function logic atomic_sc;
+function automatic logic atomic_sc;
     input amo_optype_t op;
     atomic_sc = (op[5:2] == 4'h1);
 endfunction
 
-function logic atomic_swap;
+function automatic logic atomic_swap;
     input amo_optype_t op;
     atomic_swap = (op[5:2] == 4'h2);
 endfunction
 
-function logic atomic_add ;
+function automatic logic atomic_add ;
     input amo_optype_t op;
     atomic_add = (op[5:2] == 4'h3);
 endfunction
 
-function logic atomic_xor ;
+function automatic logic atomic_xor ;
     input amo_optype_t op;
     atomic_xor = (op[5:2] == 4'h4);
 endfunction
 
-function logic atomic_and ;
+function automatic logic atomic_and ;
     input amo_optype_t op;
     atomic_and = (op[5:2] == 4'h5);
 endfunction
 
-function logic atomic_or  ;
+function automatic logic atomic_or  ;
     input amo_optype_t op;
     atomic_or = (op[5:2] == 4'h6);
 endfunction
 
-function logic atomic_min ;
+function automatic logic atomic_min ;
     input amo_optype_t op;
     atomic_min = (op[5:2] == 4'h7);
 endfunction
 
-function logic atomic_max ;
+function automatic logic atomic_max ;
     input amo_optype_t op;
     atomic_max = (op[5:2] == 4'h8);
 endfunction
 
-function logic atomic_minu;
+function automatic logic atomic_minu;
     input amo_optype_t op;
     atomic_minu = (op[5:2] == 4'h9);
 endfunction
 
-function logic atomic_maxu;
+function automatic logic atomic_maxu;
     input amo_optype_t op;
     atomic_maxu = (op[5:2] == 4'hA);
 endfunction
@@ -174,14 +174,14 @@ endfunction
 
 /* verilator lint_on UNUSEDSIGNAL */
 
-function logic addrcache;
+function automatic logic addrcache;
     input logic [63:0] waddr;
 
     assign addrcache = (waddr >= 64'h8000_0000) & (waddr < 64'h9fff_ffff);
 
 endfunction
 
-function logic [63:0] data_splicing_64;
+function automatic logic [63:0] data_splicing_64;
     input logic [63:0] data_init;
     input logic [63:0] data_merge;
     input logic [7:0]  data_strb;

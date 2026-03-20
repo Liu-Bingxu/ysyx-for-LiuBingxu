@@ -45,32 +45,32 @@ typedef union packed{
     amo_optype_t        amo_optype;
 }FuOpType_t;
 
-function logic send2alu;
+function automatic logic send2alu;
     input FuType_t futype;
     assign send2alu = (futype == fu_alu);
 endfunction
 
-function logic send2csr;
+function automatic logic send2csr;
     input FuType_t futype;
     assign send2csr = ((futype == fu_csr) | (futype == fu_fence));
 endfunction
 
-function logic send2jmp;
+function automatic logic send2jmp;
     input FuType_t futype;
     assign send2jmp = ((futype == fu_bru) | (futype == fu_jump));
 endfunction
 
-function logic send2mul;
+function automatic logic send2mul;
     input FuType_t futype;
     assign send2mul = (futype == fu_mul);
 endfunction
 
-function logic send2div;
+function automatic logic send2div;
     input FuType_t futype;
     assign send2div = (futype == fu_div);
 endfunction
 
-function logic send2load;
+function automatic logic send2load;
     input FuType_t futype;
     assign send2load = (futype == fu_load);
 endfunction
@@ -80,12 +80,12 @@ function logic send2store;
     assign send2store = (futype == fu_store);
 endfunction
 
-function logic send2amo;
+function automatic logic send2amo;
     input FuType_t futype;
     assign send2amo = (futype == fu_amo);
 endfunction
 
-function logic use_wdest;
+function automatic logic use_wdest;
     input FuType_t futype;
     //! 移除对load的提前完成，考虑load不写入的情况下，可能会出现异常和对mmio读取产生副作用
     assign use_wdest = ((futype == fu_alu) | (futype == fu_div) | (futype == fu_mul));

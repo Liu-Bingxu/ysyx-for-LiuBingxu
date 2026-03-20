@@ -14,17 +14,17 @@ typedef enum logic [8:0]{
 
 /* verilator lint_off UNUSEDSIGNAL */
 
-function logic div_word;
+function automatic logic div_word;
     input div_optype_t op;
     div_word = op[3];
 endfunction
 
-function logic div_unsign;
+function automatic logic div_unsign;
     input div_optype_t op;
     div_unsign = op[0];
 endfunction
 
-function logic div_rem;
+function automatic logic div_rem;
     input div_optype_t op;
     div_rem = op[1];
 endfunction
