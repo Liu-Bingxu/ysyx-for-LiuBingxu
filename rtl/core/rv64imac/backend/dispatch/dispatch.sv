@@ -151,7 +151,7 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
     logic       alu_div_exu_iq_enq_valid;
     logic       alu_bru_jump_exu_iq_enq_valid;
     logic       alu_csr_fence_exu_iq_enq_valid;
-    assign alu_valid = (dispatch_in_use[dispatch_index] & send2alu(rename_out[dispatch_index].futype));
+    assign alu_valid = (dispatch_in_use[dispatch_index] & `send2alu(rename_out[dispatch_index].futype));
     dispatch_alu_sel u_dispatch_alu_sel(
         .alu_valid                      	(alu_valid                       ),
         .alu_mul_exu_iq_enq_num         	(alu_mul_exu_iq_enq_num          ),
@@ -169,7 +169,7 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
         assign alu_index[dispatch_index + 1] = index_next;
     end
 
-    assign dispatch_vec_gen[dispatch_index].alu_mul_exu_in_valid        = (dispatch_in_use[dispatch_index] & send2mul(rename_out[dispatch_index].futype)) | 
+    assign dispatch_vec_gen[dispatch_index].alu_mul_exu_in_valid        = (dispatch_in_use[dispatch_index] & `send2mul(rename_out[dispatch_index].futype)) | 
                                                                             alu_mul_exu_iq_enq_valid;
     assign dispatch_vec_gen[dispatch_index].alu_mul_exu_in.futype       = rename_out[dispatch_index].futype                         ;
     assign dispatch_vec_gen[dispatch_index].alu_mul_exu_in.fuoptype     = rename_out[dispatch_index].fuoptype                       ;
@@ -185,7 +185,7 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
     assign dispatch_vec_gen[dispatch_index].alu_mul_exu_in.imm          = rename_out[dispatch_index].imm                            ;
     assign dispatch_vec_gen[dispatch_index].alu_mul_exu_in.rob_ptr      = rename_out[dispatch_index].rob_ptr[rob_entry_w - 1 : 0]   ;
 
-    assign dispatch_vec_gen[dispatch_index].alu_div_exu_in_valid        = (dispatch_in_use[dispatch_index] & send2div(rename_out[dispatch_index].futype)) | 
+    assign dispatch_vec_gen[dispatch_index].alu_div_exu_in_valid        = (dispatch_in_use[dispatch_index] & `send2div(rename_out[dispatch_index].futype)) | 
                                                                             alu_div_exu_iq_enq_valid;
     assign dispatch_vec_gen[dispatch_index].alu_div_exu_in.futype       = rename_out[dispatch_index].futype                         ;
     assign dispatch_vec_gen[dispatch_index].alu_div_exu_in.fuoptype     = rename_out[dispatch_index].fuoptype                       ;
@@ -201,7 +201,7 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
     assign dispatch_vec_gen[dispatch_index].alu_div_exu_in.imm          = rename_out[dispatch_index].imm                            ;
     assign dispatch_vec_gen[dispatch_index].alu_div_exu_in.rob_ptr      = rename_out[dispatch_index].rob_ptr[rob_entry_w - 1 : 0]   ;
 
-    assign dispatch_vec_gen[dispatch_index].alu_bru_jump_exu_in_valid       = (dispatch_in_use[dispatch_index] & send2jmp(rename_out[dispatch_index].futype)) | 
+    assign dispatch_vec_gen[dispatch_index].alu_bru_jump_exu_in_valid       = (dispatch_in_use[dispatch_index] & `send2jmp(rename_out[dispatch_index].futype)) | 
                                                                             alu_bru_jump_exu_iq_enq_valid;
     assign dispatch_vec_gen[dispatch_index].alu_bru_jump_exu_in.futype      = rename_out[dispatch_index].futype                         ;
     assign dispatch_vec_gen[dispatch_index].alu_bru_jump_exu_in.fuoptype    = rename_out[dispatch_index].fuoptype                       ;
@@ -222,7 +222,7 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
     assign dispatch_vec_gen[dispatch_index].alu_bru_jump_exu_in.ftq_ptr     = rename_out[dispatch_index].ftq_ptr                        ;
     assign dispatch_vec_gen[dispatch_index].alu_bru_jump_exu_in.inst_offset = rename_out[dispatch_index].inst_offset                    ;
 
-    assign dispatch_vec_gen[dispatch_index].alu_csr_fence_exu_in_valid          = (dispatch_in_use[dispatch_index] & send2csr(rename_out[dispatch_index].futype)) | 
+    assign dispatch_vec_gen[dispatch_index].alu_csr_fence_exu_in_valid          = (dispatch_in_use[dispatch_index] & `send2csr(rename_out[dispatch_index].futype)) | 
                                                                                     alu_csr_fence_exu_iq_enq_valid;
     assign dispatch_vec_gen[dispatch_index].alu_csr_fence_exu_in.futype         = rename_out[dispatch_index].futype                         ;
     assign dispatch_vec_gen[dispatch_index].alu_csr_fence_exu_in.fuoptype       = rename_out[dispatch_index].fuoptype                       ;
@@ -244,7 +244,7 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
     assign dispatch_vec_gen[dispatch_index].alu_csr_fence_exu_in.ftq_ptr        = rename_out[dispatch_index].ftq_ptr                        ;
     assign dispatch_vec_gen[dispatch_index].alu_csr_fence_exu_in.inst_offset    = rename_out[dispatch_index].inst_offset                    ;
 
-    assign dispatch_vec_gen[dispatch_index].loadUnit_in_valid       = (dispatch_in_use[dispatch_index] & send2load(rename_out[dispatch_index].futype));
+    assign dispatch_vec_gen[dispatch_index].loadUnit_in_valid       = (dispatch_in_use[dispatch_index] & `send2load(rename_out[dispatch_index].futype));
     assign dispatch_vec_gen[dispatch_index].loadUnit_in.psrc1       = rename_out[dispatch_index].psrc1          ;
     assign dispatch_vec_gen[dispatch_index].loadUnit_in.src1_type   = rename_out[dispatch_index].src1_type      ;
     assign dispatch_vec_gen[dispatch_index].loadUnit_in.src1_status = (rename_out[dispatch_index].src1_type != src_reg) ? reg_status_fire: 
@@ -252,7 +252,7 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
     assign dispatch_vec_gen[dispatch_index].loadUnit_in.imm         = rename_out[dispatch_index].imm            ;
     assign dispatch_vec_gen[dispatch_index].loadUnit_in.lq_ptr      = rename_out[dispatch_index].lsq_ptr        ;
 
-    assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in_valid          = (dispatch_in_use[dispatch_index] & send2store(rename_out[dispatch_index].futype) & store_can_dispatch);
+    assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in_valid          = (dispatch_in_use[dispatch_index] & `send2store(rename_out[dispatch_index].futype) & store_can_dispatch);
     assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.psrc1          = rename_out[dispatch_index].psrc1      ;
     assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.src1_type      = rename_out[dispatch_index].src1_type  ;
     assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.src1_status    = (rename_out[dispatch_index].src1_type != src_reg) ? reg_status_fire: 
@@ -260,14 +260,14 @@ generate for(dispatch_index = 0 ; dispatch_index < dispatch_width; dispatch_inde
     assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.imm            = rename_out[dispatch_index].imm        ;
     assign dispatch_vec_gen[dispatch_index].storeaddrUnit_in.sq_ptr         = rename_out[dispatch_index].lsq_ptr    ;
 
-    assign dispatch_vec_gen[dispatch_index].storedataUnit_in_valid          = (dispatch_in_use[dispatch_index] & send2store(rename_out[dispatch_index].futype) & store_can_dispatch);
+    assign dispatch_vec_gen[dispatch_index].storedataUnit_in_valid          = (dispatch_in_use[dispatch_index] & `send2store(rename_out[dispatch_index].futype) & store_can_dispatch);
     assign dispatch_vec_gen[dispatch_index].storedataUnit_in.psrc2          = rename_out[dispatch_index].psrc2      ;
     assign dispatch_vec_gen[dispatch_index].storedataUnit_in.src2_type      = rename_out[dispatch_index].src2_type  ;
     assign dispatch_vec_gen[dispatch_index].storedataUnit_in.src2_status    = (rename_out[dispatch_index].src2_type != src_reg) ? reg_status_fire: 
                                                                         dispatch_psrc2_status[dispatch_index]       ;
     assign dispatch_vec_gen[dispatch_index].storedataUnit_in.sq_ptr         = rename_out[dispatch_index].lsq_ptr    ;
 
-    assign dispatch_vec_gen[dispatch_index].atomicUnit_in_valid     = (dispatch_in_use[dispatch_index] & send2amo(rename_out[dispatch_index].futype));
+    assign dispatch_vec_gen[dispatch_index].atomicUnit_in_valid     = (dispatch_in_use[dispatch_index] & `send2amo(rename_out[dispatch_index].futype));
     assign dispatch_vec_gen[dispatch_index].atomicUnit_in.fuoptype  = rename_out[dispatch_index].fuoptype                       ;
     assign dispatch_vec_gen[dispatch_index].atomicUnit_in.psrc1     = rename_out[dispatch_index].psrc1                          ;
     assign dispatch_vec_gen[dispatch_index].atomicUnit_in.src1_type = rename_out[dispatch_index].src1_type                      ;

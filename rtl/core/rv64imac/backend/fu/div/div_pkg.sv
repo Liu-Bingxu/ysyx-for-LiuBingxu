@@ -12,23 +12,10 @@ typedef enum logic [8:0]{
     op_remuw = 9'b000001_111
 }div_optype_t;
 
-/* verilator lint_off UNUSEDSIGNAL */
+`define div_word(div_op) div_op[3]
 
-function automatic logic div_word;
-    input div_optype_t op;
-    div_word = op[3];
-endfunction
+`define div_unsign(div_op) div_op[0]
 
-function automatic logic div_unsign;
-    input div_optype_t op;
-    div_unsign = op[0];
-endfunction
-
-function automatic logic div_rem;
-    input div_optype_t op;
-    div_rem = op[1];
-endfunction
-
-/* verilator lint_on UNUSEDSIGNAL */
+`define div_rem(div_op) div_op[1]
 
 endpackage

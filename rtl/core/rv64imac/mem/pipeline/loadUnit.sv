@@ -129,9 +129,9 @@ assign vaddr = (stage1_in.src1 + {{32{stage1_in.imm[31]}}, stage1_in.imm});
 
 logic addr_misalign_flag;
 
-assign addr_misalign_flag =    ((load_half  (stage1_in.op) & (vaddr[0]   != 1'b0)) |   
-                                (load_word  (stage1_in.op) & (vaddr[1:0] != 2'b0)) |   
-                                (load_double(stage1_in.op) & (vaddr[2:0] != 3'b0))  
+assign addr_misalign_flag =    ((`load_half  (stage1_in.op) & (vaddr[0]   != 1'b0)) |   
+                                (`load_word  (stage1_in.op) & (vaddr[1:0] != 2'b0)) |   
+                                (`load_double(stage1_in.op) & (vaddr[2:0] != 3'b0))  
                                 );
 
 assign stage1_ready = ((loadUnit_mmu_valid & loadUnit_mmu_ready) | addr_misalign_flag);

@@ -7,23 +7,10 @@ typedef enum logic [8:0]{
     op_jalr    = 9'b000000_100
 }jump_optype_t;
 
-/* verilator lint_off UNUSEDSIGNAL */
+`define jump_auipc(jump_op) jump_op[0]
 
-function automatic logic jump_auipc;
-    input jump_optype_t op;
-    jump_auipc = op[0];
-endfunction
+`define jump_jal(jump_op) jump_op[1]
 
-function automatic logic jump_jal;
-    input jump_optype_t op;
-    jump_jal = op[1];
-endfunction
-
-function automatic logic jump_jalr;
-    input jump_optype_t op;
-    jump_jalr = op[2];
-endfunction
-
-/* verilator lint_on UNUSEDSIGNAL */
+`define jump_jalr(jump_op) jump_op[2]
 
 endpackage

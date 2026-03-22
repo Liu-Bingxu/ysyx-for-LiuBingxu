@@ -66,9 +66,9 @@ assign res_ltu = (~Cout);
 assign branch_pc        = pc + {{32{imm[31]}}, imm};
 assign not_branch_pc    = pc + (inst_rvc ? 64'h2 : 64'h4);
 //*************************************************************************
-assign branch_flag  =  ((res_eq  & branch_eq(op)) | 
-                        (res_lt  & branch_lt(op)) | 
-                        (res_ltu & branch_ltu(op))) ^ branch_reverse(op);
+assign branch_flag  =  ((res_eq  & `branch_eq(op)) | 
+                        (res_lt  & `branch_lt(op)) | 
+                        (res_ltu & `branch_ltu(op))) ^ `branch_reverse(op);
 
 assign token_miss     = (fix_token != branch_flag);
 assign branch_addr    = (branch_flag) ? {branch_pc[63:1], 1'b0} : not_branch_pc;

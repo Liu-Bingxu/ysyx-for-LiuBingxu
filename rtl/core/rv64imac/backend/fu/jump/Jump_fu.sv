@@ -41,11 +41,11 @@ logic [63:0]    preg_wdata;
 logic [63:0]    jump_addr;
 /* verilator lint_on UNUSEDSIGNAL */
 
-assign token_miss   = (jump_jalr(op) & (jump_addr[63:1] != token_pc[63:1]));
+assign token_miss   = (`jump_jalr(op) & (jump_addr[63:1] != token_pc[63:1]));
 
 assign auipc_res    = pc + {{32{imm[31]}}, imm};
-assign preg_wdata   = (jump_auipc(op)) ? auipc_res : pc + (inst_rvc ? 64'h2 : 64'h4);
-assign jump_addr    = (jump_jalr(op)) ? (src1 + {{32{imm[31]}}, imm}) : (pc + {{32{imm[31]}}, imm});
+assign preg_wdata   = (`jump_auipc(op)) ? auipc_res : pc + (inst_rvc ? 64'h2 : 64'h4);
+assign jump_addr    = (`jump_jalr(op)) ? (src1 + {{32{imm[31]}}, imm}) : (pc + {{32{imm[31]}}, imm});
 
 //*************************************************************************
 //!output

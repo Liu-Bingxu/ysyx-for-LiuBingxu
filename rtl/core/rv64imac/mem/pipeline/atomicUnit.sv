@@ -155,11 +155,11 @@ logic addr_uncache_flag;
 logic page_error;
 logic paddr_access_error;
 
-assign addr_misalign_flag =    ((atomic_word  (op) & (vaddr[1:0] != 2'b0)) |   
-                                (atomic_double(op) & (vaddr[2:0] != 3'b0))  
+assign addr_misalign_flag =    ((`atomic_word  (op) & (vaddr[1:0] != 2'b0)) |   
+                                (`atomic_double(op) & (vaddr[2:0] != 3'b0))  
                                 );
 
-assign addr_uncache_flag  = (!addrcache(atomicUnit_paddr));
+assign addr_uncache_flag  = (!`addrcache(atomicUnit_paddr));
 
 always_ff @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
@@ -189,7 +189,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                 if(atomicUnit_paddr_valid & atomicUnit_paddr_ready & (atomicUnit_paddr_error | addr_uncache_flag))begin
                     atomic_fsm <= atomic_S_DATA;
                 end
-                else if(atomicUnit_paddr_valid & atomicUnit_paddr_ready & atomic_sc(op))begin
+                else if(atomicUnit_paddr_valid & atomicUnit_paddr_ready & `atomic_sc(op))begin
                     atomic_fsm <= atomic_S_PA_D_W;
                 end
                 else if(atomicUnit_paddr_valid & atomicUnit_paddr_ready)begin
@@ -205,7 +205,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                 if(atomicUnit_rvalid & atomicUnit_rready & (atomicUnit_rresp != 2'h1))begin
                     atomic_fsm <= atomic_S_DATA;
                 end
-                else if(atomicUnit_rvalid & atomicUnit_rready & atomic_lr(op))begin
+                else if(atomicUnit_rvalid & atomicUnit_rready & `atomic_lr(op))begin
                     atomic_fsm <= atomic_S_DATA;
                 end
                 else if(atomicUnit_rvalid & atomicUnit_rready)begin
@@ -255,7 +255,7 @@ assign stomic_running                = ((atomic_fsm != atomic_IDLE) & (atomic_fs
 assign atomicUnit_invalid_sb_valid   = (atomic_fsm == atomic_INVALID_SB);
 
 assign atomicUnit_mmu_valid          = (atomic_fsm == atomic_S_VA);
-assign atomicUnit_vaddr              = {atomic_lr(op), vaddr};
+assign atomicUnit_vaddr              = {`atomic_lr(op), vaddr};
 
 assign atomicUnit_paddr_ready        = 1'b1;
 FF_D_without_asyn_rst #(1 )          u_page_error_o   (clk,atomicUnit_paddr_valid & atomicUnit_paddr_ready, atomicUnit_paddr_error, page_error);
@@ -263,7 +263,7 @@ FF_D_without_asyn_rst #(1 )          u_pa_access_er_o (clk,atomicUnit_paddr_vali
 FF_D_without_asyn_rst #(64)          u_paddr_o        (clk,atomicUnit_paddr_valid & atomicUnit_paddr_ready, atomicUnit_paddr, paddr);
 
 assign atomicUnit_arvalid            = (atomic_fsm == atomic_S_PA_R);
-assign atomicUnit_arsize             = atomic_size(op);
+assign atomicUnit_arsize             = `atomic_size(op);
 assign atomicUnit_araddr             = paddr;
 
 assign atomicUnit_rready             = 1'b1;
@@ -271,7 +271,7 @@ FF_D_without_asyn_rst #(2 )          u_load_resp_o    (clk,atomicUnit_rvalid & a
 FF_D_without_asyn_rst #(64)          u_load_data_o    (clk,atomicUnit_rvalid & atomicUnit_rready, atomicUnit_rdata, load_data);
 
 assign atomicUnit_awvalid            = ((atomic_fsm == atomic_S_PA_D_W) | (atomic_fsm == atomic_S_PA_W));
-assign atomicUnit_awsize             = atomic_size(op);
+assign atomicUnit_awsize             = `atomic_size(op);
 assign atomicUnit_awaddr             = paddr;
 
 logic [7:0] word_wstrb, double_wstrb;
@@ -292,23 +292,23 @@ logic [63:0]    atomic_wirte_memory_data;
 lsu_alu u_lsu_alu(
     .atomic_read_memory_data  	( load_data                 ),
     .atomic_read_gpr_data     	( src2                      ),
-    .atomic_swap    	        ( atomic_swap  (op)         ),
-    .atomic_add     	        ( atomic_add   (op)         ),
-    .atomic_xor     	        ( atomic_xor   (op)         ),
-    .atomic_and     	        ( atomic_and   (op)         ),
-    .atomic_or      	        ( atomic_or    (op)         ),
-    .atomic_min     	        ( atomic_min   (op)         ),
-    .atomic_max     	        ( atomic_max   (op)         ),
-    .atomic_minu    	        ( atomic_minu  (op)         ),
-    .atomic_maxu    	        ( atomic_maxu  (op)         ),
+    .atomic_swap    	        ( `atomic_swap  (op)        ),
+    .atomic_add     	        ( `atomic_add   (op)        ),
+    .atomic_xor     	        ( `atomic_xor   (op)        ),
+    .atomic_and     	        ( `atomic_and   (op)        ),
+    .atomic_or      	        ( `atomic_or    (op)        ),
+    .atomic_min     	        ( `atomic_min   (op)        ),
+    .atomic_max     	        ( `atomic_max   (op)        ),
+    .atomic_minu    	        ( `atomic_minu  (op)        ),
+    .atomic_maxu    	        ( `atomic_maxu  (op)        ),
     .atomic_wirte_memory_data 	( atomic_wirte_memory_data  )
 );
 assign atomicUnit_wvalid             = ((atomic_fsm == atomic_S_PA_D_W) | (atomic_fsm == atomic_S_D_W));
 assign atomicUnit_wstrb              = 8'h0 |
-                                        ({8{atomic_word  (op)}} & word_wstrb   ) |
-                                        ({8{atomic_double(op)}} & double_wstrb ) ;
+                                        ({8{`atomic_word  (op)}} & word_wstrb   ) |
+                                        ({8{`atomic_double(op)}} & double_wstrb ) ;
 memory_store_move u_memory_store_move(
-    .pre_data    	( atomic_sc(op) ? src2 : atomic_wirte_memory_data   ),
+    .pre_data    	( `atomic_sc(op) ? src2 : atomic_wirte_memory_data  ),
     .data_offset 	( paddr[2:0]                                        ),
     .data        	( atomicUnit_wdata                                  )
 );
@@ -317,15 +317,15 @@ assign atomicUnit_bready             = 1'b1;
 FF_D_without_asyn_rst #(2 )          u_store_resp_o   (clk,atomicUnit_bvalid & atomicUnit_bready, atomicUnit_bresp, store_resp);
 
 assign atomicUnit_valid_o            = (atomic_fsm == atomic_S_DATA);
-assign atomicUnit_ld_addr_misalign_o = (addr_misalign_flag  & ( atomic_lr(op)));
-assign atomicUnit_st_addr_misalign_o = (addr_misalign_flag  & (!atomic_lr(op)));
-assign atomicUnit_ld_page_error_o    = (page_error          & ( atomic_lr(op)));
-assign atomicUnit_st_page_error_o    = (page_error          & (!atomic_lr(op)));
-assign atomicUnit_load_error_o       = (((load_resp != 2'h1) | paddr_access_error) & ( atomic_lr(op)));
-assign atomicUnit_store_error_o      = ((!atomic_lr(op)) & (paddr_access_error | 
-                                        ((store_resp == 2'h0) & (!atomic_sc(op))) | 
+assign atomicUnit_ld_addr_misalign_o = (addr_misalign_flag  & ( `atomic_lr(op)));
+assign atomicUnit_st_addr_misalign_o = (addr_misalign_flag  & (!`atomic_lr(op)));
+assign atomicUnit_ld_page_error_o    = (page_error          & ( `atomic_lr(op)));
+assign atomicUnit_st_page_error_o    = (page_error          & (!`atomic_lr(op)));
+assign atomicUnit_load_error_o       = (((load_resp != 2'h1) | paddr_access_error) & ( `atomic_lr(op)));
+assign atomicUnit_store_error_o      = ((!`atomic_lr(op)) & (paddr_access_error | 
+                                        ((store_resp == 2'h0) & (!`atomic_sc(op))) | 
                                         ((store_resp == 2'h2)) | ((store_resp == 2'h3)) | 
-                                        ((load_resp  != 2'h1) & (!atomic_sc(op)))));
+                                        ((load_resp  != 2'h1) & (!`atomic_sc(op)))));
 assign atomicUnit_rob_ptr_o          = rob_ptr;
 assign atomic_vaddr_o                = vaddr;
 assign atomicUnit_rfwen_o            = rfwen & (!atomicUnit_ld_addr_misalign_o) & (!atomicUnit_st_addr_misalign_o) & (!atomicUnit_ld_page_error_o) & 
@@ -336,11 +336,11 @@ memory_load_move u_memory_load_move(
     .data_offset 	( paddr[2:0]            ),
     .is_byte     	( 1'b0                  ),
     .is_half     	( 1'b0                  ),
-    .is_word     	( atomic_word  (op)     ),
-    .is_double   	( atomic_double(op)     ),
+    .is_word     	( `atomic_word  (op)    ),
+    .is_double   	( `atomic_double(op)    ),
     .is_sign     	( 1'b1                  ),
     .data        	( preg_wdata            )
 );
-assign atomicUnit_preg_wdata_o      = atomic_sc(op) ? {63'h0, (store_resp != 2'h1)} : preg_wdata;
+assign atomicUnit_preg_wdata_o      = `atomic_sc(op) ? {63'h0, (store_resp != 2'h1)} : preg_wdata;
 
 endmodule //atomicUnit

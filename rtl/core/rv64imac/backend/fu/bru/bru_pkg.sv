@@ -10,28 +10,12 @@ typedef enum logic [8:0]{
     op_bgeu  = 9'b000001_100
 }bru_optype_t;
 
-/* verilator lint_off UNUSEDSIGNAL */
+`define branch_eq(bru_op) bru_op[0]
 
-function automatic logic branch_eq;
-    input bru_optype_t op;
-    branch_eq = op[0];
-endfunction
+`define branch_lt(bru_op) bru_op[1]
 
-function automatic logic branch_lt;
-    input bru_optype_t op;
-    branch_lt = op[1];
-endfunction
+`define branch_ltu(bru_op) bru_op[2]
 
-function automatic logic branch_ltu;
-    input bru_optype_t op;
-    branch_ltu = op[2];
-endfunction
-
-function automatic logic branch_reverse;
-    input bru_optype_t op;
-    branch_reverse = op[3];
-endfunction
-
-/* verilator lint_on UNUSEDSIGNAL */
+`define branch_reverse(bru_op) bru_op[3]
 
 endpackage

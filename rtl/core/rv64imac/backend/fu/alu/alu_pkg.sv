@@ -26,73 +26,30 @@ typedef enum logic [8:0]{
     op_addw = 9'b001000_100
 }alu_optype_t;
 
-/* verilator lint_off UNUSEDSIGNAL */
+`define shift_word(alu_op) alu_op[2]
 
-function automatic logic shift_word;
-    input alu_optype_t alu_op;
-    shift_word = alu_op[2];
-endfunction
+`define shift_al(alu_op) alu_op[1]
 
-function automatic logic shift_al;
-    input alu_optype_t alu_op;
-    shift_al = alu_op[1];
-endfunction
+`define shift_lr(alu_op) alu_op[0]
 
-function automatic logic shift_lr;
-    input alu_optype_t alu_op;
-    shift_lr = alu_op[0];
-endfunction
+`define logic_and(alu_op) alu_op[0]
 
-function automatic logic logic_and;
-    input alu_optype_t alu_op;
-    logic_and = alu_op[0];
-endfunction
+`define logic_or(alu_op) alu_op[1]
 
-function automatic logic logic_or;
-    input alu_optype_t alu_op;
-    logic_or = alu_op[1];
-endfunction
+`define logic_xor(alu_op) alu_op[2]
 
-function automatic logic logic_xor;
-    input alu_optype_t alu_op;
-    logic_xor = alu_op[2];
-endfunction
+`define sub_flag(alu_op) alu_op[5]
 
-function automatic logic sub_flag;
-    input alu_optype_t alu_op;
-    sub_flag = alu_op[5];
-endfunction
+`define shift_flag(alu_op) alu_op[3]
 
-function automatic logic shift_flag;
-    input alu_optype_t alu_op;
-    shift_flag = alu_op[3];
-endfunction
+`define logic_flag(alu_op) alu_op[4]
 
-function automatic logic logic_flag;
-    input alu_optype_t alu_op;
-    logic_flag = alu_op[4];
-endfunction
+`define set_flag(alu_op) ((!alu_op[6]) & (alu_op[5]))
 
-function automatic logic set_flag;
-    input alu_optype_t alu_op;
-    set_flag = (!alu_op[6]) & (alu_op[5]);
-endfunction
+`define add_sub_flag(alu_op) alu_op[6]
 
-function automatic logic add_sub_flag;
-    input alu_optype_t alu_op;
-    add_sub_flag = alu_op[6];
-endfunction
+`define set_signed(alu_op) alu_op[0]
 
-function automatic logic set_signed;
-    input alu_optype_t alu_op;
-    set_signed = alu_op[0];
-endfunction
-
-function automatic logic add_sub_word;
-    input alu_optype_t alu_op;
-    add_sub_word = alu_op[2];
-endfunction
-
-/* verilator lint_on UNUSEDSIGNAL */
+`define add_sub_word(alu_op) alu_op[2]
 
 endpackage

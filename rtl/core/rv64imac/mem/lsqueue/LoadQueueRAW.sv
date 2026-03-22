@@ -208,7 +208,7 @@ generate for(entry_index = 0 ; entry_index < LQRAW_entry_num; entry_index = entr
     logic load_afte_store;
     assign load_afte_store = (loadqueue_valid[entry_index] & (loadqueue[entry_index].loadUnit_raddr_o[63:3] == reg_storeaddrUnit_waddr_o[63:3]) & ((load_rmask & store_wmask) != 8'h0));
     logic old;
-    assign old = rob_is_older(reg_storeaddrUnit_rob_ptr_o, loadqueue[entry_index].loadUnit_rob_ptr_o, deq_rob_ptr);
+    assign old = `rob_is_older(reg_storeaddrUnit_rob_ptr_o, loadqueue[entry_index].loadUnit_rob_ptr_o, deq_rob_ptr);
 
     if(entry_index == 0)begin: U_gen_load_after_store_0
         assign loadqueue_flush_valid[entry_index]       = load_afte_store & old;
@@ -216,7 +216,7 @@ generate for(entry_index = 0 ; entry_index < LQRAW_entry_num; entry_index = entr
     end
     else begin: U_gen_load_after_store_another
         logic prev_old;
-        assign prev_old = rob_is_older(loadqueueRAW_flush_rob_ptr[entry_index - 1], loadqueue[entry_index].loadUnit_rob_ptr_o, deq_rob_ptr);
+        assign prev_old = `rob_is_older(loadqueueRAW_flush_rob_ptr[entry_index - 1], loadqueue[entry_index].loadUnit_rob_ptr_o, deq_rob_ptr);
 
         assign loadqueue_flush_valid[entry_index]       = ((load_afte_store & old) | loadqueue_flush_valid[entry_index - 1]);
         assign loadqueueRAW_flush_rob_ptr[entry_index]  = (loadqueue_flush_valid[entry_index - 1] & (prev_old | (!(load_afte_store & old)))) ? 

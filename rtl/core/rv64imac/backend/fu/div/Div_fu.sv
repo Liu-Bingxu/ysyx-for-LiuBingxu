@@ -33,7 +33,7 @@ divu u_divu(
     .clk         	( clk               ),
     .rst_n       	( rst_n             ),
     .div_flush   	( redirect          ),
-    .div_signed  	( !div_unsign(op)   ),
+    .div_signed  	( !`div_unsign(op)  ),
     .div_valid   	( div_valid_i       ),
     .div_ready      ( div_ready_i       ),
     .dividend    	( dividend          ),
@@ -45,14 +45,14 @@ divu u_divu(
 );
 div_optype_t temp_op;
 
-assign dividend     = (!div_word(op)) ? src1 : (
-                        (!div_unsign(op)) ? {{32{src1[31]}},src1[31:0]} : 
+assign dividend     = (!`div_word(op)) ? src1 : (
+                        (!`div_unsign(op)) ? {{32{src1[31]}},src1[31:0]} : 
                             {32'h0, src1[31:0]});
-assign divisor      = (!div_word(op)) ? src2 : (
-                        (!div_unsign(op)) ? {{32{src2[31]}},src2[31:0]} : 
+assign divisor      = (!`div_word(op)) ? src2 : (
+                        (!`div_unsign(op)) ? {{32{src2[31]}},src2[31:0]} : 
                             {32'h0, src2[31:0]});
-assign div_preg_wdata_o = (div_word(temp_op)) ? ((div_rem(temp_op)) ? {{32{remainder[31]}},remainder[31:0]} : {{32{quotient[31]}},quotient[31:0]}) : 
-                        ((div_rem(temp_op)) ? remainder : quotient);
+assign div_preg_wdata_o = (`div_word(temp_op)) ? ((`div_rem(temp_op)) ? {{32{remainder[31]}},remainder[31:0]} : {{32{quotient[31]}},quotient[31:0]}) : 
+                        ((`div_rem(temp_op)) ? remainder : quotient);
 
 FF_D_without_asyn_rst #(9)              u_temp_op  (clk,div_valid_i & div_ready_i, op, temp_op);
 FF_D_without_asyn_rst #(rob_entry_w)    u_rob_ptr_o(clk,div_valid_i & div_ready_i, rob_ptr, div_rob_ptr_o);

@@ -55,7 +55,7 @@ wire [63:0]             res;
 add_with_Cout #(64)add_sub(
     .OP_A 	    ( src1          ),
     .OP_B 	    ( src2          ),
-    .Cin  	    ( sub_flag(op)  ),
+    .Cin  	    ( `sub_flag(op) ),
     .Sum  	    ( Sum           ),
     .overflow   ( overflow      ),
     .Cout 	    ( Cout          )
@@ -72,30 +72,30 @@ assign res_ltu = (!Cout);
 
 //shift
 buck_shift #(64,6)u_buck_shift(
-    .LR       	( shift_lr(op)          ),
-    .AL       	( shift_al(op)          ),
+    .LR       	( `shift_lr(op)         ),
+    .AL       	( `shift_al(op)         ),
     .shamt    	( shift_shamt           ),
     .data_in  	( shift_data            ),
     .data_out 	( shift_res_temp        )
 );
-assign shift_shamt = (shift_word(op)) ? {1'b0, src2[4:0]} : src2[5:0];
-assign shift_data  = (!shift_word(op)) ? src1 : 
-                        ((shift_al(op)) ? {{32{src1[31]}},src1[31:0]} : 
+assign shift_shamt = (`shift_word(op)) ? {1'b0, src2[4:0]} : src2[5:0];
+assign shift_data  = (!`shift_word(op)) ? src1 : 
+                        ((`shift_al(op)) ? {{32{src1[31]}},src1[31:0]} : 
                             {32'h0,src1[31:0]}); 
-assign shift_res   = (shift_word(op)) ? {{32{shift_res_temp[31]}},shift_res_temp[31:0]} : shift_res_temp;
+assign shift_res   = (`shift_word(op)) ? {{32{shift_res_temp[31]}},shift_res_temp[31:0]} : shift_res_temp;
 
 //*************************************************************************
-assign logic_res =  (res_and & {64{logic_and(op)}}) | 
-                    (res_or  & {64{logic_or(op) }}) | 
-                    (res_xor & {64{logic_xor(op)}});
-assign set_res   = (set_signed(op)) ? {63'h0, res_lt} : {63'h0, res_ltu};
-assign sum_res   = (add_sub_word(op)) ? {{32{Sum[31]}},Sum[31:0]} : Sum;
+assign logic_res =  (res_and & {64{`logic_and(op)}}) | 
+                    (res_or  & {64{`logic_or(op) }}) | 
+                    (res_xor & {64{`logic_xor(op)}});
+assign set_res   = (`set_signed(op)) ? {63'h0, res_lt} : {63'h0, res_ltu};
+assign sum_res   = (`add_sub_word(op)) ? {{32{Sum[31]}},Sum[31:0]} : Sum;
 //*************************************************************************
 assign res       =  64'h0 |
-                    ({64{logic_flag(op)     }} & logic_res ) |
-                    ({64{set_flag(op)       }} & set_res   ) |
-                    ({64{shift_flag(op)     }} & shift_res ) |
-                    ({64{add_sub_flag(op)   }} & sum_res   );
+                    ({64{`logic_flag(op)     }} & logic_res ) |
+                    ({64{`set_flag(op)       }} & set_res   ) |
+                    ({64{`shift_flag(op)     }} & shift_res ) |
+                    ({64{`add_sub_flag(op)   }} & sum_res   );
 //*************************************************************************
 //!output
 assign alu_ready_i = ((!alu_valid_o) | alu_ready_o);

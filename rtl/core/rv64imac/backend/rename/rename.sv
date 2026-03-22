@@ -83,10 +83,10 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     assign rob_req[rename_index]                    = decode_out_valid[rename_index];
 
     // StoreQueue interface
-    assign sq_req[rename_index]                     = decode_out_valid[rename_index] & send2store(decode_out[rename_index].futype) & (!rename_rob_finish[rename_index]);
+    assign sq_req[rename_index]                     = decode_out_valid[rename_index] & `send2store(decode_out[rename_index].futype) & (!rename_rob_finish[rename_index]);
 
     // LoadQueue interface
-    assign lq_req[rename_index]                     = decode_out_valid[rename_index] & send2load(decode_out[rename_index].futype) & (!rename_rob_finish[rename_index]);
+    assign lq_req[rename_index]                     = decode_out_valid[rename_index] & `send2load(decode_out[rename_index].futype) & (!rename_rob_finish[rename_index]);
 
     assign rename_free_list_fire[rename_index]      = ((!rename_int_req[rename_index]) | rename_int_resp[rename_index].rename_valid);
     assign rename_rob_fire[rename_index]            = ((!rob_req[rename_index]) | rob_resp[rename_index].valid);
@@ -94,7 +94,7 @@ generate for(rename_index = 0 ; rename_index < rename_width; rename_index = rena
     assign rename_lq_fire[rename_index]             = ((!lq_req[rename_index])  | lq_resp[rename_index].valid);
 
     assign rename_rob_finish[rename_index]          =   (decode_out[rename_index].trap_flag) | 
-                                                        ((decode_out[rename_index].rfwen == 1'h0) & use_wdest(decode_out[rename_index].futype));
+                                                        ((decode_out[rename_index].rfwen == 1'h0) & `use_wdest(decode_out[rename_index].futype));
 
     if(rename_index == 0)begin: u_gen_pasrc_0
         assign rename_inst[rename_index].psrc1      = (decode_out[rename_index].src1_type == src_imm) ? {{(int_preg_width - 5){1'b0}}, decode_out[rename_index].src1} : int_src1_fromrat[rename_index];

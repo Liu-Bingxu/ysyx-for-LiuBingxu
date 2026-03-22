@@ -60,14 +60,14 @@ assign csr_or  = src1 | csr_rdata;
 assign npc              = pc + (inst_rvc ? 64'h2 : 64'h4);
 assign csr_satp_change  = (csrwen & (csr_index == SATP));
 
-assign csr_res =    (src1    & {64{csr_swap (op)}}) | 
-                    (csr_or  & {64{csr_set  (op)}}) | 
-                    (csr_and & {64{csr_clear(op)}});
+assign csr_res =    (src1    & {64{`csr_swap (op)}}) | 
+                    (csr_or  & {64{`csr_set  (op)}}) | 
+                    (csr_and & {64{`csr_clear(op)}});
 
-assign csr_jump_pc =    (mepc & {64{csr_mret_flag(op)}}) | 
-                        (sepc & {64{csr_sret_flag(op)}}) | 
-                        (dpc  & {64{csr_dret_flag(op)}}) | 
-                        (npc  & {64{csr_satp_change  }});
+assign csr_jump_pc =    (mepc & {64{`csr_mret_flag(op)}}) | 
+                        (sepc & {64{`csr_sret_flag(op)}}) | 
+                        (dpc  & {64{`csr_dret_flag(op)}}) | 
+                        (npc  & {64{ csr_satp_change  }});
 //*************************************************************************
 //!output
 assign csr_ready_i = ((!csr_valid_o) | csr_ready_o);
@@ -88,12 +88,12 @@ FF_D_with_syn_rst #(
 );
 FF_D_without_asyn_rst #(rob_entry_w)    u_rob_ptr_o     (clk,send_valid, rob_ptr, csr_rob_ptr_o);
 FF_D_without_asyn_rst #(int_preg_width) u_pwdest_o      (clk,send_valid, pwdest, csr_pwdest_o);
-FF_D_without_asyn_rst #(1 )             u_rfwen_o       (clk,send_valid, csr_acc_flag(op) & rfwen,  csr_rfwen_o );
-FF_D_without_asyn_rst #(1 )             u_csrwen_o      (clk,send_valid, csr_acc_flag(op) & csrwen, csr_csrwen_o);
+FF_D_without_asyn_rst #(1 )             u_rfwen_o       (clk,send_valid, `csr_acc_flag(op) & rfwen,  csr_rfwen_o );
+FF_D_without_asyn_rst #(1 )             u_csrwen_o      (clk,send_valid, `csr_acc_flag(op) & csrwen, csr_csrwen_o);
 FF_D_without_asyn_rst #(12)             u_csr_index_o   (clk,send_valid, csr_index, csr_index_o);
-FF_D_without_asyn_rst #(1 )             u_mret_o        (clk,send_valid, csr_mret_flag(op), csr_mret_o);
-FF_D_without_asyn_rst #(1 )             u_sret_o        (clk,send_valid, csr_sret_flag(op), csr_sret_o);
-FF_D_without_asyn_rst #(1 )             u_dret_o        (clk,send_valid, csr_dret_flag(op), csr_dret_o);
+FF_D_without_asyn_rst #(1 )             u_mret_o        (clk,send_valid, `csr_mret_flag(op), csr_mret_o);
+FF_D_without_asyn_rst #(1 )             u_sret_o        (clk,send_valid, `csr_sret_flag(op), csr_sret_o);
+FF_D_without_asyn_rst #(1 )             u_dret_o        (clk,send_valid, `csr_dret_flag(op), csr_dret_o);
 FF_D_without_asyn_rst #(1 )             u_satp_change_o (clk,send_valid, csr_satp_change, csr_satp_change_o);
 FF_D_without_asyn_rst #(64)             u_result_o      (clk,send_valid, csr_rdata, csr_preg_wdata_o);
 FF_D_without_asyn_rst #(64)             u_jump_pc_o     (clk,send_valid, csr_jump_pc, csr_jump_pc_o);

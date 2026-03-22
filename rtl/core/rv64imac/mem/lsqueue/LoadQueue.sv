@@ -178,7 +178,7 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
             lq_entry_loadcommit_update
         );
     end
-    assign lq_entry_loadcommit_update_wen = lq_commit_maybe_finish & LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index);
+    assign lq_entry_loadcommit_update_wen = lq_commit_maybe_finish & `LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index);
 
     assign lq_entry_loadaddr_update_wen                     = loadUnit_valid_o & loadUnit_ready_o & (entry_index == loadUnit_lq_ptr_o);
     assign lq_entry_loadaddr_update.rob_ptr                 = lq_entry[entry_index].rob_ptr                        ;
@@ -227,12 +227,12 @@ generate for(entry_index = 0 ; entry_index < LQ_entry_num; entry_index = entry_i
     FF_D_without_asyn_rst #(LQ_ENTRY_W)    u_entry     (clk,lq_entry_wen, lq_entry_nxt, lq_entry[entry_index]);
 
     logic issue_valid;
-    assign issue_valid = (LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index) & (lq_entry[entry_index].lq_entry_status == lq_get_addr) & 
+    assign issue_valid = (`LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index) & (lq_entry[entry_index].lq_entry_status == lq_get_addr) & 
                         (!lq_entry[entry_index].addr_misalign) & (!lq_entry[entry_index].page_error) & 
-                        (addrcache(lq_entry[entry_index].mem_paddr) | (lq_entry[entry_index].rob_ptr[rob_entry_w - 1 : 0] == top_rob_ptr)));
+                        (`addrcache(lq_entry[entry_index].mem_paddr) | (lq_entry[entry_index].rob_ptr[rob_entry_w - 1 : 0] == top_rob_ptr)));
 
     logic commit_valid;
-    assign commit_valid = (LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index) & (lq_entry[entry_index].lq_entry_status == lq_get_addr) & 
+    assign commit_valid = (`LoadQueueValid(lq_r_ptr, lq_w_ptr, entry_index) & (lq_entry[entry_index].lq_entry_status == lq_get_addr) & 
                         (lq_entry[entry_index].addr_misalign | lq_entry[entry_index].page_error));
 
     assign lq_entry_r_ptr_step_use[entry_index]         = lq_entry[lq_ptr_r_ptr_step_inner[entry_index][LQ_entry_w - 1 : 0]];
@@ -293,14 +293,14 @@ assign loadUnit_ready_o         = 1'b1;
 
 assign lq_entry_issue_use       = lq_entry[lq_ptr_issue];
 assign LoadQueue_arvalid        = valid_issue;
-assign LoadQueue_arsize         = load_size(lq_entry_issue_use.op);
+assign LoadQueue_arsize         = `load_size(lq_entry_issue_use.op);
 assign LoadQueue_araddr         = lq_entry_issue_use.mem_paddr;
 assign LoadQueue_rob_ptr        = lq_entry_issue_use.rob_ptr;
 assign LoadQueue_lq_ptr         = lq_ptr_issue;
 
 assign LoadQueue_enq_lqRAW_o    = (LoadQueue_arvalid & LoadQueue_arready);
 assign LoadQueue_raddr_o        = lq_entry_issue_use.mem_paddr;
-assign LoadQueue_rsize_o        = load_size(lq_entry_issue_use.op);
+assign LoadQueue_rsize_o        = `load_size(lq_entry_issue_use.op);
 assign LoadQueue_enq_rob_ptr_o  = lq_entry_issue_use.rob_ptr;
 
 assign LoadQueue_rready = LoadQueue_ready_o;
@@ -309,11 +309,11 @@ logic [63:0] load_data;
 memory_load_move u_memory_load_move(
     .pre_data    	( LoadQueue_rdata                     ),
     .data_offset 	( lq_entry_commit_use.mem_paddr[2:0]  ),
-    .is_byte     	( load_byte  (lq_entry_commit_use.op) ),
-    .is_half     	( load_half  (lq_entry_commit_use.op) ),
-    .is_word     	( load_word  (lq_entry_commit_use.op) ),
-    .is_double   	( load_double(lq_entry_commit_use.op) ),
-    .is_sign     	( load_signed(lq_entry_commit_use.op) ),
+    .is_byte     	( `load_byte  (lq_entry_commit_use.op)),
+    .is_half     	( `load_half  (lq_entry_commit_use.op)),
+    .is_word     	( `load_word  (lq_entry_commit_use.op)),
+    .is_double   	( `load_double(lq_entry_commit_use.op)),
+    .is_sign     	( `load_signed(lq_entry_commit_use.op)),
     .data        	( load_data                           )
 );
 

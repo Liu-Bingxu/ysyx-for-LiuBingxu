@@ -21,6 +21,13 @@ import mem_pkg::*;
     input       msip_asyn
 );
 
+// Address width in bits
+localparam AXI_ADDR_W = 64;
+// ID width in bits
+localparam AXI_ID_W = 8;
+// Data width in bits
+localparam AXI_DATA_W = 64;
+
 wire clk = clock;
 
 logic                       icache_arvalid;
@@ -88,13 +95,6 @@ logic                       load_uncache_rvalid;
 logic                       load_uncache_rready;
 logic [1:0]                 load_uncache_rresp;
 logic [63:0]                load_uncache_rdata;
-
-// Address width in bits
-localparam AXI_ADDR_W = 64;
-// ID width in bits
-localparam AXI_ID_W = 8;
-// Data width in bits
-localparam AXI_DATA_W = 64;
 
 wire                    halt_req = 1'b0;
 
@@ -494,7 +494,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
                                                             (!u_core_ooo_top.u_backend_top.u_rob.rob_entry[entry_index].finish) &
                                                             ((!u_core_ooo_top.u_backend_top.u_rob.LoadQueueRAW_flush_o) | 
                                                             (entry_index != u_core_ooo_top.u_backend_top.u_rob.LoadQueueRAW_rob_ptr_o));
-    assign rob_entry_loadUnit_update_io_skip                = (!addrcache(load_paddr))                            ;
+    assign rob_entry_loadUnit_update_io_skip                = (!`addrcache(load_paddr))                            ;
 
     assign rob_entry_StoreQueue_update_wen                  = u_core_ooo_top.u_backend_top.u_rob.StoreQueue_valid_o & 
                                                             u_core_ooo_top.u_backend_top.u_rob.StoreQueue_ready_o &

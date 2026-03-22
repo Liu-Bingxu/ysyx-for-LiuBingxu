@@ -40,7 +40,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     else begin
         case (fence_fsm)
             fence_idle: begin
-                if(fence_valid_i & fence_ready_i & fence_i_flag(op))begin
+                if(fence_valid_i & fence_ready_i & `fence_i_flag(op))begin
                     fence_fsm       <= fencei_run;
                     flush_i_valid   <= 1'b1;
                 end
@@ -67,7 +67,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
 end
 assign fence_addr   = pc + (inst_rvc ? 64'h2 : 64'h4);
-assign sflush_vma_valid = fence_valid_i & fence_ready_i & sfence_flag(op);
+assign sflush_vma_valid = fence_valid_i & fence_ready_i & `sfence_flag(op);
 
 //*************************************************************************
 //!output
@@ -83,7 +83,7 @@ FF_D_with_wen #(
     .clk      	( clk                                   ),
     .rst_n    	( rst_n                                 ),
     .wen        ( fence_ready_i                         ),
-    .data_in  	( fence_valid_i & (!fence_i_flag(op))   ),
+    .data_in  	( fence_valid_i & (!`fence_i_flag(op))  ),
     .data_out 	( fence_valid                           )
 );
 assign fence_valid_o = (fence_valid | fence_i_finish);

@@ -1458,7 +1458,7 @@ generate for(entry_index = 0 ; entry_index < rob_entry_num; entry_index = entry_
                                                             (!u_core_ooo_top.u_backend_top.u_rob.rob_entry[entry_index].finish) &
                                                             ((!u_core_ooo_top.u_backend_top.u_rob.LoadQueueRAW_flush_o) | 
                                                             (entry_index != u_core_ooo_top.u_backend_top.u_rob.LoadQueueRAW_rob_ptr_o));
-    assign rob_entry_loadUnit_update_io_skip                = (!addrcache(load_paddr))                            ;
+    assign rob_entry_loadUnit_update_io_skip                = (!`addrcache(load_paddr))                            ;
 
     assign rob_entry_StoreQueue_update_wen                  = u_core_ooo_top.u_backend_top.u_rob.StoreQueue_valid_o & 
                                                             u_core_ooo_top.u_backend_top.u_rob.StoreQueue_ready_o &

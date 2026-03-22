@@ -115,7 +115,7 @@ logic sign30, sign31, sign32;
 /* verilator lint_on UNUSEDSIGNAL */
 
 //? gen booth_2 code
-assign mul_signed = mul_sign(op);
+assign mul_signed = `mul_sign(op);
 assign mul_a_sign = (mul_signed[1]) ? {src1[63], src1} : {1'b0, src1};
 assign mul_b_sign = (mul_signed[0]) ? {src2[63], src2} : {1'b0, src2};
 
@@ -496,8 +496,8 @@ assign res = sum5_0_reg + carry5_0_reg;
 assign mul_valid_o      = pipeline2_valid;
 assign mul_rob_ptr_o    = rob_ptr_pipeline2;
 assign mul_pwdest_o     = pwdest_pipeline2;
-assign mul_preg_wdata_o =   ({64{mul_low(op_pipeline2) }} & res[63:0]                 ) | 
-                            ({64{mul_high(op_pipeline2)}} & res[127:64]               ) | 
-                            ({64{mul_word(op_pipeline2)}} & {{32{res[31]}}, res[31:0]});
+assign mul_preg_wdata_o =   ({64{`mul_low(op_pipeline2) }} & res[63:0]                 ) | 
+                            ({64{`mul_high(op_pipeline2)}} & res[127:64]               ) | 
+                            ({64{`mul_word(op_pipeline2)}} & {{32{res[31]}}, res[31:0]});
 
 endmodule //Mul_fu

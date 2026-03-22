@@ -209,8 +209,8 @@ generate for(entry_index = 0 ; entry_index < SQ_entry_num; entry_index = entry_i
     FF_D_without_asyn_rst #(SQ_ENTRY_W)    u_entry     (clk,sq_entry_wen, sq_entry_nxt, sq_entry[entry_index]);
 
     logic Queue_entry_use_for_bypass;
-    assign Queue_entry_use_for_bypass = (StoreQueueValid(sq_r_ptr, sq_w_ptr, entry_index) & sq_entry[entry_index].addr_finish & 
-                                    (sq_entry[entry_index].mem_waddr[63:3] == load_paddr2sq[63:3]) & rob_is_older(sq_entry[entry_index].rob_ptr, load_rob_ptr, deq_rob_ptr));
+    assign Queue_entry_use_for_bypass = (`StoreQueueValid(sq_r_ptr, sq_w_ptr, entry_index) & sq_entry[entry_index].addr_finish & 
+                                    (sq_entry[entry_index].mem_waddr[63:3] == load_paddr2sq[63:3]) & `rob_is_older(sq_entry[entry_index].rob_ptr, load_rob_ptr, deq_rob_ptr));
 
     if(entry_index == 0)begin : U_gen_sq_bypass_0
         assign sq_bypass_wait[entry_index]              = (Queue_entry_use_for_bypass & (!sq_entry[entry_index].data_finish));
@@ -265,10 +265,10 @@ generate for(entry_index = 0 ; entry_index < SQ_entry_num; entry_index = entry_i
         endcase
     end
     assign bypass_wstrb = 8'h0 |
-                        ({8{store_byte  (sq_entry[entry_index].storeaddrUnit_op)}} & bypass_byte_wstrb   ) | 
-                        ({8{store_half  (sq_entry[entry_index].storeaddrUnit_op)}} & bypass_half_wstrb   ) |
-                        ({8{store_word  (sq_entry[entry_index].storeaddrUnit_op)}} & bypass_word_wstrb   ) |
-                        ({8{store_double(sq_entry[entry_index].storeaddrUnit_op)}} & bypass_double_wstrb ) ;
+                        ({8{`store_byte  (sq_entry[entry_index].storeaddrUnit_op)}} & bypass_byte_wstrb   ) | 
+                        ({8{`store_half  (sq_entry[entry_index].storeaddrUnit_op)}} & bypass_half_wstrb   ) |
+                        ({8{`store_word  (sq_entry[entry_index].storeaddrUnit_op)}} & bypass_word_wstrb   ) |
+                        ({8{`store_double(sq_entry[entry_index].storeaddrUnit_op)}} & bypass_double_wstrb ) ;
 
     assign sq_bypass_wstrb_normal[entry_index]  = ({8{Queue_entry_use_for_bypass & ((sq_r_ptr[SQ_entry_w] == sq_w_ptr[SQ_entry_w]) | (entry_index <  sq_w_ptr[SQ_entry_w - 1 : 0]))}} & bypass_wstrb);
     assign sq_bypass_wstrb_spec[entry_index]    = ({8{Queue_entry_use_for_bypass &  (sq_r_ptr[SQ_entry_w] != sq_w_ptr[SQ_entry_w]) & (entry_index >= sq_r_ptr[SQ_entry_w - 1 : 0]) }} & bypass_wstrb);
@@ -309,29 +309,29 @@ assign sq_empty                 = (sq_r_ptr == sq_w_ptr);
 assign sq_entry_wirte_use       = sq_entry[sq_r_ptr[SQ_entry_w - 1 : 0]];
 
 assign StoreQueue_valid_o           = (StoreQueue_rob_ptr_o == top_rob_ptr) & sq_entry_wirte_use.addr_finish & sq_entry_wirte_use.data_finish & 
-                                    ((addrcache(StoreQueue_vaddr_o) & StoreQueue_can_write_sb) | ((!addrcache(StoreQueue_vaddr_o)) & StoreQueue_can_write_uc) | 
+                                    ((`addrcache(StoreQueue_vaddr_o) & StoreQueue_can_write_sb) | ((!`addrcache(StoreQueue_vaddr_o)) & StoreQueue_can_write_uc) | 
                                     StoreQueue_addr_misalign_o | StoreQueue_page_error_o) & (!sq_empty);
 assign StoreQueue_addr_misalign_o   = sq_entry_wirte_use.addr_misalign  ;
 assign StoreQueue_page_error_o      = sq_entry_wirte_use.page_error     ;
 assign StoreQueue_rob_ptr_o         = sq_entry_wirte_use.rob_ptr[rob_entry_w - 1 : 0];
 assign StoreQueue_vaddr_o           = sq_entry_wirte_use.mem_waddr      ;
 
-assign StoreQueue2Uncache_valid     = StoreQueue_valid_o & (!StoreQueue_addr_misalign_o) & (!StoreQueue_page_error_o) & (!addrcache(StoreQueue_vaddr_o));
+assign StoreQueue2Uncache_valid     = StoreQueue_valid_o & (!StoreQueue_addr_misalign_o) & (!StoreQueue_page_error_o) & (!`addrcache(StoreQueue_vaddr_o));
 assign StoreQueue_Uncache_waddr_o   = sq_entry_wirte_use.mem_waddr;
 assign StoreQueue_Uncache_wdata_o   = sq_bypass_store_data[sq_r_ptr[SQ_entry_w - 1 : 0]];
 assign StoreQueue_Uncache_wstrb_o   = 8'h0 |
-                                    ({8{store_byte  (sq_entry_wirte_use.storeaddrUnit_op)}} & byte_wstrb   ) |
-                                    ({8{store_half  (sq_entry_wirte_use.storeaddrUnit_op)}} & half_wstrb   ) |
-                                    ({8{store_word  (sq_entry_wirte_use.storeaddrUnit_op)}} & word_wstrb   ) |
-                                    ({8{store_double(sq_entry_wirte_use.storeaddrUnit_op)}} & double_wstrb ) ;
+                                    ({8{`store_byte  (sq_entry_wirte_use.storeaddrUnit_op)}} & byte_wstrb   ) |
+                                    ({8{`store_half  (sq_entry_wirte_use.storeaddrUnit_op)}} & half_wstrb   ) |
+                                    ({8{`store_word  (sq_entry_wirte_use.storeaddrUnit_op)}} & word_wstrb   ) |
+                                    ({8{`store_double(sq_entry_wirte_use.storeaddrUnit_op)}} & double_wstrb ) ;
 
-assign StoreQueue2StoreBuffer_valid = StoreQueue_valid_o & (!StoreQueue_addr_misalign_o) & (!StoreQueue_page_error_o) & addrcache(StoreQueue_vaddr_o);
+assign StoreQueue2StoreBuffer_valid = StoreQueue_valid_o & (!StoreQueue_addr_misalign_o) & (!StoreQueue_page_error_o) & `addrcache(StoreQueue_vaddr_o);
 assign StoreQueue_mem_waddr_o       = sq_entry_wirte_use.mem_waddr;
 assign StoreQueue_mem_wdata_o       = sq_bypass_store_data[sq_r_ptr[SQ_entry_w - 1 : 0]];
 assign StoreQueue_mem_wstrb_o       = 8'h0 |
-                                    ({8{store_byte  (sq_entry_wirte_use.storeaddrUnit_op)}} & byte_wstrb   ) | 
-                                    ({8{store_half  (sq_entry_wirte_use.storeaddrUnit_op)}} & half_wstrb   ) |
-                                    ({8{store_word  (sq_entry_wirte_use.storeaddrUnit_op)}} & word_wstrb   ) |
-                                    ({8{store_double(sq_entry_wirte_use.storeaddrUnit_op)}} & double_wstrb ) ;
+                                    ({8{`store_byte  (sq_entry_wirte_use.storeaddrUnit_op)}} & byte_wstrb   ) | 
+                                    ({8{`store_half  (sq_entry_wirte_use.storeaddrUnit_op)}} & half_wstrb   ) |
+                                    ({8{`store_word  (sq_entry_wirte_use.storeaddrUnit_op)}} & word_wstrb   ) |
+                                    ({8{`store_double(sq_entry_wirte_use.storeaddrUnit_op)}} & double_wstrb ) ;
 
 endmodule //StoreQueue

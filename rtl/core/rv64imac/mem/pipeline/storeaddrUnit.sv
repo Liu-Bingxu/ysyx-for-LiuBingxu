@@ -125,9 +125,9 @@ assign vaddr = (stage1_in.src1 + {{32{stage1_in.imm[31]}}, stage1_in.imm});
 
 logic addr_misalign_flag;
 
-assign addr_misalign_flag =    ((store_half  (stage1_in.op) & (vaddr[0]   != 1'b0)) |   
-                                (store_word  (stage1_in.op) & (vaddr[1:0] != 2'b0)) |   
-                                (store_double(stage1_in.op) & (vaddr[2:0] != 3'b0))  
+assign addr_misalign_flag =    ((`store_half  (stage1_in.op) & (vaddr[0]   != 1'b0)) |   
+                                (`store_word  (stage1_in.op) & (vaddr[1:0] != 2'b0)) |   
+                                (`store_double(stage1_in.op) & (vaddr[2:0] != 3'b0))  
                                 );
 
 assign stage1_ready = ((storeaddrUnit_mmu_valid & storeaddrUnit_mmu_ready) | addr_misalign_flag);
@@ -167,7 +167,7 @@ assign storeaddrUnit_page_error_o       = storeaddrUnit_paddr_error;
 assign storeaddrUnit_check_RAW_o        = (storeaddrUnit_valid_o & storeaddrUnit_ready_o);
 assign storeaddrUnit_waddr_o            = (storeaddrUnit_addr_misalign_o | storeaddrUnit_page_error_o) ? stage2_in.vaddr : storeaddrUnit_paddr;
 assign storeaddrUnit_sq_ptr_o           = stage2_in.sq_ptr;
-assign storeaddrUnit_wsize_o            = store_size(stage2_in.op);
+assign storeaddrUnit_wsize_o            = `store_size(stage2_in.op);
 assign storeaddrUnit_rob_ptr_o          = stage2_in.rob_ptr;
 //*******************************************************************************************************************************
 
