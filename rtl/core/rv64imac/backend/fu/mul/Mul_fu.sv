@@ -16,6 +16,7 @@
 
 // Please contact me through the following email: <qwe15889844242@163.com>
 
+`include "macro-func-define.sv"
 module Mul_fu
 import decode_pkg::*;
 import regfile_pkg::*;
@@ -119,39 +120,39 @@ assign mul_signed = `mul_sign(op);
 assign mul_a_sign = (mul_signed[1]) ? {src1[63], src1} : {1'b0, src1};
 assign mul_b_sign = (mul_signed[0]) ? {src2[63], src2} : {1'b0, src2};
 
-booth2_code_gen#(65) u_booth_code0 (.A(mul_a_sign), .code({mul_b_sign[1:0], 1'b0            }), .product(booth_code0 ), .h(h0 ), .sign_not(sign0 ));
-booth2_code_gen#(65) u_booth_code1 (.A(mul_a_sign), .code({mul_b_sign[3:1]                  }), .product(booth_code1 ), .h(h1 ), .sign_not(sign1 ));
-booth2_code_gen#(65) u_booth_code2 (.A(mul_a_sign), .code({mul_b_sign[5:3]                  }), .product(booth_code2 ), .h(h2 ), .sign_not(sign2 ));
-booth2_code_gen#(65) u_booth_code3 (.A(mul_a_sign), .code({mul_b_sign[7:5]                  }), .product(booth_code3 ), .h(h3 ), .sign_not(sign3 ));
-booth2_code_gen#(65) u_booth_code4 (.A(mul_a_sign), .code({mul_b_sign[9:7]                  }), .product(booth_code4 ), .h(h4 ), .sign_not(sign4 ));
-booth2_code_gen#(65) u_booth_code5 (.A(mul_a_sign), .code({mul_b_sign[11:9]                 }), .product(booth_code5 ), .h(h5 ), .sign_not(sign5 ));
-booth2_code_gen#(65) u_booth_code6 (.A(mul_a_sign), .code({mul_b_sign[13:11]                }), .product(booth_code6 ), .h(h6 ), .sign_not(sign6 ));
-booth2_code_gen#(65) u_booth_code7 (.A(mul_a_sign), .code({mul_b_sign[15:13]                }), .product(booth_code7 ), .h(h7 ), .sign_not(sign7 ));
-booth2_code_gen#(65) u_booth_code8 (.A(mul_a_sign), .code({mul_b_sign[17:15]                }), .product(booth_code8 ), .h(h8 ), .sign_not(sign8 ));
-booth2_code_gen#(65) u_booth_code9 (.A(mul_a_sign), .code({mul_b_sign[19:17]                }), .product(booth_code9 ), .h(h9 ), .sign_not(sign9 ));
-booth2_code_gen#(65) u_booth_code10(.A(mul_a_sign), .code({mul_b_sign[21:19]                }), .product(booth_code10), .h(h10), .sign_not(sign10));
-booth2_code_gen#(65) u_booth_code11(.A(mul_a_sign), .code({mul_b_sign[23:21]                }), .product(booth_code11), .h(h11), .sign_not(sign11));
-booth2_code_gen#(65) u_booth_code12(.A(mul_a_sign), .code({mul_b_sign[25:23]                }), .product(booth_code12), .h(h12), .sign_not(sign12));
-booth2_code_gen#(65) u_booth_code13(.A(mul_a_sign), .code({mul_b_sign[27:25]                }), .product(booth_code13), .h(h13), .sign_not(sign13));
-booth2_code_gen#(65) u_booth_code14(.A(mul_a_sign), .code({mul_b_sign[29:27]                }), .product(booth_code14), .h(h14), .sign_not(sign14));
-booth2_code_gen#(65) u_booth_code15(.A(mul_a_sign), .code({mul_b_sign[31:29]                }), .product(booth_code15), .h(h15), .sign_not(sign15));
-booth2_code_gen#(65) u_booth_code16(.A(mul_a_sign), .code({mul_b_sign[33:31]                }), .product(booth_code16), .h(h16), .sign_not(sign16));
-booth2_code_gen#(65) u_booth_code17(.A(mul_a_sign), .code({mul_b_sign[35:33]                }), .product(booth_code17), .h(h17), .sign_not(sign17));
-booth2_code_gen#(65) u_booth_code18(.A(mul_a_sign), .code({mul_b_sign[37:35]                }), .product(booth_code18), .h(h18), .sign_not(sign18));
-booth2_code_gen#(65) u_booth_code19(.A(mul_a_sign), .code({mul_b_sign[39:37]                }), .product(booth_code19), .h(h19), .sign_not(sign19));
-booth2_code_gen#(65) u_booth_code20(.A(mul_a_sign), .code({mul_b_sign[41:39]                }), .product(booth_code20), .h(h20), .sign_not(sign20));
-booth2_code_gen#(65) u_booth_code21(.A(mul_a_sign), .code({mul_b_sign[43:41]                }), .product(booth_code21), .h(h21), .sign_not(sign21));
-booth2_code_gen#(65) u_booth_code22(.A(mul_a_sign), .code({mul_b_sign[45:43]                }), .product(booth_code22), .h(h22), .sign_not(sign22));
-booth2_code_gen#(65) u_booth_code23(.A(mul_a_sign), .code({mul_b_sign[47:45]                }), .product(booth_code23), .h(h23), .sign_not(sign23));
-booth2_code_gen#(65) u_booth_code24(.A(mul_a_sign), .code({mul_b_sign[49:47]                }), .product(booth_code24), .h(h24), .sign_not(sign24));
-booth2_code_gen#(65) u_booth_code25(.A(mul_a_sign), .code({mul_b_sign[51:49]                }), .product(booth_code25), .h(h25), .sign_not(sign25));
-booth2_code_gen#(65) u_booth_code26(.A(mul_a_sign), .code({mul_b_sign[53:51]                }), .product(booth_code26), .h(h26), .sign_not(sign26));
-booth2_code_gen#(65) u_booth_code27(.A(mul_a_sign), .code({mul_b_sign[55:53]                }), .product(booth_code27), .h(h27), .sign_not(sign27));
-booth2_code_gen#(65) u_booth_code28(.A(mul_a_sign), .code({mul_b_sign[57:55]                }), .product(booth_code28), .h(h28), .sign_not(sign28));
-booth2_code_gen#(65) u_booth_code29(.A(mul_a_sign), .code({mul_b_sign[59:57]                }), .product(booth_code29), .h(h29), .sign_not(sign29));
-booth2_code_gen#(65) u_booth_code30(.A(mul_a_sign), .code({mul_b_sign[61:59]                }), .product(booth_code30), .h(h30), .sign_not(sign30));
-booth2_code_gen#(65) u_booth_code31(.A(mul_a_sign), .code({mul_b_sign[63:61]                }), .product(booth_code31), .h(h31), .sign_not(sign31));
-booth2_code_gen#(65) u_booth_code32(.A(mul_a_sign), .code({mul_b_sign[64], mul_b_sign[64:63]}), .product(booth_code32), .h(h32), .sign_not(sign32));
+booth2_code_gen #(65) u_booth_code0 (.A(mul_a_sign), .code({mul_b_sign[1:0], 1'b0            }), .product(booth_code0 ), .h(h0 ), .sign_not(sign0 ));
+booth2_code_gen #(65) u_booth_code1 (.A(mul_a_sign), .code({mul_b_sign[3:1]                  }), .product(booth_code1 ), .h(h1 ), .sign_not(sign1 ));
+booth2_code_gen #(65) u_booth_code2 (.A(mul_a_sign), .code({mul_b_sign[5:3]                  }), .product(booth_code2 ), .h(h2 ), .sign_not(sign2 ));
+booth2_code_gen #(65) u_booth_code3 (.A(mul_a_sign), .code({mul_b_sign[7:5]                  }), .product(booth_code3 ), .h(h3 ), .sign_not(sign3 ));
+booth2_code_gen #(65) u_booth_code4 (.A(mul_a_sign), .code({mul_b_sign[9:7]                  }), .product(booth_code4 ), .h(h4 ), .sign_not(sign4 ));
+booth2_code_gen #(65) u_booth_code5 (.A(mul_a_sign), .code({mul_b_sign[11:9]                 }), .product(booth_code5 ), .h(h5 ), .sign_not(sign5 ));
+booth2_code_gen #(65) u_booth_code6 (.A(mul_a_sign), .code({mul_b_sign[13:11]                }), .product(booth_code6 ), .h(h6 ), .sign_not(sign6 ));
+booth2_code_gen #(65) u_booth_code7 (.A(mul_a_sign), .code({mul_b_sign[15:13]                }), .product(booth_code7 ), .h(h7 ), .sign_not(sign7 ));
+booth2_code_gen #(65) u_booth_code8 (.A(mul_a_sign), .code({mul_b_sign[17:15]                }), .product(booth_code8 ), .h(h8 ), .sign_not(sign8 ));
+booth2_code_gen #(65) u_booth_code9 (.A(mul_a_sign), .code({mul_b_sign[19:17]                }), .product(booth_code9 ), .h(h9 ), .sign_not(sign9 ));
+booth2_code_gen #(65) u_booth_code10(.A(mul_a_sign), .code({mul_b_sign[21:19]                }), .product(booth_code10), .h(h10), .sign_not(sign10));
+booth2_code_gen #(65) u_booth_code11(.A(mul_a_sign), .code({mul_b_sign[23:21]                }), .product(booth_code11), .h(h11), .sign_not(sign11));
+booth2_code_gen #(65) u_booth_code12(.A(mul_a_sign), .code({mul_b_sign[25:23]                }), .product(booth_code12), .h(h12), .sign_not(sign12));
+booth2_code_gen #(65) u_booth_code13(.A(mul_a_sign), .code({mul_b_sign[27:25]                }), .product(booth_code13), .h(h13), .sign_not(sign13));
+booth2_code_gen #(65) u_booth_code14(.A(mul_a_sign), .code({mul_b_sign[29:27]                }), .product(booth_code14), .h(h14), .sign_not(sign14));
+booth2_code_gen #(65) u_booth_code15(.A(mul_a_sign), .code({mul_b_sign[31:29]                }), .product(booth_code15), .h(h15), .sign_not(sign15));
+booth2_code_gen #(65) u_booth_code16(.A(mul_a_sign), .code({mul_b_sign[33:31]                }), .product(booth_code16), .h(h16), .sign_not(sign16));
+booth2_code_gen #(65) u_booth_code17(.A(mul_a_sign), .code({mul_b_sign[35:33]                }), .product(booth_code17), .h(h17), .sign_not(sign17));
+booth2_code_gen #(65) u_booth_code18(.A(mul_a_sign), .code({mul_b_sign[37:35]                }), .product(booth_code18), .h(h18), .sign_not(sign18));
+booth2_code_gen #(65) u_booth_code19(.A(mul_a_sign), .code({mul_b_sign[39:37]                }), .product(booth_code19), .h(h19), .sign_not(sign19));
+booth2_code_gen #(65) u_booth_code20(.A(mul_a_sign), .code({mul_b_sign[41:39]                }), .product(booth_code20), .h(h20), .sign_not(sign20));
+booth2_code_gen #(65) u_booth_code21(.A(mul_a_sign), .code({mul_b_sign[43:41]                }), .product(booth_code21), .h(h21), .sign_not(sign21));
+booth2_code_gen #(65) u_booth_code22(.A(mul_a_sign), .code({mul_b_sign[45:43]                }), .product(booth_code22), .h(h22), .sign_not(sign22));
+booth2_code_gen #(65) u_booth_code23(.A(mul_a_sign), .code({mul_b_sign[47:45]                }), .product(booth_code23), .h(h23), .sign_not(sign23));
+booth2_code_gen #(65) u_booth_code24(.A(mul_a_sign), .code({mul_b_sign[49:47]                }), .product(booth_code24), .h(h24), .sign_not(sign24));
+booth2_code_gen #(65) u_booth_code25(.A(mul_a_sign), .code({mul_b_sign[51:49]                }), .product(booth_code25), .h(h25), .sign_not(sign25));
+booth2_code_gen #(65) u_booth_code26(.A(mul_a_sign), .code({mul_b_sign[53:51]                }), .product(booth_code26), .h(h26), .sign_not(sign26));
+booth2_code_gen #(65) u_booth_code27(.A(mul_a_sign), .code({mul_b_sign[55:53]                }), .product(booth_code27), .h(h27), .sign_not(sign27));
+booth2_code_gen #(65) u_booth_code28(.A(mul_a_sign), .code({mul_b_sign[57:55]                }), .product(booth_code28), .h(h28), .sign_not(sign28));
+booth2_code_gen #(65) u_booth_code29(.A(mul_a_sign), .code({mul_b_sign[59:57]                }), .product(booth_code29), .h(h29), .sign_not(sign29));
+booth2_code_gen #(65) u_booth_code30(.A(mul_a_sign), .code({mul_b_sign[61:59]                }), .product(booth_code30), .h(h30), .sign_not(sign30));
+booth2_code_gen #(65) u_booth_code31(.A(mul_a_sign), .code({mul_b_sign[63:61]                }), .product(booth_code31), .h(h31), .sign_not(sign31));
+booth2_code_gen #(65) u_booth_code32(.A(mul_a_sign), .code({mul_b_sign[64], mul_b_sign[64:63]}), .product(booth_code32), .h(h32), .sign_not(sign32));
 
 //? L1 compressor42 34 -> 18
 /* verilator lint_off UNUSEDSIGNAL */
@@ -458,7 +459,9 @@ assign l5_3  = {carry4_1[105:0], 22'h0};
 
 compressor_42#(128) l5_compressor_42_0 ( .data0(l5_0 ), .data1(l5_1 ), .data2(l5_2 ), .data3(l5_3 ), .sum(sum5_0 ), .carry_o(carry5_0 ));
 
+/* verilator lint_off UNUSEDSIGNAL */
 mul_optype_t    op_pipeline2;
+/* verilator lint_on UNUSEDSIGNAL */
 rob_entry_ptr_t rob_ptr_pipeline2;
 pint_regdest_t  pwdest_pipeline2;
 

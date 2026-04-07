@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module Alu_fu
 import decode_pkg::*;
 import regfile_pkg::*;
@@ -11,7 +12,9 @@ import rob_pkg::*;
 
     input                                               alu_valid_i,
     output                                              alu_ready_i,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  alu_optype_t                                 op,
+    /* verilator lint_on UNUSEDSIGNAL */
     input  [63:0]                                       src1,
     input  [63:0]                                       src2,
     input  pint_regdest_t                               pwdest,

@@ -41,16 +41,37 @@ typedef struct packed {
     logic [BLOCK_BIT_NUM - 1:0]             inst_offset;        // 指令与ftq中起始pc的偏移
 } rob_entry_t;
 
-`define RobQueueValid(func_rob_r_ptr, func_rob_w_ptr, func_test_rob_ptr) \
-    ((func_rob_r_ptr[rob_entry_w] == func_rob_w_ptr[rob_entry_w]) ?  \
-    ((func_test_rob_ptr >= func_rob_r_ptr[rob_entry_w - 1 : 0]) & (func_test_rob_ptr < func_rob_w_ptr[rob_entry_w - 1 : 0])) : \
-    ((func_test_rob_ptr >= func_rob_r_ptr[rob_entry_w - 1 : 0]) | (func_test_rob_ptr < func_rob_w_ptr[rob_entry_w - 1 : 0])))
+// function automatic logic RobQueueValid;
+//     input ls_rob_entry_ptr_t      rob_r_ptr;
+//     input ls_rob_entry_ptr_t      rob_w_ptr;
+//     input rob_entry_ptr_t         test_rob_ptr;
 
-`define rob_is_older(func_a_ptr, func_b_ptr, func_deq_rob_ptr) \
-    (((func_a_ptr[rob_entry_w] == func_b_ptr[rob_entry_w]) & (func_a_ptr[rob_entry_w - 1 : 0] < func_b_ptr[rob_entry_w - 1 : 0]  )) | \
-    (((func_a_ptr[rob_entry_w] != func_b_ptr[rob_entry_w]) & (func_a_ptr[rob_entry_w - 1 : 0] != func_b_ptr[rob_entry_w - 1 : 0])) &  \
-    ({(!func_a_ptr[rob_entry_w]), func_a_ptr[rob_entry_w - 1 : 0]} > func_b_ptr)) |                                                   \
-    (((func_a_ptr[rob_entry_w] != func_b_ptr[rob_entry_w]) & (func_a_ptr[rob_entry_w - 1 : 0] == func_b_ptr[rob_entry_w - 1 : 0])) &  \
-    (func_a_ptr == func_deq_rob_ptr)))
+//     logic test_rob_ptr_in_r_eq_w;
+//     logic test_rob_ptr_in_r_ne_w;
+//     assign test_rob_ptr_in_r_eq_w = ((test_rob_ptr >= rob_r_ptr[rob_entry_w - 1 : 0]) & (test_rob_ptr < rob_w_ptr[rob_entry_w - 1 : 0]));
+//     assign test_rob_ptr_in_r_ne_w = ((test_rob_ptr >= rob_r_ptr[rob_entry_w - 1 : 0]) | (test_rob_ptr < rob_w_ptr[rob_entry_w - 1 : 0]));
+
+//     assign RobQueueValid = (rob_r_ptr[rob_entry_w] == rob_w_ptr[rob_entry_w]) ? test_rob_ptr_in_r_eq_w : test_rob_ptr_in_r_ne_w;
+
+// endfunction
+
+// function automatic logic rob_is_older;
+//     input ls_rob_entry_ptr_t      a_rob_ptr;
+//     input ls_rob_entry_ptr_t      b_rob_ptr;
+//     input ls_rob_entry_ptr_t      deq_rob_ptr;
+
+//     logic same_group, rob_full, diff_group;
+//     ls_rob_entry_ptr_t    diff_a_rob_ptr;
+//     assign same_group = (a_rob_ptr[rob_entry_w] == b_rob_ptr[rob_entry_w]);
+//     assign rob_full   = ((a_rob_ptr[rob_entry_w] != b_rob_ptr[rob_entry_w]) & (a_rob_ptr[rob_entry_w - 1 : 0] == b_rob_ptr[rob_entry_w - 1 : 0]));
+//     assign diff_group = ((a_rob_ptr[rob_entry_w] != b_rob_ptr[rob_entry_w]) & (a_rob_ptr[rob_entry_w - 1 : 0] != b_rob_ptr[rob_entry_w - 1 : 0]));
+
+//     assign diff_a_rob_ptr = {(!a_rob_ptr[rob_entry_w]), a_rob_ptr[rob_entry_w - 1 : 0]};
+
+//     assign rob_is_older =   (same_group & (a_rob_ptr[rob_entry_w - 1 : 0] < b_rob_ptr[rob_entry_w - 1 : 0]  )) | 
+//                             (diff_group & (diff_a_rob_ptr                 > b_rob_ptr                       )) | 
+//                             (rob_full   & (a_rob_ptr                     == deq_rob_ptr                     ));
+
+// endfunction
 
 endpackage

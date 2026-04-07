@@ -106,15 +106,33 @@ task automatic Load_commit_judge(
     assign lq_entry_update.mem_vaddr         = lq_entry_self.mem_vaddr     ;
 endtask //automatic
 
-`define LoadQueueValid(func_lq_r_ptr, func_lq_w_ptr, func_test_lq_ptr) \
-    ((func_lq_r_ptr[LQ_entry_w] == func_lq_w_ptr[LQ_entry_w]) ?  \
-    ((func_test_lq_ptr >= func_lq_r_ptr[LQ_entry_w - 1 : 0]) & (func_test_lq_ptr < func_lq_w_ptr[LQ_entry_w - 1 : 0])) : \
-    ((func_test_lq_ptr >= func_lq_r_ptr[LQ_entry_w - 1 : 0]) | (func_test_lq_ptr < func_lq_w_ptr[LQ_entry_w - 1 : 0])))
+// function automatic logic LoadQueueValid;
+//     input LQ_entry_ptr_inner_t      lq_r_ptr;
+//     input LQ_entry_ptr_inner_t      lq_w_ptr;
+//     input LQ_entry_ptr_t            test_lq_ptr;
 
-`define StoreQueueValid(func_sq_r_ptr, func_sq_w_ptr, func_test_sq_ptr) \
-    ((func_sq_r_ptr[SQ_entry_w] == func_sq_w_ptr[SQ_entry_w]) ?  \
-    ((func_test_sq_ptr >= func_sq_r_ptr[SQ_entry_w - 1 : 0]) & (func_test_sq_ptr < func_sq_w_ptr[SQ_entry_w - 1 : 0])) : \
-    ((func_test_sq_ptr >= func_sq_r_ptr[SQ_entry_w - 1 : 0]) | (func_test_sq_ptr < func_sq_w_ptr[SQ_entry_w - 1 : 0])))
+//     logic test_lq_ptr_in_r_eq_w;
+//     logic test_lq_ptr_in_r_ne_w;
+//     assign test_lq_ptr_in_r_eq_w = ((test_lq_ptr >= lq_r_ptr[LQ_entry_w - 1 : 0]) & (test_lq_ptr < lq_w_ptr[LQ_entry_w - 1 : 0]));
+//     assign test_lq_ptr_in_r_ne_w = ((test_lq_ptr >= lq_r_ptr[LQ_entry_w - 1 : 0]) | (test_lq_ptr < lq_w_ptr[LQ_entry_w - 1 : 0]));
+
+//     assign LoadQueueValid = (lq_r_ptr[LQ_entry_w] == lq_w_ptr[LQ_entry_w]) ? test_lq_ptr_in_r_eq_w : test_lq_ptr_in_r_ne_w;
+
+// endfunction
+
+// function automatic logic StoreQueueValid;
+//     input SQ_entry_ptr_inner_t      sq_r_ptr;
+//     input SQ_entry_ptr_inner_t      sq_w_ptr;
+//     input SQ_entry_ptr_t            test_sq_ptr;
+
+//     logic test_sq_ptr_in_r_eq_w;
+//     logic test_sq_ptr_in_r_ne_w;
+//     assign test_sq_ptr_in_r_eq_w = ((test_sq_ptr >= sq_r_ptr[SQ_entry_w - 1 : 0]) & (test_sq_ptr < sq_w_ptr[SQ_entry_w - 1 : 0]));
+//     assign test_sq_ptr_in_r_ne_w = ((test_sq_ptr >= sq_r_ptr[SQ_entry_w - 1 : 0]) | (test_sq_ptr < sq_w_ptr[SQ_entry_w - 1 : 0]));
+
+//     assign StoreQueueValid = (sq_r_ptr[SQ_entry_w] == sq_w_ptr[SQ_entry_w]) ? test_sq_ptr_in_r_eq_w : test_sq_ptr_in_r_ne_w;
+
+// endfunction
 
 // function automatic logic lsq_is_older;
 //     input SQ_entry_ptr_t      a_sq_ptr;

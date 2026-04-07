@@ -10,12 +10,24 @@ typedef enum logic [8:0]{
     op_mulw   = 9'b0000_100_11
 }mul_optype_t;
 
-`define mul_sign(mul_op) mul_op[1:0]
+// function automatic logic [1:0] mul_sign;
+//     input mul_optype_t op;
+//     mul_sign = op[1:0];
+// endfunction
 
-`define mul_low(mul_op) mul_op[2]
+// function automatic logic mul_low;
+//     input mul_optype_t op;
+//     mul_low = op[2];
+// endfunction
 
-`define mul_high(mul_op) mul_op[3]
+// function automatic logic mul_high;
+//     input mul_optype_t op;
+//     mul_high = op[3];
+// endfunction
 
-`define mul_word(mul_op) mul_op[4]
+// function automatic logic mul_word;
+//     input mul_optype_t op;
+//     mul_word = op[4];
+// endfunction
 
 endpackage

@@ -45,24 +45,50 @@ typedef union packed{
     amo_optype_t        amo_optype;
 }FuOpType_t;
 
-`define send2alu(fu_type) (fu_type == fu_alu)
+// function logic send2alu;
+//     input FuType_t futype;
+//     assign send2alu = (futype == fu_alu);
+// endfunction
 
-`define send2csr(fu_type) ((fu_type == fu_csr) | (fu_type == fu_fence))
+// function logic send2csr;
+//     input FuType_t futype;
+//     assign send2csr = ((futype == fu_csr) | (futype == fu_fence));
+// endfunction
 
-`define send2jmp(fu_type) ((fu_type == fu_bru) | (fu_type == fu_jump))
+// function logic send2jmp;
+//     input FuType_t futype;
+//     assign send2jmp = ((futype == fu_bru) | (futype == fu_jump));
+// endfunction
 
-`define send2mul(fu_type) (fu_type == fu_mul)
+// function logic send2mul;
+//     input FuType_t futype;
+//     assign send2mul = (futype == fu_mul);
+// endfunction
 
-`define send2div(fu_type) (fu_type == fu_div)
+// function logic send2div;
+//     input FuType_t futype;
+//     assign send2div = (futype == fu_div);
+// endfunction
 
-`define send2load(fu_type) (fu_type == fu_load)
+// function logic send2load;
+//     input FuType_t futype;
+//     assign send2load = (futype == fu_load);
+// endfunction
 
-`define send2store(fu_type) (fu_type == fu_store)
+// function logic send2store;
+//     input FuType_t futype;
+//     assign send2store = (futype == fu_store);
+// endfunction
 
-`define send2amo(fu_type) (fu_type == fu_amo)
+// function logic send2amo;
+//     input FuType_t futype;
+//     assign send2amo = (futype == fu_amo);
+// endfunction
 
-//! 移除对load的提前完成，考虑load不写入的情况下，可能会出现异常和对mmio读取产生副作用
-`define use_wdest(fu_type) ((fu_type == fu_alu) | (fu_type == fu_div) | (fu_type == fu_mul))
+// function logic use_wdest;
+//     input FuType_t futype;
+//     assign use_wdest = ((futype == fu_alu) | (futype == fu_div) | (futype == fu_mul) | (futype == fu_load));
+// endfunction
 
 localparam DECODE_O_W = 4 + 9 + 5 + 2 + 5 + 2 + 2 + 5 + 32 + 7 + 4 + 32 + 1 + FTQ_ENTRY_BIT_NUM + BLOCK_BIT_NUM;
 typedef struct packed {

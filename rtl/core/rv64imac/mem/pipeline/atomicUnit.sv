@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module atomicUnit
 import decode_pkg::*;
 import regfile_pkg::*;
@@ -87,7 +88,9 @@ logic               out1_valid;
 logic               out1_ready;
 iq_mem_atomic_out_t out1;
 
+/* verilator lint_off UNUSEDSIGNAL */
 amo_optype_t        op;
+/* verilator lint_on UNUSEDSIGNAL */
 intreg_t            src1;
 intreg_t            src2;
 logic [31:0]        imm;

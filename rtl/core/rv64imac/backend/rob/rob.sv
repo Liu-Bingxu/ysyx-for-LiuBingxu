@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module rob
 import core_setting_pkg::*;
 import frontend_pkg::*;

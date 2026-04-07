@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module Fence_fu
 import decode_pkg::*;
 import regfile_pkg::*;
@@ -15,7 +16,9 @@ import rob_pkg::*;
 
     input                                               fence_valid_i,
     output                                              fence_ready_i,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  fence_optype_t                               op,
+    /* verilator lint_on UNUSEDSIGNAL */
     input                                               inst_rvc,
     input  [63:0]                                       pc,
     input  rob_entry_ptr_t                              rob_ptr,

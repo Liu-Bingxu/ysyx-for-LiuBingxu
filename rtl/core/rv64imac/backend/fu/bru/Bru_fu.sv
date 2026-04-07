@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module Bru_fu
 import decode_pkg::*;
 import bru_pkg::*;
@@ -10,7 +11,9 @@ import rob_pkg::*;
 
     input                                               bru_valid_i,
     output                                              bru_ready_i,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  bru_optype_t                                 op,
+    /* verilator lint_on UNUSEDSIGNAL */
     input                                               fix_token,
     input                                               inst_rvc,
     input  [63:0]                                       src1,

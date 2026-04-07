@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module Div_fu
 import decode_pkg::*;
 import regfile_pkg::*;
@@ -11,7 +12,9 @@ import rob_pkg::*;
 
     input                                               div_valid_i,
     output                                              div_ready_i,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  div_optype_t                                 op,
+    /* verilator lint_on UNUSEDSIGNAL */
     input  [63:0]                                       src1,
     input  [63:0]                                       src2,
     input  pint_regdest_t                               pwdest,
@@ -43,7 +46,9 @@ divu u_divu(
     .div_o_valid 	( div_valid_o       ),
     .div_o_ready 	( div_ready_o       )
 );
+/* verilator lint_off UNUSEDSIGNAL */
 div_optype_t temp_op;
+/* verilator lint_on UNUSEDSIGNAL */
 
 assign dividend     = (!`div_word(op)) ? src1 : (
                         (!`div_unsign(op)) ? {{32{src1[31]}},src1[31:0]} : 

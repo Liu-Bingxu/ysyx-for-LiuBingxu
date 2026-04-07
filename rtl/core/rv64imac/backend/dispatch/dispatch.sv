@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module dispatch
 import decode_pkg::*;
 import rename_pkg::*;

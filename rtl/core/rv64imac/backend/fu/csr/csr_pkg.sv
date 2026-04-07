@@ -15,18 +15,39 @@ typedef enum logic [8:0]{
     op_csrrci   = 9'b000011_100
 }csr_optype_t;
 
-`define csr_mret_flag(csr_op) csr_op[8]
+// function automatic logic csr_mret_flag;
+//     input csr_optype_t op;
+//     csr_mret_flag = op[8];
+// endfunction
 
-`define csr_sret_flag(csr_op) csr_op[7]
+// function automatic logic csr_sret_flag;
+//     input csr_optype_t op;
+//     csr_sret_flag = op[7];
+// endfunction
 
-`define csr_dret_flag(csr_op) csr_op[6]
+// function automatic logic csr_dret_flag;
+//     input csr_optype_t op;
+//     csr_dret_flag = op[6];
+// endfunction
 
-`define csr_acc_flag(csr_op) csr_op[3]
+// function automatic logic csr_acc_flag;
+//     input csr_optype_t op;
+//     csr_acc_flag = op[3];
+// endfunction
 
-`define csr_swap(csr_op) csr_op[0]
+// function automatic logic csr_swap;
+//     input csr_optype_t op;
+//     csr_swap = op[0];
+// endfunction
 
-`define csr_set(csr_op) csr_op[1]
+// function automatic logic csr_set;
+//     input csr_optype_t op;
+//     csr_set = op[1];
+// endfunction
 
-`define csr_clear(csr_op) csr_op[2]
+// function automatic logic csr_clear;
+//     input csr_optype_t op;
+//     csr_clear = op[2];
+// endfunction
 
 endpackage

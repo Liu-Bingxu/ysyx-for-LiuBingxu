@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module storeaddrUnit
 import decode_pkg::*;
 import regfile_pkg::*;

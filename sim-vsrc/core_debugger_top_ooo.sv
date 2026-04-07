@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module core_debugger_top_ooo
 import core_setting_pkg::*;
 import frontend_pkg::*;

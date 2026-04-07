@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module Jump_fu
 import decode_pkg::*;
 import regfile_pkg::*;
@@ -11,8 +12,8 @@ import rob_pkg::*;
 
     input                                               jump_valid_i,
     output                                              jump_ready_i,
-    input  jump_optype_t                                op,
     /* verilator lint_off UNUSEDSIGNAL */
+    input  jump_optype_t                                op,
     input  [63:0]                                       token_pc,
     /* verilator lint_on UNUSEDSIGNAL */
     input                                               inst_rvc,

@@ -12,10 +12,19 @@ typedef enum logic[1:0] {
     fencei_out = 2'h2
 } fence_fsm_t;
 
-`define fence_flag(fence_op) fence_op[2]
+// function automatic logic fence_flag;
+//     input fence_optype_t op;
+//     fence_flag = op[2];
+// endfunction
 
-`define fence_i_flag(fence_op) fence_op[1]
+// function automatic logic fence_i_flag;
+//     input fence_optype_t op;
+//     fence_i_flag = op[1];
+// endfunction
 
-`define sfence_flag(fence_op) fence_op[0]
+// function automatic logic sfence_flag;
+//     input fence_optype_t op;
+//     sfence_flag = op[0];
+// endfunction
 
 endpackage

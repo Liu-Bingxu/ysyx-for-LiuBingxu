@@ -7,7 +7,7 @@ import core_setting_pkg::*;
 
     input                                               redirect,
 
-    output                                              rename_fire,
+    input                                               rename_fire,
 
     input                [wb_width - 1 : 0]             rfwen,
     input  pint_regdest_t[wb_width - 1 : 0]             pwdest,

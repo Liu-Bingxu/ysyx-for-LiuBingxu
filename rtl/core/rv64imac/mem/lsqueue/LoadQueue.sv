@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module LoadQueue
 import lsq_pkg::*;
 import rob_pkg::*;

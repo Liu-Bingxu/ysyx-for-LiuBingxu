@@ -1,3 +1,4 @@
+`include "macro-func-define.sv"
 module Csr_fu
 import decode_pkg::*;
 import regfile_pkg::*;
@@ -12,7 +13,9 @@ import core_setting_pkg::*;
 
     input                                               csr_valid_i,
     output                                              csr_ready_i,
+    /* verilator lint_off UNUSEDSIGNAL */
     input  csr_optype_t                                 op,
+    /* verilator lint_on UNUSEDSIGNAL */
     input  [11:0]                                       csr_index,
     input  [63:0]                                       csr_rdata,
     input  [63:0]                                       src1,
